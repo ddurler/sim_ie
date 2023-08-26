@@ -1,7 +1,9 @@
 /// Simulateur d'informatique embarquée
 use std::env;
 
+mod fake_serial_com;
 mod serial_com;
+
 use serial_com::SerialCom;
 
 fn main() {
