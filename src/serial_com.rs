@@ -1,10 +1,27 @@
 /// Gestion d'un port série
+///
+/// Ce module gère un port série de manière synchrone.
+///
+/// Le port est identifié par son nom (COM1, COM2, etc.).
+/// Sous windows, les liaisons après COM9 doivent s'identifier par "\.\COM10"
+/// selon [la description de Microsoft](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file)
+/// Sous Linux, le nom d'un port est du style "/dev/ttyUSB0".
+///
+/// La primitive `available_names_list` est disponible pour obtenir la liste des noms
+/// des ports séries disponibles sur la machine.
+///
+/// La création d'un port à 9600Bd (1 start, 8 data, 1 stop, sans parité ni contrôle) :
+/// ```rs
+/// use serial_com;
+/// let port = serial_com::SerialCom::new("COM1", 9600);
+/// ```
+///
+/// Les primitives `read`, `write` permettent de lire et d'écrire des vecteurs de `u8`.
+/// TODO : Expliquer si le `read` est bloquant...
+///
 
-// Vitesse du port géré
-const BAUD_RATE: u32 = 9600;
-
-/// Retourne la liste des ports séries disponibles sur cette machine
-pub fn get_list() -> Vec<String> {
+/// Retourne la liste des noms des ports séries disponibles sur cette machine
+pub fn available_names_list() -> Vec<String> {
     let mut ret_list = vec![];
     match serial2::SerialPort::available_ports() {
         Err(e) => {
@@ -31,8 +48,8 @@ pub struct SerialCom {
 
 impl SerialCom {
     /// Constructeur
-    pub fn new(name: &str) -> Self {
-        let port = serial2::SerialPort::open(name, BAUD_RATE);
+    pub fn new(name: &str, baud_rate: u32) -> Self {
+        let port = serial2::SerialPort::open(name, baud_rate);
         match port {
             Err(e) => {
                 eprintln!("Erreur lors de l'ouverture du port '{name}' : {e}");
@@ -70,6 +87,19 @@ impl SerialCom {
     pub fn write(&self, buffer: &[u8]) {
         if let Err(e) = self.port.write_all(buffer) {
             panic!("Erreur d'écriture du port '{}' : {}", self.name, e);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_serial_com_new() {
+        let list_port_names = available_names_list();
+        for name in list_port_names {
+            let _serial_com = SerialCom::new(&name, 9600);
         }
     }
 }
