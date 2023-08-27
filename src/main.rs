@@ -3,8 +3,9 @@ use std::env;
 
 mod fake_serial_com;
 mod serial_com;
+mod true_serial_com;
 
-use serial_com::SerialCom;
+use serial_com::{CommonSerialComTrait, SerialCom};
 
 fn main() {
     let command_args: Vec<String> = env::args().collect();
@@ -29,6 +30,11 @@ fn main() {
         .contains(&command_args[1].to_uppercase())
         {
             print_serial_com_name_list();
+        } else if command_args[1].starts_with('-') {
+            // Option inconnue
+            print_help();
+            eprintln!();
+            eprintln!("Erreur option inconnue : '{}'\n", command_args[1]);
         } else {
             // port série défini en ligne de commande
             let _port = SerialCom::new(&command_args[1], 9600);
@@ -37,13 +43,13 @@ fn main() {
         // Sans argument ou avec trop d'arguments, on affiche l'aide à l'utilisateur
         print_help();
         print_serial_com_name_list();
-        println!();
+        eprintln!();
     }
 }
 
 /// Affiche l'aide pour l'utilisateur
 fn print_help() {
-    println!(
+    eprintln!(
         r#"
 Simulateur d'informatique embarquée - ALMA 2023.
 
@@ -62,11 +68,11 @@ Usage :
 fn print_serial_com_name_list() {
     let port_names_list = serial_com::available_names_list();
     if port_names_list.is_empty() {
-        println!("Désolé, pas de port série sur cette machine :(");
+        eprintln!("Désolé, pas de port série sur cette machine :(");
     } else {
-        println!("Ports séries de cette machine :");
+        eprintln!("Ports séries de cette machine :");
         for name in port_names_list {
-            println!("{name}");
+            eprintln!("{name}");
         }
     }
 }
