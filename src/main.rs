@@ -2,6 +2,7 @@
 use std::env;
 
 mod serial_com;
+mod st2150;
 
 use serial_com::{CommonSerialComTrait, SerialCom};
 
@@ -35,7 +36,9 @@ fn main() {
             eprintln!("Erreur option inconnue : '{}'\n", command_args[1]);
         } else {
             // port série défini en ligne de commande
-            let _port = SerialCom::new(&command_args[1], 9600);
+            let port = SerialCom::new(&command_args[1], 9600);
+            // Protocole ST2150 sur cette liaison série
+            let _protocol = st2150::ST2150::new(port);
         }
     } else {
         // Sans argument ou avec trop d'arguments, on affiche l'aide à l'utilisateur
