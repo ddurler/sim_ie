@@ -1,9 +1,9 @@
-use crate::fake_serial_com;
 /// Gestion d'un port série réel ou virtuel
 ///
 /// Un port nommé 'FAKE' a un comportement spécifique pour les besoins de tests. Voir `FakeSerialPort`
 /// Sinon, il s'agit d'un port réel de la machine qu'on cherche à gérer
-use crate::true_serial_com;
+mod fake_serial_com;
+mod true_serial_com;
 
 /// Retourne la liste des noms des ports séries disponibles sur cette machine
 pub fn available_names_list() -> Vec<String> {

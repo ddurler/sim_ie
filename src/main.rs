@@ -1,9 +1,7 @@
 /// Simulateur d'informatique embarquée
 use std::env;
 
-mod fake_serial_com;
 mod serial_com;
-mod true_serial_com;
 
 use serial_com::{CommonSerialComTrait, SerialCom};
 
