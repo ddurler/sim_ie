@@ -24,6 +24,9 @@ pub trait CommonSerialComTrait {
     /// Écriture du port
     fn write(&self, buffer: &[u8]);
 
+    ///FAKE panic! si la prochaine écriture n'est pas celle attendue
+    fn should_write(&mut self, buffer: &[u8]);
+
     /// FAKE : Force les lectures à suivre
     fn will_read(&mut self, buffer: &[u8]);
 }
@@ -62,6 +65,20 @@ impl CommonSerialComTrait for SerialCom {
         match &self {
             SerialCom::FakePort(fake) => fake.write(buffer),
             SerialCom::TruePort(port) => port.write(buffer),
+        }
+    }
+
+    /// Primitive pour les FAKE ports uniquement
+    /// Sans effet si le port n'est pas un FAKE port
+    fn should_write(&mut self, buffer: &[u8]) {
+        match self {
+            SerialCom::FakePort(fake) => fake.should_write(buffer),
+            SerialCom::TruePort(port) => {
+                eprint!(
+                    "Usage inattendu de 'should_write' avec un port existant ({})",
+                    port.name
+                );
+            }
         }
     }
 

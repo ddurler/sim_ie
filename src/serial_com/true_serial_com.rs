@@ -94,6 +94,15 @@ impl CommonSerialComTrait for TrueSerialCom {
 
     /// Primitive pour les FAKE ports uniquement
     /// Sans effet si le port n'est pas un FAKE port
+    fn should_write(&mut self, _buffer: &[u8]) {
+        eprint!(
+            "Usage inattendu de 'should_write' avec un port existant ({})",
+            self.name
+        );
+    }
+
+    /// Primitive pour les FAKE ports uniquement
+    /// Sans effet si le port n'est pas un FAKE port
     fn will_read(&mut self, _buffer: &[u8]) {
         eprint!(
             "Usage inattendu de 'will_read' avec un port existant ({})",
