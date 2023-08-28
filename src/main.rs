@@ -38,7 +38,8 @@ fn main() {
             // port série défini en ligne de commande
             let port = SerialCom::new(&command_args[1], 9600);
             // Protocole ST2150 sur cette liaison série
-            let _protocol = st2150::ST2150::new(port);
+            let mut protocol = st2150::ST2150::new(port);
+            protocol.message00();
         }
     } else {
         // Sans argument ou avec trop d'arguments, on affiche l'aide à l'utilisateur
