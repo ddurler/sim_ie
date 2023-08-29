@@ -5,6 +5,11 @@
 //!
 //! (Le LRC n'intègre pas le STX et intègre le SEPARATOR qui le précède)
 
+use std::time::SystemTime;
+
+use super::ProtocolError;
+use crate::serial_com::{CommonSerialComTrait, SerialCom};
+
 /// Début de message
 pub const STX: u8 = 0x02;
 
@@ -20,10 +25,66 @@ pub const ACK: u8 = 0x06;
 /// Non-acquit de message
 pub const NACK: u8 = 0x15;
 
+/// Timeout réception réponse (en seconde) : Absence de toute réponse
+pub const TIMEOUT_READ_FRAME: f32 = 1.0;
+
+/// Timeout fin de trame (en seconde) : Si reçu quelque chose mais pas assez
+pub const TIMEOUT_END_FRAME: f32 = 0.3;
+
 /// Calcul du checksum pour trame (XOR des octets)
 /// Attention : Dans la ST2150, le checksum n'intègre pas le STX initial et contient un SEPARATOR avant
 pub fn calcul_checksum(data: &[u8]) -> u8 {
     data.iter().fold(0_u8, |lrc, byte| lrc ^ (*byte))
+}
+
+/// Primitive générique pour attendre une réponse sur la liaison série
+/// `port` : Référence au port série (true ou FAKE) à utiliser
+/// `buffer` : Buffer pour les octets reçus sur le port
+/// `expected_len` : Longueur de la réponse attendue. Dès qu'un nombre au moins égal à cette longueur
+/// est reçue, la fonction retourne à l'appelant. Sinon, un timeout court pour retourner une erreur
+/// à l'appelant
+/// # Errors
+/// `ProtocolError::NoReply` : Rien n'a été reçue en réponse
+/// `ProtocolError::ReplyTooShort` : Reçu quelques octets mais pas autant qu'attendus
+pub fn waiting_frame(
+    port: &SerialCom,
+    buffer: &mut [u8],
+    expected_len: usize,
+) -> Result<usize, ProtocolError> {
+    let mut total_len_received = 0;
+    let mut start_time = SystemTime::now();
+
+    // Boucle de lecture du port série
+    loop {
+        let len_received = port.read(&mut buffer[total_len_received..]);
+        if len_received > 0 {
+            // Ré-arme le timer si on a reçu qq. chose
+            total_len_received += len_received;
+            start_time = SystemTime::now();
+        }
+        if total_len_received >= expected_len {
+            // On a reçu au moins le nombre d'octets attendus, on retourne
+            return Ok(total_len_received);
+        }
+        if total_len_received > 0 {
+            // On a reçu qq. chose (mais pas assez), c'est le timeout fin de trame qui compte
+            if let Ok(elapsed) = start_time.elapsed() {
+                if elapsed.as_secs_f32() > TIMEOUT_END_FRAME {
+                    return Err(ProtocolError::ReplyTooShort(
+                        total_len_received,
+                        expected_len,
+                    ));
+                }
+            }
+        } else {
+            // Absolument rien reçu en réponse
+            if let Ok(elapsed) = start_time.elapsed() {
+                if elapsed.as_secs_f32() > TIMEOUT_READ_FRAME {
+                    return Err(ProtocolError::NoReply);
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -42,5 +103,20 @@ mod tests {
             ]),
             0xC5
         );
+    }
+
+    #[test]
+    fn test_waiting_frame() {
+        // On utilise le FAKE serial port pour simuler un réponse...
+        let mut fake_port = SerialCom::new("FAKE", 9600);
+
+        fake_port.will_read(&[0x01, 0x02, 0x03]);
+
+        let mut buffer = [0; 500];
+        let rep = waiting_frame(&fake_port, &mut buffer, 3);
+
+        assert!(rep.is_ok());
+        assert_eq!(rep.unwrap(), 3);
+        assert_eq!(buffer[0..3], [0x01, 0x02, 0x03]);
     }
 }

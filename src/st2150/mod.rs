@@ -9,17 +9,29 @@ mod field;
 mod frame;
 mod protocol;
 
-/// Erreur détectée par le module
-#[derive(Debug, Default)]
-struct ModError {}
+/// Erreur détectée
+#[derive(Debug)]
+pub enum ProtocolError {
+    /// Pas de réponse du calculateur
+    NoReply,
 
-impl Display for ModError {
+    /// Réponse incomplète du calculateur (nb octets reçus, attendus)
+    ReplyTooShort(usize, usize),
+}
+
+impl Display for ProtocolError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Erreur")
+        match self {
+            ProtocolError::NoReply => write!(f, "Pas de réponse du calculateur"),
+            ProtocolError::ReplyTooShort(nb_rec, nb_expected) => write!(
+                f,
+                "Réponse incomplète du calculateur ({nb_rec}/{nb_expected} cars)"
+            ),
+        }
     }
 }
 
-impl Error for ModError {}
+impl Error for ProtocolError {}
 
 /// Associe un port série au protocole ST2150
 pub struct ST2150 {
@@ -56,20 +68,55 @@ impl ST2150 {
         self.port.write(&req.to_frame());
     }
 
+    /// Helper pour renseigner la trace de ce qu'on a reçu
+    fn set_last_rep(&mut self, buffer: &[u8], len_buffer: usize, error: String) {
+        self.last_rep = Vec::with_capacity(len_buffer);
+        for v in &buffer[0..len_buffer] {
+            self.last_rep.push(*v);
+        }
+        self.last_error = error;
+    }
+
     /// Attente d'un message (réponse)
-    fn wait_rep(&mut self) -> Result<frame::Frame, Box<dyn Error>> {
+    fn wait_rep(&mut self, buffer: &mut [u8], expected_len: usize) -> Result<usize, ProtocolError> {
         self.last_rep = vec![];
         self.last_error = "TODO Erreur".to_string();
-        Err(Box::<ModError>::default())
+        let rep = protocol::waiting_frame(&self.port, buffer, expected_len);
+        let len_rep = match rep {
+            Err(e) => {
+                match e {
+                    ProtocolError::ReplyTooShort(len_rep, _) => {
+                        self.set_last_rep(buffer, len_rep, format!("{e}"));
+                    }
+                    ProtocolError::NoReply => {
+                        self.set_last_rep(&[], 0, format!("{e}"));
+                    }
+                }
+                return Err(e);
+            }
+            Ok(n) => {
+                self.set_last_rep(buffer, n, String::new());
+                n // Nombre de caractères reçus
+            }
+        };
+
+        Ok(len_rep)
     }
 
     /// Message 00 de signe de vie
     pub fn message00(&mut self) {
-        let requete = frame::Frame::new(0);
-        self.send_req(&requete);
-        if let Ok(rep) = self.wait_rep() {
-            dbg!(rep.to_frame());
-        }
+        // Création et envoi requête
+        let req = frame::Frame::new(0);
+        self.send_req(&req);
+
+        // Réception réponse
+        let mut buffer = [0; 200];
+        let Ok(len_rep) = self.wait_rep(&mut buffer, 17) else {
+            return;
+        };
+
+        // TODO : Décodage de la répons reçue
+        dbg!(&buffer[..len_rep]);
     }
 }
 
@@ -90,6 +137,27 @@ mod tests {
             protocol::SEPARATOR,
             0x46,
             0x45,
+            protocol::ETX,
+        ]);
+
+        // Réponse simulée
+        fake_port.will_read(&[
+            protocol::STX,
+            0x30,
+            0x30,
+            protocol::SEPARATOR,
+            0x30, // Hors mesurage
+            protocol::SEPARATOR,
+            0x20, // Pas de défaut
+            protocol::SEPARATOR,
+            0x30, // Pas en arrêt intermédiaire
+            protocol::SEPARATOR,
+            0x30, // Pas de forçage PD
+            protocol::SEPARATOR,
+            0x30, // En mode autonome
+            protocol::SEPARATOR,
+            0x00,
+            0x00,
             protocol::ETX,
         ]);
 
