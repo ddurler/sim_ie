@@ -1,23 +1,23 @@
-/// Gestion d'un port série
-///
-/// Ce module gère un port série de manière synchrone.
-///
-/// Le port est identifié par son nom (COM1, COM2, etc.).
-/// Sous windows, les liaisons après COM9 doivent s'identifier par "\.\COM10"
-/// selon [la description de Microsoft](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file)
-/// Sous Linux, le nom d'un port est du style "/dev/ttyUSB0".
-///
-/// La primitive `available_names_list` est disponible pour obtenir la liste des noms
-/// des ports séries disponibles sur la machine.
-///
-/// La création d'un port à 9600Bd (1 start, 8 data, 1 stop, sans parité ni contrôle) :
-/// ```rs
-/// use serial_com;
-/// let port = serial_com::SerialCom::new("COM1", 9600);
-/// ```
-///
-/// Les primitives `read`, `write` permettent de lire et d'écrire des vecteurs de `u8`.
-/// TODO : Expliquer si le `read` est bloquant...
+//! Gestion d'un port série
+//!
+//! Ce module gère un port série de manière synchrone.
+//!
+//! Le port est identifié par son nom (COM1, COM2, etc.).
+//! Sous windows, les liaisons après COM9 doivent s'identifier par "\.\COM10"
+//! selon [la description de Microsoft](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file)
+//! Sous Linux, le nom d'un port est du style "/dev/ttyUSB0".
+//!
+//! La primitive `available_names_list` est disponible pour obtenir la liste des noms
+//! des ports séries disponibles sur la machine.
+//!
+//! La création d'un port à 9600Bd (1 start, 8 data, 1 stop, sans parité ni contrôle) :
+//! ```rs
+//! use serial_com;
+//! let port = serial_com::SerialCom::new("COM1", 9600);
+//! ```
+//!
+//! Les primitives `read`, `write` permettent de lire et d'écrire des vecteurs de `u8`.
+//! TODO : Expliquer si le `read` est bloquant...
 use crate::CommonSerialComTrait;
 
 /// Retourne la liste des noms des ports séries disponibles sur cette machine
@@ -39,10 +39,10 @@ pub fn available_names_list() -> Vec<String> {
 
 /// Structure pour gérer un port série à 9600Bd / 1 start / 8 bits data / 1 stop
 pub struct TrueSerialCom {
-    // Nom du port série
+    /// Nom du port série
     pub name: String,
 
-    // Objet serial associé
+    /// Objet serial associé
     pub port: serial2::SerialPort,
 }
 
@@ -70,7 +70,7 @@ impl TrueSerialCom {
 
 impl CommonSerialComTrait for TrueSerialCom {
     /// Lecture du port série
-    /// `buffer` : Vec<u8> qu'on peut initialiser par `let mut buffer = [0; 512]`
+    /// `buffer` : `Vec<u8>` qu'on peut initialiser par `let mut buffer = [0; 512]`
     /// Return : Nombre d'octets lus
     /// # panics
     /// panic! si erreur de lecture du port
@@ -83,7 +83,7 @@ impl CommonSerialComTrait for TrueSerialCom {
     }
 
     /// Écriture du port série
-    /// `buffer` : Vec<u8> à écriture
+    /// `buffer` : `Vec<u8>` à écriture
     /// # panics
     /// panics si erreur d'écriture du port
     fn write(&self, buffer: &[u8]) {

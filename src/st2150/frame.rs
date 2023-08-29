@@ -1,12 +1,14 @@
+//! Helper pour l'encodage/décodage des trames du protocole ALMA IE ST2150
+
 use crate::st2150::field::Field;
-/// Helper de message pour le protocole ALMA IE ST2150
 use crate::st2150::protocol;
 
+/// Support générique pour un message du protocole
 pub struct Frame {
-    // Numéro de message
+    /// Numéro de message
     pub num_message: u8,
 
-    // Champ de la requête
+    /// Champ de la requête
     pub fields: Vec<Field>,
 }
 

@@ -1,4 +1,4 @@
-/// Simulateur d'informatique embarquée
+//! Simulateur d'informatique embarquée ALMA - ST 2150
 use std::env;
 
 mod serial_com;
@@ -6,6 +6,7 @@ mod st2150;
 
 use serial_com::{CommonSerialComTrait, SerialCom};
 
+/// Point d'entrée de l'outil
 fn main() {
     let command_args: Vec<String> = env::args().collect();
 

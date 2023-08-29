@@ -1,4 +1,4 @@
-/// Protocole ALMA IE selon ST 2150 (voir DOCS)
+//! Protocole ALMA IE selon ST 2150 (voir DOCS)
 use std::error::Error;
 use std::fmt::Display;
 
@@ -21,6 +21,7 @@ impl Display for ModError {
 
 impl Error for ModError {}
 
+/// Associe un port série au protocole ST2150
 pub struct ST2150 {
     /// Port série de communication
     port: SerialCom,
@@ -62,7 +63,7 @@ impl ST2150 {
         Err(Box::<ModError>::default())
     }
 
-    /// Message de signe de vie
+    /// Message 00 de signe de vie
     pub fn message00(&mut self) {
         let requete = frame::Frame::new(0);
         self.send_req(&requete);

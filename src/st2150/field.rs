@@ -1,5 +1,8 @@
+//! Gestion du contenu d'un champ du protocole ST2150
+
 /// Champ d'une requête ou d'une réponse
 pub struct Field {
+    /// Table des octets d'un champ
     data: Vec<u8>,
 }
 

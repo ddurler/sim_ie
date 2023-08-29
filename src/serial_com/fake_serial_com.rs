@@ -1,12 +1,13 @@
-/// Port série fictif pour les besoins de test
+//! Port série fictif pour les besoins de test
 use crate::CommonSerialComTrait;
 
+/// Port série fictif
 #[derive(Default)]
 pub struct FakeSerialCom {
-    // Ecriture attendue pour les 'write'
+    /// Ecriture attendue pour les 'write'
     should_write: Vec<u8>,
 
-    // Réponse à faire pour un `read`
+    /// Réponse à faire pour un `read`
     will_read: Vec<u8>,
 }
 

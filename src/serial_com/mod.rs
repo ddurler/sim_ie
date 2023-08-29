@@ -1,7 +1,7 @@
-/// Gestion d'un port série réel ou virtuel
-///
-/// Un port nommé 'FAKE' a un comportement spécifique pour les besoins de tests. Voir `FakeSerialPort`
-/// Sinon, il s'agit d'un port réel de la machine qu'on cherche à gérer
+//! Gestion d'un port série réel ou virtuel
+//!
+//! Un port nommé 'FAKE' a un comportement spécifique pour les besoins de tests. Voir `FakeSerialPort`
+//! Sinon, il s'agit d'un port réel de la machine qu'on cherche à gérer
 mod fake_serial_com;
 mod true_serial_com;
 
@@ -46,7 +46,7 @@ impl SerialCom {
 
 impl CommonSerialComTrait for SerialCom {
     /// Lecture du port série
-    /// `buffer` : Vec<u8> qu'on peut initialiser par `let mut buffer = [0; 512]`
+    /// `buffer` : `Vec<u8>` qu'on peut initialiser par `let mut buffer = [0; 512]`
     /// Return : Nombre d'octets lus
     /// # panics
     /// panic! si erreur de lecture du port réel de la machine
@@ -58,7 +58,7 @@ impl CommonSerialComTrait for SerialCom {
     }
 
     /// Écriture du port série
-    /// `buffer` : Vec<u8> à écriture
+    /// `buffer` : `Vec<u8>` à écriture
     /// # panics
     /// panics si erreur d'écriture d'un port réel de la machine
     fn write(&self, buffer: &[u8]) {

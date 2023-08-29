@@ -1,9 +1,9 @@
-/// Helper pour les requêtes et les réponses du protocole ALMA IE selon la ST 2150
-///
-/// Une trame du protocole IE est au format :
-/// `STX + numéro_command_as_N2 + { SEPARATOR + champ }* + SEPARATOR + lrc_as_Hex2) + STX`
-///
-/// (Le LRC n'intègre pas le STX et intègre le SEPARATOR qui le précède)
+//! Helper pour les requêtes et les réponses du protocole ALMA IE selon la ST 2150
+//!
+//! Une trame du protocole IE est au format :
+//! `STX + numéro_command_as_N2 + { SEPARATOR + champ }* + SEPARATOR + lrc_as_Hex2) + STX`
+//!
+//! (Le LRC n'intègre pas le STX et intègre le SEPARATOR qui le précède)
 
 /// Début de message
 pub const STX: u8 = 0x02;
