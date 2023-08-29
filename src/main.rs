@@ -10,7 +10,7 @@ fn main() {
     let command_args: Vec<String> = env::args().collect();
 
     if command_args.len() == 2 {
-        if vec![
+        if [
             // Aide utilisateur
             "--HELP".to_string(),
             "HELP".to_string(),
@@ -19,7 +19,7 @@ fn main() {
         .contains(&command_args[1].to_uppercase())
         {
             print_help();
-        } else if vec![
+        } else if [
             // Liste ports de la machine
             "--PORTS".to_string(),
             "--LIST".to_string(),

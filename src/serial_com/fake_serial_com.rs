@@ -31,7 +31,7 @@ impl CommonSerialComTrait for FakeSerialCom {
     /// Prédéfini la prochaine écriture du FAKE port
     fn should_write(&mut self, buffer: &[u8]) {
         self.should_write = Vec::new();
-        for byte in buffer.iter() {
+        for byte in buffer {
             self.should_write.push(*byte);
         }
     }
@@ -39,7 +39,7 @@ impl CommonSerialComTrait for FakeSerialCom {
     /// Prédéfini la prochaine lecture du FAKE port
     fn will_read(&mut self, buffer: &[u8]) {
         self.will_read = Vec::new();
-        for byte in buffer.iter() {
+        for byte in buffer {
             self.will_read.push(*byte);
         }
     }
