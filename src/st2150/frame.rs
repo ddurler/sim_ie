@@ -3,6 +3,9 @@
 use crate::st2150::field::Field;
 use crate::st2150::protocol;
 
+use super::field;
+use super::ProtocolError;
+
 /// Support générique pour un message du protocole
 pub struct Frame {
     /// Numéro de message
@@ -10,6 +13,16 @@ pub struct Frame {
 
     /// Champ de la requête
     pub fields: Vec<Field>,
+}
+
+/// Helper pour convertir un caractère hexadécimal en binaire décimal
+fn car_hexa_to_value(car: u8) -> u8 {
+    match car {
+        b'0'..=b'9' => car - b'0',
+        b'A'..=b'F' => car - b'A' + 10,
+        b'a'..=b'f' => car - b'a' + 10,
+        _ => 0,
+    }
 }
 
 impl Frame {
@@ -66,6 +79,78 @@ impl Frame {
 
         // et voilà :)
         req
+    }
+
+    /// Décodage et validation d'une trame d'un message
+    /// `buffer` : Message à décoder
+    /// `num_message` : Numéro de message attendu
+    /// `len_fields` : Nombre et taille (en octet) des différents champs attendus dans le message
+    ///
+    /// Rappel : Un message ST2150 est : STX + num(2) + { SEPARATOR + champ(n) }* + SEPARATOR + checksum(2) + ETX
+    ///
+    pub fn try_from_buffer(
+        buffer: &[u8],
+        num_message: u8,
+        len_fields: &[usize],
+    ) -> Result<Self, ProtocolError> {
+        // Commence par STX ?
+        if buffer[0] != protocol::STX {
+            return Err(ProtocolError::MissingSTX);
+        }
+
+        // Termine par ETX ?
+        if buffer[buffer.len() - 1] != protocol::ETX {
+            return Err(ProtocolError::MissingETX);
+        }
+
+        // Longueur du message OK ?
+        let mut rec_len = 1 + 2; // STX + numéro de message
+        rec_len += len_fields.len() + len_fields.iter().sum::<usize>(); // SEPARATOR avant chaque champs + champs
+        rec_len += 1 + 2 + 1; // SEPARATOR + checksum + ETX
+        if buffer.len() != rec_len {
+            return Err(ProtocolError::BadMessageLen(buffer.len(), rec_len));
+        }
+
+        // checksum OK ?
+        let rec_checksum =
+            car_hexa_to_value(buffer[rec_len - 3]) * 16 + car_hexa_to_value(buffer[rec_len - 2]);
+        let checksum = protocol::calcul_checksum(&buffer[1..rec_len - 4]);
+        if checksum != rec_checksum {
+            return Err(ProtocolError::BadChecksum(rec_checksum, checksum));
+        }
+
+        // Numéro de message OK ?
+        let rec_num_message = (buffer[1] - b'0') * 10 + (buffer[1] - b'0');
+        if rec_num_message != num_message {
+            return Err(ProtocolError::BadMessageNumber(
+                rec_num_message,
+                num_message,
+            ));
+        }
+
+        // On est plutôt bien parti, reste à valider les champs..
+        let mut frame = Self::new(num_message);
+
+        let mut cur_position = 1 + 2; /* Après le STX num(2) */
+        for len_field in len_fields {
+            // On doit trouver un SEPARATOR avant le champ
+            if buffer[cur_position] != protocol::SEPARATOR {
+                return Err(ProtocolError::SeparatorExpected(cur_position));
+            }
+            cur_position += 1;
+            // Les len_field caractères qui suivent sont un champ
+            let field = field::Field::new(&buffer[cur_position..cur_position + len_field]);
+            frame.add_field(field);
+            cur_position += len_field;
+        }
+
+        // On doit trouver encore un SEPARATOR avant le checksum
+        if buffer[cur_position] != protocol::SEPARATOR {
+            return Err(ProtocolError::SeparatorExpected(cur_position));
+        }
+
+        // On est tout bon :)
+        Ok(frame)
     }
 }
 
@@ -139,5 +224,27 @@ mod tests {
         req.add_field(Field::encode_str("ERREUR", 6));
 
         assert!(req.is_nack());
+    }
+
+    #[test]
+    fn test_try_from_buffer() {
+        let err_tests: Vec<(&[u8], u8, &[usize], ProtocolError)> = vec![
+            /* buffer / num message / len_fields / ProtocolError */
+            (&[0x01], 0, &[], ProtocolError::MissingSTX),
+            (&[protocol::STX, 0x01], 0, &[], ProtocolError::MissingETX),
+            (
+                &[protocol::STX, 0x01, protocol::ETX],
+                0,
+                &[],
+                ProtocolError::BadMessageLen(3, 7),
+            ),
+            // TODO : More tests
+        ];
+
+        for (buffer, num_message, len_fields, expected) in err_tests {
+            let res = Frame::try_from_buffer(buffer, num_message, len_fields);
+            assert!(res.is_err());
+            assert_eq!(expected, res.err().unwrap());
+        }
     }
 }

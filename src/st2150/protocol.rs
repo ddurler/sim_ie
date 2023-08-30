@@ -57,9 +57,7 @@ pub fn waiting_frame(
     println!("Entering waiting_frame loop...");
     // Boucle de lecture du port série
     loop {
-        println!("Read before...");
         let len_received = port.read(&mut buffer[total_len_received..]);
-        println!("Read after...");
         if len_received > 0 {
             // Ré-arme le timer si on a reçu qq. chose
             total_len_received += len_received;

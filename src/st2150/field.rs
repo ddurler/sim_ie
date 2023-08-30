@@ -7,6 +7,15 @@ pub struct Field {
 }
 
 impl Field {
+    /// Constructeur champ avec un array de u8
+    pub fn new(field: &[u8]) -> Self {
+        let mut data = vec![];
+        for v in field {
+            data.push(*v);
+        }
+        Self { data }
+    }
+
     /// Constructeur champ avec une valeur binaire (typiquement ACK ou NACK)
     /// (Ne peut donner qu'un champ d'une longueur de 1 octet)
     pub fn encode_binary(value: u8) -> Self {
@@ -90,6 +99,12 @@ impl Field {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_new() {
+        let f = Field::new(&[1, 2, 3]);
+        assert_eq!(f.to_frame(), vec![1, 2, 3]);
+    }
 
     #[test]
     fn test_encode_binary() {
