@@ -13,7 +13,7 @@ pub struct FakeSerialCom {
 
 impl CommonSerialComTrait for FakeSerialCom {
     /// Fake read
-    fn read(&self, buffer: &mut [u8]) -> usize {
+    fn read(&mut self, buffer: &mut [u8]) -> usize {
         for (dst, src) in buffer.iter_mut().zip(self.will_read.iter()) {
             *dst = *src;
         }
@@ -22,7 +22,7 @@ impl CommonSerialComTrait for FakeSerialCom {
 
     /// Fake write
     #[allow(clippy::unused_self)]
-    fn write(&self, buffer: &[u8]) {
+    fn write(&mut self, buffer: &[u8]) {
         if !self.should_write.is_empty() {
             // Si un 'should_write' a été défini, on doit le retrouver ici
             assert_eq!(buffer, self.should_write);
@@ -58,7 +58,7 @@ mod tests {
         fake.write(&[1, 2, 3]);
 
         // Par défaut, on ne lit rien
-        let mut buffer = [0; 512];
+        let mut buffer: [u8; 512] = [0; 512];
         assert_eq!(fake.read(&mut buffer), 0);
 
         // Mais on peut forcer ce qu'on va lire

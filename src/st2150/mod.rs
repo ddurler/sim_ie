@@ -81,7 +81,7 @@ impl ST2150 {
     fn wait_rep(&mut self, buffer: &mut [u8], expected_len: usize) -> Result<usize, ProtocolError> {
         self.last_rep = vec![];
         self.last_error = "TODO Erreur".to_string();
-        let rep = protocol::waiting_frame(&self.port, buffer, expected_len);
+        let rep = protocol::waiting_frame(&mut self.port, buffer, expected_len);
         let len_rep = match rep {
             Err(e) => {
                 match e {

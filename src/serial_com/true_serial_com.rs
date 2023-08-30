@@ -18,12 +18,15 @@
 //!
 //! Les primitives `read`, `write` permettent de lire et d'écrire des vecteurs de `u8`.
 //! TODO : Expliquer si le `read` est bloquant...
+
+use std::time::Duration;
+
 use crate::CommonSerialComTrait;
 
 /// Retourne la liste des noms des ports séries disponibles sur cette machine
 pub fn available_names_list() -> Vec<String> {
     let mut ret_list = vec![];
-    match serial2::SerialPort::available_ports() {
+    match serialport::available_ports() {
         Err(e) => {
             eprintln!("Erreur fatal lors de la recherche des ports séries de cette machine : {e}");
             std::process::exit(1);
@@ -31,7 +34,7 @@ pub fn available_names_list() -> Vec<String> {
         Ok(ports) => {
             ports
                 .iter()
-                .for_each(|port| ret_list.push(format!("{}", port.display())));
+                .for_each(|port| ret_list.push(port.port_name.to_string()));
             ret_list
         }
     }
@@ -43,13 +46,15 @@ pub struct TrueSerialCom {
     pub name: String,
 
     /// Objet serial associé
-    pub port: serial2::SerialPort,
+    pub port: Box<dyn serialport::SerialPort>,
 }
 
 impl TrueSerialCom {
     /// Constructeur
     pub fn new(name: &str, baud_rate: u32) -> Self {
-        let port = serial2::SerialPort::open(name, baud_rate);
+        let port = serialport::new(name, baud_rate)
+            .timeout(Duration::from_millis(10))
+            .open();
         match port {
             Err(e) => {
                 eprintln!("Erreur lors de l'ouverture du port '{name}' : {e}");
@@ -74,9 +79,9 @@ impl CommonSerialComTrait for TrueSerialCom {
     /// Return : Nombre d'octets lus
     /// # panics
     /// panic! si erreur de lecture du port
-    fn read(&self, buffer: &mut [u8]) -> usize {
-        match self.port.read(buffer) {
-            Ok(n) => n,
+    fn read(&mut self, buffer: &mut [u8]) -> usize {
+        match &self.port.read(buffer) {
+            Ok(n) => *n,
             Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => 0,
             Err(e) => panic!("Erreur de lecture du port '{}' : {}", self.name, e),
         }
@@ -86,7 +91,7 @@ impl CommonSerialComTrait for TrueSerialCom {
     /// `buffer` : `Vec<u8>` à écriture
     /// # panics
     /// panics si erreur d'écriture du port
-    fn write(&self, buffer: &[u8]) {
+    fn write(&mut self, buffer: &[u8]) {
         if let Err(e) = self.port.write_all(buffer) {
             panic!("Erreur d'écriture du port '{}' : {}", self.name, e);
         }

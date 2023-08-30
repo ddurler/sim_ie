@@ -47,16 +47,19 @@ pub fn calcul_checksum(data: &[u8]) -> u8 {
 /// `ProtocolError::NoReply` : Rien n'a été reçue en réponse
 /// `ProtocolError::ReplyTooShort` : Reçu quelques octets mais pas autant qu'attendus
 pub fn waiting_frame(
-    port: &SerialCom,
+    port: &mut SerialCom,
     buffer: &mut [u8],
     expected_len: usize,
 ) -> Result<usize, ProtocolError> {
     let mut total_len_received = 0;
     let mut start_time = SystemTime::now();
 
+    println!("Entering waiting_frame loop...");
     // Boucle de lecture du port série
     loop {
+        println!("Read before...");
         let len_received = port.read(&mut buffer[total_len_received..]);
+        println!("Read after...");
         if len_received > 0 {
             // Ré-arme le timer si on a reçu qq. chose
             total_len_received += len_received;
@@ -113,7 +116,7 @@ mod tests {
         fake_port.will_read(&[0x01, 0x02, 0x03]);
 
         let mut buffer = [0; 500];
-        let rep = waiting_frame(&fake_port, &mut buffer, 3);
+        let rep = waiting_frame(&mut fake_port, &mut buffer, 3);
 
         assert!(rep.is_ok());
         assert_eq!(rep.unwrap(), 3);
