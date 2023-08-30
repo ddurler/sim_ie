@@ -1,7 +1,8 @@
 //! Gestion d'un port série réel ou virtuel
 //!
-//! Un port nommé 'FAKE' a un comportement spécifique pour les besoins de tests. Voir `FakeSerialPort`
-//! Sinon, il s'agit d'un port réel de la machine qu'on cherche à gérer
+//! Un port nommé 'FAKE' a un comportement spécifique pour les besoins de tests. Voir `FakeSerialPort`.
+//! Sinon, il s'agit d'un port réel de la machine qu'on cherche à gérer. Voir `TrueSerialPort`.
+//! Dans tous les 2 cas, le port implémente le trait `CommonSerialComTrait`.
 mod fake_serial_com;
 mod true_serial_com;
 

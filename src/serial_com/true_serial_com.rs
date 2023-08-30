@@ -54,21 +54,20 @@ impl TrueSerialCom {
     pub fn new(name: &str, baud_rate: u32) -> Self {
         let port = serialport::new(name, baud_rate)
             .timeout(Duration::from_millis(10))
+            .flow_control(serialport::FlowControl::None)
+            .data_bits(serialport::DataBits::Eight)
+            .stop_bits(serialport::StopBits::Two)
+            .parity(serialport::Parity::None)
             .open();
         match port {
             Err(e) => {
                 eprintln!("Erreur lors de l'ouverture du port '{name}' : {e}");
                 std::process::exit(1);
             }
-            Ok(port) => {
-                // Nécessaire ?
-                // let mut settings = serial2::Settings::from(port.get_configuration().unwrap());
-                // settings.set_raw();  // 1 start, 8 data, 1 stop, pas de parité ni de contrôle
-                Self {
-                    name: name.to_owned(),
-                    port,
-                }
-            }
+            Ok(port) => Self {
+                name: name.to_owned(),
+                port,
+            },
         }
     }
 }
@@ -90,7 +89,7 @@ impl CommonSerialComTrait for TrueSerialCom {
     /// Écriture du port série
     /// `buffer` : `Vec<u8>` à écriture
     /// # panics
-    /// panics si erreur d'écriture du port
+    /// panics! si erreur d'écriture du port
     fn write(&mut self, buffer: &[u8]) {
         if let Err(e) = self.port.write_all(buffer) {
             panic!("Erreur d'écriture du port '{}' : {}", self.name, e);
