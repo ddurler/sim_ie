@@ -16,16 +16,6 @@ pub struct Frame {
     pub fields: Vec<Field>,
 }
 
-/// Helper pour convertir un caractère hexadécimal en binaire décimal
-fn car_hexa_to_value(car: u8) -> u8 {
-    match car {
-        b'0'..=b'9' => car - b'0',
-        b'A'..=b'F' => car - b'A' + 10,
-        b'a'..=b'f' => car - b'a' + 10,
-        _ => 0,
-    }
-}
-
 impl Frame {
     /// Constructeur
     pub fn new(numero: u8) -> Self {
@@ -36,11 +26,13 @@ impl Frame {
     }
 
     /// Est-ce un message ACK ?
+    #[allow(dead_code)]
     pub fn is_ack(&self) -> bool {
         !self.fields.is_empty() && self.fields[0].to_frame() == vec![protocol::ACK]
     }
 
     /// Est-ce un message NACK ?
+    #[allow(dead_code)]
     pub fn is_nack(&self) -> bool {
         !self.fields.is_empty() && self.fields[0].to_frame() == vec![protocol::NACK]
     }
@@ -113,8 +105,8 @@ impl Frame {
         }
 
         // checksum OK ?
-        let rec_checksum =
-            car_hexa_to_value(buffer[rec_len - 3]) * 16 + car_hexa_to_value(buffer[rec_len - 2]);
+        let rec_checksum = protocol::car_hexa_to_value(buffer[rec_len - 3]) * 16
+            + protocol::car_hexa_to_value(buffer[rec_len - 2]);
         let checksum = protocol::calcul_checksum(&buffer[1..rec_len - 3]);
         if checksum != rec_checksum {
             return Err(ProtocolError::BadChecksum(rec_checksum, checksum));

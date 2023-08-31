@@ -31,6 +31,21 @@ pub const TIMEOUT_READ_FRAME: f32 = 1.0;
 /// Timeout fin de trame (en seconde) : Si reçu quelque chose mais pas assez
 pub const TIMEOUT_END_FRAME: f32 = 0.3;
 
+/// Helper pour vérifier qu'un caractère est de l'hexadécimal
+pub fn is_car_hexa(car: u8) -> bool {
+    matches!(car, b'0'..=b'9' | b'A'..=b'F' | b'a'..=b'f')
+}
+
+/// Helper pour convertir un caractère hexadécimal en binaire décimal
+pub fn car_hexa_to_value(car: u8) -> u8 {
+    match car {
+        b'0'..=b'9' => car - b'0',
+        b'A'..=b'F' => car - b'A' + 10,
+        b'a'..=b'f' => car - b'a' + 10,
+        _ => 0,
+    }
+}
+
 /// Calcul du checksum pour trame (XOR des octets)
 /// Attention : Dans la ST2150, le checksum n'intègre pas le STX initial et contient un SEPARATOR avant
 pub fn calcul_checksum(data: &[u8]) -> u8 {
@@ -41,7 +56,7 @@ pub fn calcul_checksum(data: &[u8]) -> u8 {
 /// `port` : Référence au port série (true ou FAKE) à utiliser
 /// `buffer` : Buffer pour les octets reçus sur le port
 /// `expected_len` : Longueur de la réponse attendue. Dès qu'un nombre au moins égal à cette longueur
-/// est reçue, la fonction retourne à l'appelant. Sinon, un timeout court pour retourner une erreur
+/// est reçu, la fonction retourne à l'appelant. Sinon, un timeout court pour retourner une erreur
 /// à l'appelant
 /// # Errors
 /// `ProtocolError::NoReply` : Rien n'a été reçue en réponse

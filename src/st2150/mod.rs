@@ -140,7 +140,7 @@ impl ST2150 {
         Ok(len_rep)
     }
 
-    /// Conversion d'une message reçu
+    /// Décodage et conversion d'un message reçu en une `Frame`
     pub fn try_from_buffer(
         &mut self,
         buffer: &[u8],
