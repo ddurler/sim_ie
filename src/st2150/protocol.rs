@@ -54,7 +54,6 @@ pub fn waiting_frame(
     let mut total_len_received = 0;
     let mut start_time = SystemTime::now();
 
-    println!("Entering waiting_frame loop...");
     // Boucle de lecture du port série
     loop {
         let len_received = port.read(&mut buffer[total_len_received..]);

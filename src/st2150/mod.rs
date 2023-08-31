@@ -196,7 +196,7 @@ mod tests {
             protocol::ETX,
         ]);
 
-        // Réponse simulée
+        // Réponse simulée (le checksum est 0x20)
         fake_port.will_read(&[
             protocol::STX,
             0x30,
@@ -212,8 +212,8 @@ mod tests {
             protocol::SEPARATOR,
             0x30, // En mode autonome
             protocol::SEPARATOR,
-            b'D',
-            b'E',
+            b'2',
+            b'0',
             protocol::ETX,
         ]);
 

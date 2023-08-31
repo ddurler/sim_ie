@@ -40,7 +40,11 @@ fn main() {
             let port = SerialCom::new(&command_args[1], 9600);
             // Protocole ST2150 sur cette liaison série
             let mut protocol = st2150::ST2150::new(port);
-            let _ = protocol.message00();
+            let ret = protocol.message00();
+
+            if ret.is_err() {
+                dbg!(ret.err());
+            }
         }
     } else {
         // Sans argument ou avec trop d'arguments, on affiche l'aide à l'utilisateur
