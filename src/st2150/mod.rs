@@ -2,6 +2,7 @@
 use std::error::Error;
 use std::fmt::Display;
 
+use crate::context::Context;
 use crate::serial_com::SerialCom;
 use crate::CommonSerialComTrait;
 
@@ -41,6 +42,9 @@ pub enum ProtocolError {
 
     /// Échec conversion d'un champ dans un type (type_de_champ, champ),
     ErrFieldConversion(String, field::Field),
+
+    /// Valeur incorrecte dans un champ (champ, nom, domaine_valeurs)
+    IllegalFieldValue(field::Field, String, String),
 }
 
 impl Display for ProtocolError {
@@ -77,16 +81,24 @@ impl Display for ProtocolError {
                 f,
                 "Erreur lors de la conversion en {str_decode} du champ {field:?}"
             ),
+            ProtocolError::IllegalFieldValue(field, nom, domaine_valeurs) => write!(
+                f,
+                "Valeur incorrecte du champ '{nom}'={field:?} : {domaine_valeurs}"
+            ),
         }
     }
 }
 
 impl Error for ProtocolError {}
 
-/// Associe un port série au protocole ST2150 et la trace des dernières vacations
-pub struct ST2150 {
+/// Associe un port série au protocole ST2150, un contexte des informations 'atomiques'
+/// et la trace des dernières vacations
+pub struct ST2150<'a> {
     /// Port série de communication
     port: SerialCom,
+
+    /// Contexte des informations 'atomiques'
+    context: &'a mut Context,
 
     /// Dernière requête envoyée
     last_req: Vec<u8>,
@@ -98,11 +110,12 @@ pub struct ST2150 {
     last_error: String,
 }
 
-impl ST2150 {
+impl<'a> ST2150<'a> {
     /// Constructeur
-    pub fn new(port: SerialCom) -> Self {
+    pub fn new(port: SerialCom, context: &'a mut Context) -> Self {
         Self {
             port,
+            context,
             last_req: vec![],
             last_rep: vec![],
             last_error: String::new(),
@@ -184,8 +197,73 @@ impl ST2150 {
         // Décodage de la réponse reçue
         let frame = self.try_from_buffer(&buffer[..len_rep], 0, &[1, 1, 1, 1, 1])?;
 
-        dbg!(frame.to_frame());
+        // Mise à jour du contexte
 
+        // #0 : En mesurage
+        match frame.fields[0].decode_char()? {
+            '0' => self.context.en_mesurage = Some(false),
+            '1' => self.context.en_mesurage = Some(true),
+            _ => {
+                return Err(ProtocolError::IllegalFieldValue(
+                    frame.fields[0].clone(),
+                    "en mesurage".to_string(),
+                    "'0' ou '1'".to_string(),
+                ))
+            }
+        }
+
+        // #1 : Code défaut
+        let code_defaut = frame.fields[1].decode_binary()?;
+        if (0x20..=0x9F).contains(&code_defaut) {
+            self.context.code_defaut = Some(code_defaut - 0x20);
+        } else {
+            return Err(ProtocolError::IllegalFieldValue(
+                frame.fields[1].clone(),
+                "code défaut".to_string(),
+                "Valeur entre 0x20 et 0x9F".to_string(),
+            ));
+        }
+
+        // #2 : Arrêt intermédiaire
+        match frame.fields[2].decode_char()? {
+            '0' => self.context.arret_intermediaire = Some(false),
+            '1' => self.context.arret_intermediaire = Some(true),
+            _ => {
+                return Err(ProtocolError::IllegalFieldValue(
+                    frame.fields[2].clone(),
+                    "arrêt intermédiaire".to_string(),
+                    "'0' ou '1'".to_string(),
+                ))
+            }
+        }
+
+        // #3 : Forçage petit débit
+        match frame.fields[3].decode_char()? {
+            '0' => self.context.forcage_petit_debit = Some(false),
+            '1' => self.context.forcage_petit_debit = Some(true),
+            _ => {
+                return Err(ProtocolError::IllegalFieldValue(
+                    frame.fields[3].clone(),
+                    "forçage petit debit".to_string(),
+                    "'0' ou '1'".to_string(),
+                ))
+            }
+        }
+
+        // #4 : Mode connecté
+        match frame.fields[4].decode_char()? {
+            '0' => self.context.mode_connecte = Some(false),
+            '1' => self.context.mode_connecte = Some(true),
+            _ => {
+                return Err(ProtocolError::IllegalFieldValue(
+                    frame.fields[4].clone(),
+                    "mode connecté".to_string(),
+                    "'0' ou '1'".to_string(),
+                ))
+            }
+        }
+
+        // C'est tout bon
         Ok(())
     }
 }
@@ -231,7 +309,15 @@ mod tests {
             protocol::ETX,
         ]);
 
-        let mut st = ST2150::new(fake_port);
-        assert!(st.message00().is_ok());
+        let mut context = Context::default();
+        let mut st = ST2150::new(fake_port, &mut context);
+
+        assert_eq!(st.message00(), Ok(()));
+
+        assert_eq!(context.en_mesurage, Some(false));
+        assert_eq!(context.code_defaut, Some(0));
+        assert_eq!(context.arret_intermediaire, Some(false));
+        assert_eq!(context.forcage_petit_debit, Some(false));
+        assert_eq!(context.mode_connecte, Some(false));
     }
 }

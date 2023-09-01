@@ -1,9 +1,11 @@
 //! Simulateur d'informatique embarquée ALMA - ST 2150
 use std::env;
 
+mod context;
 mod serial_com;
 mod st2150;
 
+use context::Context;
 use serial_com::{CommonSerialComTrait, SerialCom};
 
 /// Point d'entrée de l'outil
@@ -38,8 +40,10 @@ fn main() {
         } else {
             // port série défini en ligne de commande
             let port = SerialCom::new(&command_args[1], 9600);
+            // Contexte des informations 'atomiques'
+            let mut context = Context::default();
             // Protocole ST2150 sur cette liaison série
-            let mut protocol = st2150::ST2150::new(port);
+            let mut protocol = st2150::ST2150::new(port, &mut context);
             let ret = protocol.message00();
 
             if ret.is_err() {
