@@ -35,6 +35,12 @@ pub enum ProtocolError {
 
     /// Séparateur de champ attendu (position)
     SeparatorExpected(usize),
+
+    /// Caractère incorrect dans un champ lors du décodage (type_de_champ, champ, caractère)
+    IllegalFieldCharDecode(String, field::Field, u8),
+
+    /// Échec conversion d'un champ dans un type (type_de_champ, champ),
+    ErrFieldConversion(String, field::Field),
 }
 
 impl Display for ProtocolError {
@@ -62,6 +68,14 @@ impl Display for ProtocolError {
             ProtocolError::SeparatorExpected(pos) => write!(
                 f,
                 "Séparateur de champ attendu en position {pos} dans le message"
+            ),
+            ProtocolError::IllegalFieldCharDecode(str_decode, field, car) => write!(
+                f,
+                "Contenu '0x{car:02X}' incorrect pour décodage en {str_decode} du champ {field:?}"
+            ),
+            ProtocolError::ErrFieldConversion(str_decode, field) => write!(
+                f,
+                "Erreur lors de la conversion en {str_decode} du champ {field:?}"
             ),
         }
     }
