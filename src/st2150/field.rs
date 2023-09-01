@@ -44,7 +44,7 @@ impl Field {
     /// Constructeur champ numérique entier (supposé positif)
     /// Transforme une valeur entière en un champ ASCII d'une taille définie (0 padded à gauche)
     /// Par exemple la valeur 2 sur une width de 2 retourne vec![0x30, 0x32]
-    /// # panics
+    /// # Panics
     /// panic! si la valeur est trop grande pour la taille demandée
     /// panic! si taille demandée = 0
     #[allow(dead_code)]
@@ -87,7 +87,7 @@ impl Field {
     /// Constructeur champ numérique entier signé (Le 1er car est un signe '+' ou '-')
     /// Transforme une valeur entière en un champ ASCII d'une taille définie (0 padded à gauche)
     /// Par exemple la valeur 2 sur une width de 2 retourne vec![0x30, 0x32]
-    /// # panics
+    /// # Panics
     /// panic! si la valeur est trop grande pour la taille demandée
     /// panic! si taille demandée = 0
     #[allow(dead_code)]
@@ -143,6 +143,7 @@ impl Field {
     /// Transforme une chaîne en un champ ASCII d'une taille définie (space padded à droite)
     /// Par exemple la valeur "ABC" sur une width de 4 retourne vec![0x41, 0x42, 0x43, 0x20]
     /// La chaîne est tronquée si trop grande pour la taille définie
+    /// # Panics
     /// panic! si taille demandée = 0
     #[allow(dead_code)]
     pub fn encode_str(value: &str, width: usize) -> Self {
@@ -156,7 +157,7 @@ impl Field {
 
     /// Extraction d'une chaîne de caractère
     /// # Errors
-    /// Si le contenu ne peut pas être convertit en un String UTF-8
+    /// Si le contenu ne peut pas être convertit en une `String` UTF-8
     #[allow(dead_code)]
     pub fn decode_str(&self) -> Result<String, ProtocolError> {
         String::from_utf8(self.data.clone())
@@ -165,7 +166,7 @@ impl Field {
 
     /// Constructeur champ d'un caractère ASCII
     /// Transforme un caractère en un champ d'une taille de 1 (Que de l'ASCII géré, par d'UTF-8)
-    /// # panics
+    /// # Panics
     /// panic! si le caractère n'est pas de l'ASCII (0x20 - 0x7F)
     #[allow(dead_code)]
     pub fn encode_char(car: char) -> Self {
@@ -198,7 +199,7 @@ impl Field {
     /// Constructeur champ en hexadécimal
     /// Transforme une valeur entière en un champ hexadécimal d'une taille définie (cars hexadécimal en majuscule)
     /// Par exemple 0xA23 sur une width de 4 retourne vec![0x30, 0x41, 0x32, 0x33]
-    /// # panics
+    /// # Panics
     /// panic! si la valeur est trop grande pour la taille demandée
     /// panic! si taille demandée = 0
     #[allow(dead_code)]

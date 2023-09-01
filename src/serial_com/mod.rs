@@ -53,7 +53,7 @@ impl CommonSerialComTrait for SerialCom {
     /// Lecture du port série
     /// `buffer` : `Vec<u8>` qu'on peut initialiser par `let mut buffer = [0; 512]`
     /// Return : Nombre d'octets lus
-    /// # panics
+    /// # Panics
     /// panic! si erreur de lecture du port réel de la machine
     fn read(&mut self, buffer: &mut [u8]) -> usize {
         self.port.read(buffer)
@@ -61,7 +61,7 @@ impl CommonSerialComTrait for SerialCom {
 
     /// Écriture du port série
     /// `buffer` : `Vec<u8>` à écriture
-    /// # panics
+    /// # Panics
     /// panics si erreur d'écriture d'un port réel de la machine
     fn write(&mut self, buffer: &[u8]) {
         self.port.write(buffer);
