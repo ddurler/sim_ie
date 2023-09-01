@@ -2,8 +2,9 @@
 
 /// Structure pour toutes les informations 'atomiques'
 ///
-/// Toutes les informations sont du type Option<T> avec une valeur à None
-/// tant qu'aucune valeur n'a été explicitement assignée à l'information.
+/// Toutes les informations sont du type `Option<T>` avec une valeur à `None`
+/// tant qu'aucune valeur n'a été explicitement assignée à l'information qui devient alors
+/// `Some(quelque_chose)`
 #[derive(Debug, Default)]
 pub struct Context {
     /// En mesurage

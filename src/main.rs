@@ -44,6 +44,9 @@ fn main() {
             let mut context = Context::default();
             // Protocole ST2150 sur cette liaison série
             let mut protocol = st2150::ST2150::new(port, &mut context);
+
+            assert!(protocol.is_message_available(0));
+
             let ret = protocol.message00();
 
             if ret.is_err() {
