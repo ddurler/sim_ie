@@ -2,16 +2,19 @@
 use std::error::Error;
 use std::fmt::Display;
 
-use crate::context::Context;
+use super::context::Context;
 use crate::serial_com::SerialCom;
 use crate::CommonSerialComTrait;
 
 use self::messages::CommonMessageTrait;
+use messages::message00;
 
 pub mod field;
 pub mod frame;
 pub mod messages;
 pub mod protocol;
+
+use field::Field;
 
 /// Erreur détectée
 #[derive(Debug, PartialEq, Eq)]
@@ -41,13 +44,13 @@ pub enum ProtocolError {
     SeparatorExpected(usize),
 
     /// Caractère incorrect dans un champ lors du décodage (type_de_champ, champ, caractère)
-    IllegalFieldCharDecode(String, field::Field, u8),
+    IllegalFieldCharDecode(String, Field, u8),
 
     /// Échec conversion d'un champ dans un type (type_de_champ, champ),
-    ErrFieldConversion(String, field::Field),
+    ErrFieldConversion(String, Field),
 
     /// Valeur incorrecte dans un champ (champ, nom, domaine_valeurs)
-    IllegalFieldValue(field::Field, String, String),
+    IllegalFieldValue(Field, String, String),
 
     /// Information manquante dans le contexte (nom_de_l_info)
     ContextMissing(String),
@@ -108,14 +111,10 @@ impl Display for ProtocolError {
 
 impl Error for ProtocolError {}
 
-/// Associe un port série au protocole ST2150, un contexte des informations 'atomiques'
-/// et la trace des dernières vacations
-pub struct ST2150<'a> {
+/// Associe un port série pour le protocole ALMA IE ST2150  et la trace des dernières vacations
+pub struct ST2150 {
     /// Port série de communication
     port: SerialCom,
-
-    /// Contexte des informations 'atomiques'
-    context: &'a mut Context,
 
     /// Dernière requête envoyée
     last_req: Vec<u8>,
@@ -127,12 +126,11 @@ pub struct ST2150<'a> {
     last_error: String,
 }
 
-impl<'a> ST2150<'a> {
+impl ST2150 {
     /// Constructeur
-    pub fn new(port: SerialCom, context: &'a mut Context) -> Self {
+    pub fn new(port: SerialCom) -> Self {
         Self {
             port,
-            context,
             last_req: vec![],
             last_rep: vec![],
             last_error: String::new(),
@@ -202,20 +200,21 @@ impl<'a> ST2150<'a> {
     }
 
     /// Message disponible (toutes les informations nécessaires disponibles dans le contexte) ?
-    pub fn message_availability(&self, message_num: u8) -> Result<(), ProtocolError> {
+    pub fn message_availability(context: &Context, message_num: u8) -> Result<(), ProtocolError> {
         match message_num {
-            0 => messages::message00::Message00::availability(self.context),
+            0 => messages::message00::Message00::availability(context),
             _ => Err(ProtocolError::IllegalMessageNumber(message_num)),
         }
     }
 
     /// Vacation (requête/réponse) d'un message
-    pub fn do_message_vacation(&'a mut self, message_num: u8) -> Result<(), ProtocolError> {
+    pub fn do_message_vacation(
+        &mut self,
+        context: &mut Context,
+        message_num: u8,
+    ) -> Result<(), ProtocolError> {
         match message_num {
-            0 => {
-                let mut message = messages::message00::Message00::new(self);
-                message.do_vacation()
-            }
+            0 => message00::Message00::do_vacation(self, context),
             _ => Err(ProtocolError::IllegalMessageNumber(message_num)),
         }
     }

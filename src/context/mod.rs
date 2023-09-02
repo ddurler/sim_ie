@@ -1,4 +1,4 @@
-//! Informations 'atomiques' échangées par le protocole Informatique Embarquée - ST2150
+//! Informations 'atomiques' échangées par le protocole ALMA IE - ST2150
 
 /// Structure pour toutes les informations 'atomiques'
 ///

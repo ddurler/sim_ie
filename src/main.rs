@@ -7,6 +7,7 @@ mod st2150;
 
 use context::Context;
 use serial_com::{CommonSerialComTrait, SerialCom};
+use st2150::ST2150;
 
 /// Point d'entrée de l'outil
 fn main() {
@@ -40,17 +41,22 @@ fn main() {
         } else {
             // port série défini en ligne de commande
             let port = SerialCom::new(&command_args[1], 9600);
+            // Protocole ALMA IE - ST2150 sur cette liaison série
+            let mut protocol = ST2150::new(port);
+
             // Contexte des informations 'atomiques'
             let mut context = Context::default();
-            // Protocole ST2150 sur cette liaison série
-            let mut protocol = st2150::ST2150::new(port, &mut context);
 
-            assert!(protocol.message_availability(0).is_ok());
+            for message_num in 0_u8..=0_u8 {
+                assert!(ST2150::message_availability(&context, message_num).is_ok());
 
-            let ret = protocol.do_message_vacation(0);
+                println!("Trying message #{message_num}");
 
-            if ret.is_err() {
-                dbg!(ret.err());
+                let ret = protocol.do_message_vacation(&mut context, 0);
+
+                if ret.is_err() {
+                    dbg!(ret.err());
+                }
             }
         }
     } else {

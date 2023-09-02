@@ -1,6 +1,6 @@
-//! Gestion du contenu d'un champ du protocole ST2150
+//! Gestion du contenu d'un champ pour le protocole ALMA IE - ST2150
 
-use crate::st2150::{protocol, ProtocolError};
+use super::{protocol, ProtocolError};
 
 /// Champ d'une requête ou d'une réponse
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd)]

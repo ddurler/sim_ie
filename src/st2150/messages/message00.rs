@@ -7,47 +7,37 @@ use super::CommonMessageTrait;
 use super::ProtocolError;
 use super::ST2150;
 
-pub struct Message00<'a> {
-    /// Structure ST2150
-    st2150: &'a mut ST2150<'a>,
-}
+/// Message 00 : Signe de vie
+#[derive(Default)]
+pub struct Message00 {}
 
-impl<'a> Message00<'a> {
-    /// Constructeur
-    pub fn new(st2150: &'a mut ST2150<'a>) -> Self {
-        Self { st2150 }
-    }
-}
-
-impl<'a> CommonMessageTrait for Message00<'a> {
+impl CommonMessageTrait for Message00 {
     fn availability(_context: &Context) -> Result<(), ProtocolError> {
         // Toujours possible car pas d'information dans la requête
         Ok(())
     }
 
-    fn do_vacation(&mut self) -> Result<(), ProtocolError> {
+    fn do_vacation(st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError> {
         // Contexte OK ?
-        Message00::availability(self.st2150.context)?;
+        Message00::availability(context)?;
 
         // Création et envoi requête
         let req = frame::Frame::new(0);
-        self.st2150.send_req(&req);
+        st2150.send_req(&req);
 
         // Réception réponse
         let mut buffer = [0; 200];
-        let len_rep = self.st2150.wait_rep(&mut buffer, 17)?;
+        let len_rep = st2150.wait_rep(&mut buffer, 17)?;
 
         // Décodage de la réponse reçue
-        let frame = self
-            .st2150
-            .try_from_buffer(&buffer[..len_rep], 0, &[1, 1, 1, 1, 1])?;
+        let frame = st2150.try_from_buffer(&buffer[..len_rep], 0, &[1, 1, 1, 1, 1])?;
 
         // Mise à jour du contexte
 
         // #0 : En mesurage
         match frame.fields[0].decode_char()? {
-            '0' => self.st2150.context.en_mesurage = Some(false),
-            '1' => self.st2150.context.en_mesurage = Some(true),
+            '0' => context.en_mesurage = Some(false),
+            '1' => context.en_mesurage = Some(true),
             _ => {
                 return Err(ProtocolError::IllegalFieldValue(
                     frame.fields[0].clone(),
@@ -60,7 +50,7 @@ impl<'a> CommonMessageTrait for Message00<'a> {
         // #1 : Code défaut
         let code_defaut = frame.fields[1].decode_binary()?;
         if (0x20..=0x9F).contains(&code_defaut) {
-            self.st2150.context.code_defaut = Some(code_defaut - 0x20);
+            context.code_defaut = Some(code_defaut - 0x20);
         } else {
             return Err(ProtocolError::IllegalFieldValue(
                 frame.fields[1].clone(),
@@ -71,8 +61,8 @@ impl<'a> CommonMessageTrait for Message00<'a> {
 
         // #2 : Arrêt intermédiaire
         match frame.fields[2].decode_char()? {
-            '0' => self.st2150.context.arret_intermediaire = Some(false),
-            '1' => self.st2150.context.arret_intermediaire = Some(true),
+            '0' => context.arret_intermediaire = Some(false),
+            '1' => context.arret_intermediaire = Some(true),
             _ => {
                 return Err(ProtocolError::IllegalFieldValue(
                     frame.fields[2].clone(),
@@ -84,8 +74,8 @@ impl<'a> CommonMessageTrait for Message00<'a> {
 
         // #3 : Forçage petit débit
         match frame.fields[3].decode_char()? {
-            '0' => self.st2150.context.forcage_petit_debit = Some(false),
-            '1' => self.st2150.context.forcage_petit_debit = Some(true),
+            '0' => context.forcage_petit_debit = Some(false),
+            '1' => context.forcage_petit_debit = Some(true),
             _ => {
                 return Err(ProtocolError::IllegalFieldValue(
                     frame.fields[3].clone(),
@@ -97,8 +87,8 @@ impl<'a> CommonMessageTrait for Message00<'a> {
 
         // #4 : Mode connecté
         match frame.fields[4].decode_char()? {
-            '0' => self.st2150.context.mode_connecte = Some(false),
-            '1' => self.st2150.context.mode_connecte = Some(true),
+            '0' => context.mode_connecte = Some(false),
+            '1' => context.mode_connecte = Some(true),
             _ => {
                 return Err(ProtocolError::IllegalFieldValue(
                     frame.fields[4].clone(),
@@ -158,15 +148,17 @@ mod tests {
             protocol::ETX,
         ]);
 
-        // Création du protocol ST2150 avec ce FAKE port
+        // Création du protocole ST2150 avec ce FAKE port
+        let mut st = ST2150::new(fake_port);
+
+        // Contexte pour le protocole
         let mut context = Context::default();
-        let mut st = ST2150::new(fake_port, &mut context);
 
         // Le message 00 est possible
-        assert!(st.message_availability(0).is_ok());
+        assert!(ST2150::message_availability(&context, 0).is_ok());
 
         // Vacation requête/réponse du message 00 via le FAKE port
-        assert_eq!(st.do_message_vacation(0), Ok(()));
+        assert_eq!(st.do_message_vacation(&mut context, 0), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(context.en_mesurage, Some(false));

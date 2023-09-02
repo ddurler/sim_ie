@@ -8,12 +8,13 @@ use super::ST2150;
 pub mod message00;
 
 /// Trait à implémenter pour chaque type de message
+/// Les structures `MessageXX` doivent implémenter le `Default` trait
 pub trait CommonMessageTrait {
     /// Indique si le contexte permet d'effectuer une requête avec ce message
     /// (note: pas de `self` dans cette fonction)
-    /// Retourne `Ok(())` ou `Err(ProtocolError::ContextMissing)`
     fn availability(context: &Context) -> Result<(), ProtocolError>;
 
-    /// Tente une vacation avec ce message
-    fn do_vacation(&mut self) -> Result<(), ProtocolError>;
+    /// Tente une vacation sur un port avec un contexte de ce message
+    /// (note: pas de `self` dans cette fonction)
+    fn do_vacation(st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError>;
 }

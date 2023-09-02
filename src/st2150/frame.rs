@@ -1,16 +1,14 @@
-//! Helper pour l'encodage/décodage des trames du protocole ALMA IE ST2150
+//! Helper pour l'encodage/décodage des trames du protocole ALMA IE - ST2150
 
-use crate::st2150::field::Field;
-use crate::st2150::protocol;
-
-use super::field;
+use super::field::Field;
+use super::protocol;
 use super::ProtocolError;
 
 /// Support générique pour un message du protocole
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Frame {
     /// Numéro de message
-    pub num_message: u8,
+    pub message_num: u8,
 
     /// Champ de la requête
     pub fields: Vec<Field>,
@@ -20,7 +18,7 @@ impl Frame {
     /// Constructeur
     pub fn new(numero: u8) -> Self {
         Self {
-            num_message: numero,
+            message_num: numero,
             fields: vec![],
         }
     }
@@ -50,7 +48,7 @@ impl Frame {
         req.push(protocol::STX);
 
         // Numéro de message sur 2 octets
-        let command_field = Field::encode_number(self.num_message, 2);
+        let command_field = Field::encode_number(self.message_num, 2);
         req.extend(command_field.to_frame());
 
         // Tous le champs du message précédés d'un SEPARATOR
@@ -76,14 +74,14 @@ impl Frame {
 
     /// Décodage et validation d'une trame d'un message
     /// `buffer` : Message à décoder
-    /// `num_message` : Numéro de message attendu
+    /// `message_num` : Numéro de message attendu
     /// `len_fields` : Nombre et taille (en octet) des différents champs attendus dans le message
     ///
-    /// Rappel : Un message ST2150 est : STX + num(2) + { SEPARATOR + champ(n) }* + SEPARATOR + checksum(2) + ETX
+    /// Rappel : Un message est : STX + num(2) + { SEPARATOR + champ(n) }* + SEPARATOR + checksum(2) + ETX
     ///
     pub fn try_from_buffer(
         buffer: &[u8],
-        num_message: u8,
+        message_num: u8,
         len_fields: &[usize],
     ) -> Result<Self, ProtocolError> {
         // Commence par STX ?
@@ -113,16 +111,16 @@ impl Frame {
         }
 
         // Numéro de message OK ?
-        let rec_num_message = (buffer[1] - b'0') * 10 + (buffer[2] - b'0');
-        if rec_num_message != num_message {
+        let rec_message_num = (buffer[1] - b'0') * 10 + (buffer[2] - b'0');
+        if rec_message_num != message_num {
             return Err(ProtocolError::BadMessageNumber(
-                rec_num_message,
-                num_message,
+                rec_message_num,
+                message_num,
             ));
         }
 
         // On est plutôt bien parti, reste à valider les champs..
-        let mut frame = Self::new(num_message);
+        let mut frame = Self::new(message_num);
 
         let mut cur_position = 1 + 2; /* Après le STX num(2) */
         for len_field in len_fields {
@@ -132,7 +130,7 @@ impl Frame {
             }
             cur_position += 1;
             // Les len_field caractères qui suivent sont un champ
-            let field = field::Field::new(&buffer[cur_position..cur_position + len_field]);
+            let field = Field::new(&buffer[cur_position..cur_position + len_field]);
             frame.add_field(field);
             cur_position += len_field;
         }
@@ -325,8 +323,8 @@ mod tests {
             ),
         ];
 
-        for (buffer, num_message, len_fields, expected) in err_tests {
-            let res = Frame::try_from_buffer(buffer, num_message, len_fields);
+        for (buffer, message_num, len_fields, expected) in err_tests {
+            let res = Frame::try_from_buffer(buffer, message_num, len_fields);
             assert!(res.is_err());
             assert_eq!(expected, res.err().unwrap());
         }
