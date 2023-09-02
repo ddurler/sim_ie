@@ -51,6 +51,9 @@ pub enum ProtocolError {
 
     /// Information manquante dans le contexte (nom_de_l_info)
     ContextMissing(String),
+
+    /// Message inexistant ou non implémenté (num_message)
+    IllegalMessageNumber(u8),
 }
 
 impl Display for ProtocolError {
@@ -94,6 +97,10 @@ impl Display for ProtocolError {
             ProtocolError::ContextMissing(nom) => write!(
                 f,
                 "Valeur non renseignée du champ '{nom}'"
+            ),
+            ProtocolError::IllegalMessageNumber(message_num) => write!(
+                f,
+                "Le message '{message_num:02}' n'existe pas ou n'est pas implémenté"
             ),
         }
     }
@@ -195,10 +202,10 @@ impl<'a> ST2150<'a> {
     }
 
     /// Message disponible (toutes les informations nécessaires disponibles dans le contexte) ?
-    pub fn is_message_available(&self, num_message: u8) -> bool {
+    pub fn message_availability(&self, num_message: u8) -> Result<(), ProtocolError> {
         match num_message {
-            0 => messages::message00::Message00::availability(self.context).is_ok(),
-            _ => false,
+            0 => messages::message00::Message00::availability(self.context),
+            _ => Err(ProtocolError::IllegalMessageNumber(num_message)),
         }
     }
 

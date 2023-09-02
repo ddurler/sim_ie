@@ -45,7 +45,7 @@ fn main() {
             // Protocole ST2150 sur cette liaison série
             let mut protocol = st2150::ST2150::new(port, &mut context);
 
-            assert!(protocol.is_message_available(0));
+            assert!(protocol.message_availability(0).is_ok());
 
             let ret = protocol.message00();
 

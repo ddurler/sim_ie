@@ -163,7 +163,7 @@ mod tests {
         let mut st = ST2150::new(fake_port, &mut context);
 
         // Le message 00 est possible
-        assert!(st.is_message_available(0));
+        assert!(st.message_availability(0).is_ok());
 
         // Vacation requête/réponse du message 00 via le FAKE port
         assert_eq!(st.message00(), Ok(()));
