@@ -166,7 +166,7 @@ mod tests {
         assert!(st.message_availability(0).is_ok());
 
         // Vacation requête/réponse du message 00 via le FAKE port
-        assert_eq!(st.message00(), Ok(()));
+        assert_eq!(st.do_message_vacation(0), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(context.en_mesurage, Some(false));

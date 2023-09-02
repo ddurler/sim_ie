@@ -47,7 +47,7 @@ fn main() {
 
             assert!(protocol.message_availability(0).is_ok());
 
-            let ret = protocol.message00();
+            let ret = protocol.do_message_vacation(0);
 
             if ret.is_err() {
                 dbg!(ret.err());

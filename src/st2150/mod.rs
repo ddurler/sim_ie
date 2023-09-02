@@ -202,17 +202,21 @@ impl<'a> ST2150<'a> {
     }
 
     /// Message disponible (toutes les informations nécessaires disponibles dans le contexte) ?
-    pub fn message_availability(&self, num_message: u8) -> Result<(), ProtocolError> {
-        match num_message {
+    pub fn message_availability(&self, message_num: u8) -> Result<(), ProtocolError> {
+        match message_num {
             0 => messages::message00::Message00::availability(self.context),
-            _ => Err(ProtocolError::IllegalMessageNumber(num_message)),
+            _ => Err(ProtocolError::IllegalMessageNumber(message_num)),
         }
     }
 
-    /// Message 00 de signe de vie
-    pub fn message00(&'a mut self) -> Result<(), ProtocolError> {
-        let mut message = messages::message00::Message00::new(self);
-
-        message.do_vacation()
+    /// Vacation (requête/réponse) d'un message
+    pub fn do_message_vacation(&'a mut self, message_num: u8) -> Result<(), ProtocolError> {
+        match message_num {
+            0 => {
+                let mut message = messages::message00::Message00::new(self);
+                message.do_vacation()
+            }
+            _ => Err(ProtocolError::IllegalMessageNumber(message_num)),
+        }
     }
 }
