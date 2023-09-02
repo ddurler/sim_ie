@@ -47,12 +47,12 @@ fn main() {
             // Contexte des informations 'atomiques'
             let mut context = Context::default();
 
-            for message_num in 0_u8..=0_u8 {
+            for message_num in [0_u8, 10_u8] {
                 assert!(ST2150::message_availability(&context, message_num).is_ok());
 
                 println!("Trying message #{message_num}");
 
-                let ret = protocol.do_message_vacation(&mut context, 0);
+                let ret = protocol.do_message_vacation(&mut context, message_num);
 
                 if ret.is_err() {
                     dbg!(ret.err());

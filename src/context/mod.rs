@@ -22,4 +22,19 @@ pub struct Context {
 
     /// En mode connecté
     pub mode_connecte: Option<bool>,
+
+    /// Totalisateur (en échelon = Litre ou kg)
+    pub totalisateur: Option<u32>,
+
+    /// Débit instantané en m3/h (ou tonne/h)
+    pub debit_instant: Option<f32>,
+
+    /// Quantité chargée (en échelon = Litre ou kg)
+    pub quantite_chargee: Option<u32>,
+
+    /// Température instantanée
+    pub temperature_instant: Option<f32>,
+
+    /// Prédétermination (en échelon = Litre ou kg)
+    pub predetermination: Option<u32>,
 }

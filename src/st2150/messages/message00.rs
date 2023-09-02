@@ -116,34 +116,34 @@ mod tests {
         // On utilise le FAKE serial port pour contrôler ce qui circule...
         let mut fake_port = SerialCom::new("FAKE", 9600);
 
-        // Trame pour message 00 (le checksum est 0xFE)
+        // Trame pour message
         fake_port.should_write(&[
             protocol::STX,
-            0x30,
-            0x30,
+            b'0', // Numéro de message
+            b'0',
             protocol::SEPARATOR,
-            0x46,
-            0x45,
+            b'F', // Checksum
+            b'E',
             protocol::ETX,
         ]);
 
-        // Réponse simulée (le checksum est 0x20)
+        // Réponse simulée
         fake_port.will_read(&[
             protocol::STX,
-            0x30,
-            0x30,
+            b'0', // Numéro de message
+            b'0',
             protocol::SEPARATOR,
-            0x30, // Hors mesurage
+            b'0', // Hors mesurage
             protocol::SEPARATOR,
             0x20, // Pas de défaut
             protocol::SEPARATOR,
-            0x30, // Pas en arrêt intermédiaire
+            b'0', // Pas en arrêt intermédiaire
             protocol::SEPARATOR,
-            0x30, // Pas de forçage PD
+            b'0', // Pas de forçage PD
             protocol::SEPARATOR,
-            0x30, // En mode autonome
+            b'0', // En mode autonome
             protocol::SEPARATOR,
-            b'2',
+            b'2', // Checksum
             b'0',
             protocol::ETX,
         ]);
@@ -154,10 +154,10 @@ mod tests {
         // Contexte pour le protocole
         let mut context = Context::default();
 
-        // Le message 00 est possible
+        // Le message est possible
         assert!(ST2150::message_availability(&context, 0).is_ok());
 
-        // Vacation requête/réponse du message 00 via le FAKE port
+        // Vacation requête/réponse du message via le FAKE port
         assert_eq!(st.do_message_vacation(&mut context, 0), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte

@@ -6,6 +6,7 @@ use super::ProtocolError;
 use super::ST2150;
 
 pub mod message00;
+pub mod message10;
 
 /// Trait à implémenter pour chaque type de message
 /// Les structures `MessageXX` doivent implémenter le `Default` trait

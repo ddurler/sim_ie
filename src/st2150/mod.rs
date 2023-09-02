@@ -8,6 +8,7 @@ use crate::CommonSerialComTrait;
 
 use self::messages::CommonMessageTrait;
 use messages::message00;
+use messages::message10;
 
 pub mod field;
 pub mod frame;
@@ -203,6 +204,7 @@ impl ST2150 {
     pub fn message_availability(context: &Context, message_num: u8) -> Result<(), ProtocolError> {
         match message_num {
             0 => messages::message00::Message00::availability(context),
+            10 => messages::message10::Message10::availability(context),
             _ => Err(ProtocolError::IllegalMessageNumber(message_num)),
         }
     }
@@ -215,6 +217,7 @@ impl ST2150 {
     ) -> Result<(), ProtocolError> {
         match message_num {
             0 => message00::Message00::do_vacation(self, context),
+            10 => message10::Message10::do_vacation(self, context),
             _ => Err(ProtocolError::IllegalMessageNumber(message_num)),
         }
     }
