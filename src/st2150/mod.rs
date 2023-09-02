@@ -48,6 +48,9 @@ pub enum ProtocolError {
 
     /// Valeur incorrecte dans un champ (champ, nom, domaine_valeurs)
     IllegalFieldValue(field::Field, String, String),
+
+    /// Information manquante dans le contexte (nom_de_l_info)
+    ContextMissing(String),
 }
 
 impl Display for ProtocolError {
@@ -87,6 +90,10 @@ impl Display for ProtocolError {
             ProtocolError::IllegalFieldValue(field, nom, domaine_valeurs) => write!(
                 f,
                 "Valeur incorrecte du champ '{nom}'={field:?} : {domaine_valeurs}"
+            ),
+            ProtocolError::ContextMissing(nom) => write!(
+                f,
+                "Valeur non renseignée du champ '{nom}'"
             ),
         }
     }
@@ -190,7 +197,7 @@ impl<'a> ST2150<'a> {
     /// Message disponible (toutes les informations nécessaires disponibles dans le contexte) ?
     pub fn is_message_available(&self, num_message: u8) -> bool {
         match num_message {
-            0 => messages::message00::Message00::is_available(self.context),
+            0 => messages::message00::Message00::availability(self.context).is_ok(),
             _ => false,
         }
     }

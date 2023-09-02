@@ -11,7 +11,8 @@ pub mod message00;
 pub trait CommonMessageTrait {
     /// Indique si le contexte permet d'effectuer une requête avec ce message
     /// (note: pas de `self` dans cette fonction)
-    fn is_available(context: &Context) -> bool;
+    /// Retourne `Ok(())` ou `Err(ProtocolError::ContextMissing)`
+    fn availability(context: &Context) -> Result<(), ProtocolError>;
 
     /// Tente une vacation avec ce message
     fn do_vacation(&mut self) -> Result<(), ProtocolError>;

@@ -20,14 +20,15 @@ impl<'a> Message00<'a> {
 }
 
 impl<'a> CommonMessageTrait for Message00<'a> {
-    /// Indique si le contexte permet d'effectuer une requête
-    fn is_available(_context: &Context) -> bool {
+    fn availability(_context: &Context) -> Result<(), ProtocolError> {
         // Toujours possible car pas d'information dans la requête
-        true
+        Ok(())
     }
 
-    /// Tente une vacation
     fn do_vacation(&mut self) -> Result<(), ProtocolError> {
+        // Contexte OK ?
+        Message00::availability(self.st2150.context)?;
+
         // Création et envoi requête
         let req = frame::Frame::new(0);
         self.st2150.send_req(&req);
