@@ -113,6 +113,7 @@ impl Display for ProtocolError {
 impl Error for ProtocolError {}
 
 /// Associe un port série pour le protocole ALMA IE ST2150  et la trace des dernières vacations
+#[derive(Default)]
 pub struct ST2150 {
     /// Port série de communication
     port: SerialCom,

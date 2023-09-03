@@ -7,6 +7,8 @@
 /// `Some(quelque_chose)`
 #[derive(Debug, Default)]
 pub struct Context {
+    /* Réponse Message 00 */
+    /* ------------------ */
     /// En mesurage
     pub en_mesurage: Option<bool>,
 
@@ -23,6 +25,8 @@ pub struct Context {
     /// En mode connecté
     pub mode_connecte: Option<bool>,
 
+    /* Réponse Message 10 */
+    /* ------------------ */
     /// Totalisateur (en échelon = Litre ou kg)
     pub totalisateur: Option<u32>,
 

@@ -17,6 +17,14 @@ pub struct SerialCom {
     port: Box<dyn CommonSerialComTrait>,
 }
 
+impl Default for SerialCom {
+    fn default() -> Self {
+        SerialCom {
+            port: Box::<fake_serial_com::FakeSerialCom>::default(),
+        }
+    }
+}
+
 /// Trait à implémenter pour les `SerialCom` (true ou FAKE)
 pub trait CommonSerialComTrait {
     /// Lecture du port

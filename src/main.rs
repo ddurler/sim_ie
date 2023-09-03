@@ -1,6 +1,7 @@
 //! Simulateur d'informatique embarquée ALMA - ST 2150
 use std::env;
 
+mod app_view;
 mod context;
 mod serial_com;
 mod st2150;
@@ -41,29 +42,40 @@ fn main() {
         } else {
             // port série défini en ligne de commande
             let port = SerialCom::new(&command_args[1], 9600);
+
             // Protocole ALMA IE - ST2150 sur cette liaison série
-            let mut protocol = ST2150::new(port);
+            let st2150 = ST2150::new(port);
 
-            // Contexte des informations 'atomiques'
-            let mut context = Context::default();
+            // Application de test sur le terminal
+            // run_on_terminal(&mut st2150);
 
-            for message_num in [0_u8, 10_u8] {
-                assert!(ST2150::message_availability(&context, message_num).is_ok());
-
-                println!("Trying message #{message_num}");
-
-                let ret = protocol.do_message_vacation(&mut context, message_num);
-
-                if ret.is_err() {
-                    dbg!(ret.err());
-                }
-            }
+            // IHM application avec l'utilisateur
+            app_view::run(st2150);
         }
     } else {
         // Sans argument ou avec trop d'arguments, on affiche l'aide à l'utilisateur
         print_help();
         print_serial_com_name_list();
         eprintln!();
+    }
+}
+
+/// Fonction pour test sur le terminal (sans IHM)
+#[allow(dead_code)]
+fn run_on_terminal(st2150: &mut ST2150) {
+    // Création d'un contexte
+    let mut context = Context::default();
+
+    for message_num in [0_u8, 10_u8] {
+        assert!(ST2150::message_availability(&context, message_num).is_ok());
+
+        println!("Trying message #{message_num}");
+
+        let ret = st2150.do_message_vacation(&mut context, message_num);
+
+        if ret.is_err() {
+            dbg!(ret.err());
+        }
     }
 }
 
