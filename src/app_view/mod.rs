@@ -6,6 +6,7 @@
 use iced::widget::Text;
 use iced::{executor, window, Application, Command, Element, Settings, Theme};
 
+use crate::st2150::ST2150_MESSAGE_NUMBERS;
 use crate::Context;
 use crate::ST2150;
 
@@ -24,6 +25,9 @@ pub struct AppView {
 
     /// Contexte de l'utilisateur (informations gérées)
     context: Context,
+
+    /// Numéro de message sélectionné
+    message_num: u8,
 }
 
 /// Point d'entrée de l'IHM
@@ -62,6 +66,7 @@ impl Application for AppView {
             AppView {
                 st2150: flags.st2150,
                 context: Context::default(),
+                message_num: ST2150_MESSAGE_NUMBERS[0],
             },
             Command::none(),
         )
@@ -82,6 +87,10 @@ impl Application for AppView {
     // Mise à jour affichage de l'application
     fn view(&self) -> Element<Message> {
         // Créez une colonne avec un texte affichant la valeur du compteur et un message
-        Text::new(format!("Hello form iced !")).into()
+        Text::new(format!(
+            "Hello form iced ! Message: {:02}",
+            self.message_num
+        ))
+        .into()
     }
 }

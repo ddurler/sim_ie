@@ -12,6 +12,7 @@ Pour ajouter un nouveau message XX pris en compte par cette application, on comm
 
   * Renommer la structure du message `MessageTT` du fichier pris pour modèle en `MessageXX`
   * Ne pas modifier tout de suite le comportement (on va d'abord implémenter ce nouveau message dans le projet avec le comportement du message ZZ pris pour modèle)
+  * Dans le fichier `st2150/mod.rs`, ajouter le numéro XX dans la liste `ST2150_MESSAGE_NUMBERS`
   * La fonction `ST2150::is_message_available` (dans `st2150/mod.rs`) utilise le numéro du message (`XX`) comme paramètre : A adapter
   * La fonction `ST2150::do_message_vacation` (dans `st2150/mod.rs`) utilise le numéro du message (`XX`) comme paramètre : A adapter
 

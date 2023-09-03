@@ -17,6 +17,9 @@ pub mod protocol;
 
 use field::Field;
 
+/// Liste des numéros de messages implémentés
+pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[0_u8, 10_u8];
+
 /// Erreur détectée
 #[derive(Debug, PartialEq, Eq)]
 pub enum ProtocolError {
@@ -206,7 +209,13 @@ impl ST2150 {
         match message_num {
             0 => messages::message00::Message00::availability(context),
             10 => messages::message10::Message10::availability(context),
-            _ => Err(ProtocolError::IllegalMessageNumber(message_num)),
+            _ => {
+                assert!(
+                    !ST2150_MESSAGE_NUMBERS.contains(&message_num),
+                    "Manque implémentation du message {message_num:02} !!!"
+                );
+                Err(ProtocolError::IllegalMessageNumber(message_num))
+            }
         }
     }
 
@@ -219,7 +228,13 @@ impl ST2150 {
         match message_num {
             0 => message00::Message00::do_vacation(self, context),
             10 => message10::Message10::do_vacation(self, context),
-            _ => Err(ProtocolError::IllegalMessageNumber(message_num)),
+            _ => {
+                assert!(
+                    !ST2150_MESSAGE_NUMBERS.contains(&message_num),
+                    "Manque implémentation du message {message_num:02} !!!"
+                );
+                Err(ProtocolError::IllegalMessageNumber(message_num))
+            }
         }
     }
 }
