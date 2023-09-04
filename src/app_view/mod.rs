@@ -55,12 +55,32 @@ pub enum Message {
     DoVacation,
 }
 
+impl AppView {
+    /// Status de l'outil
+    fn str_status(&self) -> String {
+        let availability = match ST2150::message_availability(&self.context, self.message_num) {
+            Ok(_) => "Prêt...".to_string(),
+            Err(e) => format!("{e}"),
+        };
+        format!(
+            "Message '{:02}' sur le port {} : {}",
+            self.message_num, self.st2150.port.name, availability
+        )
+    }
+
+    /// Contenu du message de status de l'outil
+    pub fn view_status(&self) -> Element<Message> {
+        Text::new(self.str_status()).into()
+    }
+}
+
 impl Application for AppView {
     type Executor = executor::Default;
     type Flags = AppSettings;
     type Message = Message;
     type Theme = Theme;
 
+    /// Constructeur de `AppView` (sur la base de `AppSettings`)
     fn new(flags: AppSettings) -> (AppView, Command<Self::Message>) {
         (
             AppView {
@@ -72,6 +92,7 @@ impl Application for AppView {
         )
     }
 
+    /// Titre de l'application
     fn title(&self) -> String {
         "Simulateur Informatique Embarquée ALMA - ST2150".to_string()
     }
@@ -84,13 +105,8 @@ impl Application for AppView {
         }
     }
 
-    // Mise à jour affichage de l'application
+    /// Mise à jour affichage de l'application
     fn view(&self) -> Element<Message> {
-        // Créez une colonne avec un texte affichant la valeur du compteur et un message
-        Text::new(format!(
-            "Hello form iced ! Message: {:02} - Running on port={}",
-            self.message_num, self.st2150.port.name,
-        ))
-        .into()
+        self.view_status()
     }
 }
