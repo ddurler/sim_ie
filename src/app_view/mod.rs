@@ -3,7 +3,7 @@
 //! On utilise ici le [crate iced](https://iced.rs/) pour l'interface graphique
 //!
 
-use iced::widget::Text;
+use iced::widget::{column, Column, horizontal_rule, Text};
 use iced::{executor, window, Application, Command, Element, Settings, Theme};
 
 use crate::st2150::ST2150_MESSAGE_NUMBERS;
@@ -56,8 +56,8 @@ pub enum Message {
 }
 
 impl AppView {
-    /// Status de l'outil
-    fn str_status(&self) -> String {
+    /// Header affichage
+    fn str_header(&self) -> String {
         let availability = match ST2150::message_availability(&self.context, self.message_num) {
             Ok(_) => "Prêt...".to_string(),
             Err(e) => format!("{e}"),
@@ -68,9 +68,43 @@ impl AppView {
         )
     }
 
-    /// Contenu du message de status de l'outil
-    pub fn view_status(&self) -> Element<Message> {
-        Text::new(self.str_status()).into()
+    /// Contenu du header en affichage
+    pub fn view_header(&self) -> Element<Message> {
+        Text::new(self.str_header()).into()
+    }
+
+    /// Contenu du footer en affichage
+    pub fn view_footer(&self) -> Element<Message> {
+        let col = Column::new();
+
+        // Dernière requête
+        let my_str = if self.st2150.last_error.is_empty() {
+            "(Pas de requête)".to_string()
+        } else {
+            format!("Requête : {:?}", self.st2150.last_req)
+        };
+        let txt: Text = Text::new(my_str.to_string());
+        let col = col.push(txt);
+
+        // Dernière réponse
+        let my_str = if self.st2150.last_rep.is_empty() {
+            "(Pas de réponse)".to_string()
+        } else {
+            format!("Réponse : {:?}", self.st2150.last_rep)
+        };
+        let txt: Text = Text::new(my_str.to_string());
+        let col = col.push(txt);
+
+        // Dernière erreur
+        let my_str = if self.st2150.last_error.is_empty() {
+            "(Pas d'erreur)".to_string()
+        } else {
+            format!("/!\\ ERREUR : {} /!\\", self.st2150.last_error)
+        };
+        let txt: Text = Text::new(my_str.to_string());
+        let col = col.push(txt);
+
+        col.into()
     }
 }
 
@@ -107,6 +141,6 @@ impl Application for AppView {
 
     /// Mise à jour affichage de l'application
     fn view(&self) -> Element<Message> {
-        self.view_status()
+        column![self.view_header(), horizontal_rule(10), self.view_footer(),].into()
     }
 }
