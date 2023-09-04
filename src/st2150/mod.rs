@@ -119,16 +119,16 @@ impl Error for ProtocolError {}
 #[derive(Default)]
 pub struct ST2150 {
     /// Port série de communication
-    port: SerialCom,
+    pub port: SerialCom,
 
     /// Dernière requête envoyée
-    last_req: Vec<u8>,
+    pub last_req: Vec<u8>,
 
     /// Dernière réponse reçue
-    last_rep: Vec<u8>,
+    pub last_rep: Vec<u8>,
 
     /// Libellé de la dernière erreur relevée
-    last_error: String,
+    pub last_error: String,
 }
 
 impl ST2150 {

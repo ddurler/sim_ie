@@ -88,8 +88,8 @@ impl Application for AppView {
     fn view(&self) -> Element<Message> {
         // Créez une colonne avec un texte affichant la valeur du compteur et un message
         Text::new(format!(
-            "Hello form iced ! Message: {:02}",
-            self.message_num
+            "Hello form iced ! Message: {:02} - Running on port={}",
+            self.message_num, self.st2150.port.name,
         ))
         .into()
     }

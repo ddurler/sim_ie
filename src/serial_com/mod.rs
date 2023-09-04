@@ -13,6 +13,9 @@ pub fn available_names_list() -> Vec<String> {
 
 /// Façade entre un 'true' port d'un FAKE port
 pub struct SerialCom {
+    /// Nom du port
+    pub name: String,
+
     /// Port 'true' ou FAKE sous-jacent
     port: Box<dyn CommonSerialComTrait>,
 }
@@ -20,6 +23,7 @@ pub struct SerialCom {
 impl Default for SerialCom {
     fn default() -> Self {
         SerialCom {
+            name: "FAKE".to_string(),
             port: Box::<fake_serial_com::FakeSerialCom>::default(),
         }
     }
@@ -47,10 +51,12 @@ impl SerialCom {
         if name.to_uppercase() == "FAKE" {
             // Cas d'un FAKE port série
             SerialCom {
+                name: name.to_string(),
                 port: Box::<fake_serial_com::FakeSerialCom>::default(),
             }
         } else {
             SerialCom {
+                name: name.to_string(),
                 port: Box::new(true_serial_com::TrueSerialCom::new(name, baud_rate)),
             }
         }
@@ -96,6 +102,9 @@ mod tests {
     fn test_serial_com_new() {
         // Création d'un FAKE port si le nom est "FAKE" ou "fake"
         let mut serial_com = SerialCom::new("fake", 9600);
+
+        // Nom du port machine utilisé
+        assert_eq!(serial_com.name.to_uppercase(), "fake".to_uppercase());
 
         // On vérifie que c'est un FAKE port en testant la fonction 'will_read' qui n'a
         // de sens que pour les FAKE ports
