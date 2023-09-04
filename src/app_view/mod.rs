@@ -11,7 +11,7 @@ use message00::Message00;
 use message10::Message10;
 use messages::CommonMessageTrait;
 
-use iced::widget::{column, horizontal_rule, row, Button, Column, Row, Text};
+use iced::widget::{column, container, horizontal_rule, row, vertical_rule, Button, Column, Text};
 use iced::{executor, theme, window, Application, Command, Element, Settings, Theme};
 
 use crate::st2150::ST2150_MESSAGE_NUMBERS;
@@ -107,7 +107,8 @@ impl AppView {
 
         for message_num in ST2150_MESSAGE_NUMBERS {
             let dyn_message = get_dyn_message(*message_num);
-            let text: Text = Text::new(format!("{:02} {}", message_num, dyn_message.str_message())).size(12);
+            let text: Text =
+                Text::new(format!("{:02} {}", message_num, dyn_message.str_message())).size(12);
             let btn = if *message_num == cur_message_num {
                 // C'est le numéro de message actuellement sélectionné
                 Button::new(text).on_press(Message::SelectionMessage(*message_num))
@@ -197,7 +198,17 @@ impl Application for AppView {
             self.view_header(),
             // Le corps du simulateur
             horizontal_rule(10),
-            self.body_message_selection(),
+            container(row![
+                // Sélection du message courant
+                self.body_message_selection(),
+                // Partie 'requête' du message courant
+                vertical_rule(10),
+                self.dyn_message.view_request(),
+                // Partie 'réponse' du message courant
+                vertical_rule(10),
+                self.dyn_message.view_response(),
+            ])
+            .max_height(500),
             // Un footer avec les traces dernières requête/réponse/erreur
             horizontal_rule(10),
             self.view_footer(),
