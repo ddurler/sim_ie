@@ -3,6 +3,7 @@
 //! On utilise ici le [crate iced](https://iced.rs/) pour l'interface graphique
 //!
 
+mod infos;
 mod message00;
 mod message10;
 mod messages;
@@ -126,14 +127,40 @@ impl AppView {
 
     /// Informations pour la requête courante
     pub fn view_request(&self) -> Element<Message> {
-        let txt = format!("{:?}", self.dyn_message.id_infos_request());
-        Text::new(txt).into()
+        let id_infos = self.dyn_message.id_infos_request();
+
+        let mut col = Column::new();
+
+        if id_infos.is_empty() {
+            let txt = Text::new("(Pas d'information)");
+            col = col.push(txt);
+        } else {
+            for id_info in &id_infos {
+                let w = infos::show_info(id_info);
+                col = col.push(w);
+            }
+        }
+
+        col.into()
     }
 
     /// Informations pour la réponse courante
     pub fn view_response(&self) -> Element<Message> {
-        let txt = format!("{:?}", self.dyn_message.id_infos_response());
-        Text::new(txt).into()
+        let id_infos = self.dyn_message.id_infos_response();
+
+        let mut col = Column::new();
+
+        if id_infos.is_empty() {
+            let txt = Text::new("(Pas d'information)");
+            col = col.push(txt);
+        } else {
+            for id_info in &id_infos {
+                let w = infos::show_info(id_info);
+                col = col.push(w);
+            }
+        }
+
+        col.into()
     }
 
     /// Contenu du footer en affichage

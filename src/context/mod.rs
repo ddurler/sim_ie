@@ -16,6 +16,7 @@
 ///
 
 /// Format possible d'une information du contexte
+#[derive(Clone, Debug)]
 pub enum FormatInfo {
     FormatBool,
     FormatU8,
@@ -23,7 +24,7 @@ pub enum FormatInfo {
 }
 
 /// Énumération des informations du contexte
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum IdInfo {
     EnMesurage,
     CodeDefaut,
