@@ -1,10 +1,7 @@
 //! Implémentation IHM pour le message 00
 
-use iced::widget::Text;
-use iced::Element;
-
 use super::messages::CommonMessageTrait;
-use super::Message;
+use crate::context::IdInfo;
 
 /// Numéro de ce message
 const MESSAGE_NUM: u8 = 0;
@@ -22,11 +19,17 @@ impl CommonMessageTrait for Message00 {
         "Signe de vie"
     }
 
-    fn view_request(&self) -> Element<Message> {
-        Text::new("(Pas de champ pour cette requête)").into()
+    fn id_infos_request(&self) -> Vec<IdInfo> {
+        vec![]
     }
 
-    fn view_response(&self) -> Element<Message> {
-        Text::new("(TODO message 00)").into()
+    fn id_infos_response(&self) -> Vec<IdInfo> {
+        vec![
+            IdInfo::EnMesurage,
+            IdInfo::CodeDefaut,
+            IdInfo::ArretIntermediaire,
+            IdInfo::ForcagePetitDebit,
+            IdInfo::ModeConnecte,
+        ]
     }
 }

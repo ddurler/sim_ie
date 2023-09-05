@@ -1,10 +1,7 @@
 //! Implémentation IHM pour le message 10
 
-use iced::widget::Text;
-use iced::Element;
-
 use super::messages::CommonMessageTrait;
-use super::Message;
+use crate::context::IdInfo;
 
 /// Numéro de ce message
 const MESSAGE_NUM: u8 = 10;
@@ -22,11 +19,17 @@ impl CommonMessageTrait for Message10 {
         "Informations instantanées"
     }
 
-    fn view_request(&self) -> Element<Message> {
-        Text::new("(Pas de champ pour cette requête)").into()
+    fn id_infos_request(&self) -> Vec<IdInfo> {
+        vec![]
     }
 
-    fn view_response(&self) -> Element<Message> {
-        Text::new("(TODO message 10)").into()
+    fn id_infos_response(&self) -> Vec<IdInfo> {
+        vec![
+            IdInfo::Totalisateur,
+            IdInfo::DebitInstant,
+            IdInfo::QuantiteChargee,
+            IdInfo::TemperatureInstant,
+            IdInfo::Predetermination,
+        ]
     }
 }

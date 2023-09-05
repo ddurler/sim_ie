@@ -7,6 +7,8 @@ use super::CommonMessageTrait;
 use super::ProtocolError;
 use super::ST2150;
 
+use crate::context::IdInfo;
+
 /// Message 00 : Signe de vie
 #[derive(Default)]
 pub struct Message00 {}
@@ -36,8 +38,8 @@ impl CommonMessageTrait for Message00 {
 
         // #0 : En mesurage
         match frame.fields[0].decode_char()? {
-            '0' => context.en_mesurage = Some(false),
-            '1' => context.en_mesurage = Some(true),
+            '0' => context.set_info_bool(&IdInfo::EnMesurage, false),
+            '1' => context.set_info_bool(&IdInfo::EnMesurage, true),
             _ => {
                 return Err(ProtocolError::IllegalFieldValue(
                     frame.fields[0].clone(),
@@ -50,7 +52,7 @@ impl CommonMessageTrait for Message00 {
         // #1 : Code défaut
         let code_defaut = frame.fields[1].decode_binary()?;
         if (0x20..=0x9F).contains(&code_defaut) {
-            context.code_defaut = Some(code_defaut - 0x20);
+            context.set_info_u8(&IdInfo::CodeDefaut, code_defaut - 0x20);
         } else {
             return Err(ProtocolError::IllegalFieldValue(
                 frame.fields[1].clone(),
@@ -61,8 +63,8 @@ impl CommonMessageTrait for Message00 {
 
         // #2 : Arrêt intermédiaire
         match frame.fields[2].decode_char()? {
-            '0' => context.arret_intermediaire = Some(false),
-            '1' => context.arret_intermediaire = Some(true),
+            '0' => context.set_info_bool(&IdInfo::ArretIntermediaire, false),
+            '1' => context.set_info_bool(&IdInfo::ArretIntermediaire, true),
             _ => {
                 return Err(ProtocolError::IllegalFieldValue(
                     frame.fields[2].clone(),
@@ -74,8 +76,8 @@ impl CommonMessageTrait for Message00 {
 
         // #3 : Forçage petit débit
         match frame.fields[3].decode_char()? {
-            '0' => context.forcage_petit_debit = Some(false),
-            '1' => context.forcage_petit_debit = Some(true),
+            '0' => context.set_info_bool(&IdInfo::ForcagePetitDebit, false),
+            '1' => context.set_info_bool(&IdInfo::ForcagePetitDebit, true),
             _ => {
                 return Err(ProtocolError::IllegalFieldValue(
                     frame.fields[3].clone(),
@@ -87,8 +89,8 @@ impl CommonMessageTrait for Message00 {
 
         // #4 : Mode connecté
         match frame.fields[4].decode_char()? {
-            '0' => context.mode_connecte = Some(false),
-            '1' => context.mode_connecte = Some(true),
+            '0' => context.set_info_bool(&IdInfo::ModeConnecte, false),
+            '1' => context.set_info_bool(&IdInfo::ModeConnecte, true),
             _ => {
                 return Err(ProtocolError::IllegalFieldValue(
                     frame.fields[4].clone(),
@@ -161,10 +163,16 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, 0), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(context.en_mesurage, Some(false));
-        assert_eq!(context.code_defaut, Some(0));
-        assert_eq!(context.arret_intermediaire, Some(false));
-        assert_eq!(context.forcage_petit_debit, Some(false));
-        assert_eq!(context.mode_connecte, Some(false));
+        assert_eq!(context.get_info_bool(&IdInfo::EnMesurage), Some(false));
+        assert_eq!(context.get_info_u8(&IdInfo::CodeDefaut), Some(0));
+        assert_eq!(
+            context.get_info_bool(&IdInfo::ArretIntermediaire),
+            Some(false)
+        );
+        assert_eq!(
+            context.get_info_bool(&IdInfo::ForcagePetitDebit),
+            Some(false)
+        );
+        assert_eq!(context.get_info_bool(&IdInfo::ModeConnecte), Some(false));
     }
 }

@@ -1,7 +1,6 @@
 //! Structure IHM générique pour afficher/éditer un message de l'Informatique Embarquée - ST2150
 
-use super::Message;
-use iced::Element;
+use crate::context::IdInfo;
 
 pub trait CommonMessageTrait {
     /// Numéro de message
@@ -10,9 +9,9 @@ pub trait CommonMessageTrait {
     /// Libellé (Quelques mots) décrivant le message
     fn str_message(&self) -> &'static str;
 
-    /// View pour la partie 'requête' du message
-    fn view_request(&self) -> Element<Message>;
+    /// Informations contexte nécessaire pour la 'requête' du message
+    fn id_infos_request(&self) -> Vec<IdInfo>;
 
-    /// View pour la partie 'réponse' du message
-    fn view_response(&self) -> Element<Message>;
+    /// Informations contexte nécessaire pour la 'réponse' du message
+    fn id_infos_response(&self) -> Vec<IdInfo>;
 }

@@ -124,6 +124,18 @@ impl AppView {
         col.into()
     }
 
+    /// Informations pour la requête courante
+    pub fn view_request(&self) -> Element<Message> {
+        let txt = format!("{:?}", self.dyn_message.id_infos_request());
+        Text::new(txt).into()
+    }
+
+    /// Informations pour la réponse courante
+    pub fn view_response(&self) -> Element<Message> {
+        let txt = format!("{:?}", self.dyn_message.id_infos_response());
+        Text::new(txt).into()
+    }
+
     /// Contenu du footer en affichage
     pub fn view_footer(&self) -> Element<Message> {
         let col = Column::new();
@@ -203,10 +215,10 @@ impl Application for AppView {
                 self.body_message_selection(),
                 // Partie 'requête' du message courant
                 vertical_rule(10),
-                self.dyn_message.view_request(),
+                self.view_request(),
                 // Partie 'réponse' du message courant
                 vertical_rule(10),
-                self.dyn_message.view_response(),
+                self.view_response(),
             ])
             .max_height(500),
             // Un footer avec les traces dernières requête/réponse/erreur
