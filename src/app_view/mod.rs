@@ -12,7 +12,9 @@ use message00::Message00;
 use message10::Message10;
 use messages::CommonMessageTrait;
 
-use iced::widget::{column, container, horizontal_rule, row, vertical_rule, Button, Column, Text};
+use iced::widget::{
+    column, container, horizontal_rule, row, vertical_rule, Button, Column, Row, Text,
+};
 use iced::{executor, theme, window, Application, Command, Element, Settings, Theme};
 
 use crate::st2150::ST2150_MESSAGE_NUMBERS;
@@ -70,7 +72,7 @@ fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
 #[derive(Debug, Clone)]
 pub enum Message {
     SelectionMessage(u8),
-    DoMessageVacation,
+    DoMessageVacation(u8),
 }
 
 impl AppView {
@@ -79,24 +81,39 @@ impl AppView {
         self.dyn_message = get_dyn_message(message_num);
     }
 
-    /// Header affichage
-    fn str_header(&self) -> String {
-        let availability =
-            match ST2150::message_availability(&self.context, self.dyn_message.message_num()) {
-                Ok(_) => "Prêt...".to_string(),
-                Err(e) => format!("{e}"),
-            };
-        format!(
-            "Message '{:02}' sur le port {} : {}",
-            self.dyn_message.message_num(),
-            self.st2150.port.name,
-            availability
-        )
-    }
-
     /// Contenu du header en affichage
     pub fn view_header(&self) -> Element<Message> {
-        Text::new(self.str_header()).into()
+        let mut row = Row::new();
+
+        /* Disponibilité ? */
+        match ST2150::message_availability(&self.context, self.dyn_message.message_num()) {
+            Ok(_) => {
+                // Bouton pour exécuter cette commande
+                let txt_do_it = format!(
+                    "Run Message {:02} ({}) sur le port {}",
+                    self.dyn_message.message_num(),
+                    self.dyn_message.str_message(),
+                    self.st2150.port.name,
+                );
+                let txt_do_it: Text = Text::new(txt_do_it);
+                let btn_do_it = Button::new(txt_do_it)
+                    .on_press(Message::DoMessageVacation(self.dyn_message.message_num()));
+                row = row.push(btn_do_it);
+            }
+            Err(e) => {
+                // Texte de l'erreur ne permettant pas d'exécuter cette commande
+                let txt_error = format!(
+                    "Message '{:02}' sur le port {} : {}",
+                    self.dyn_message.message_num(),
+                    self.st2150.port.name,
+                    e
+                );
+                let txt_error: Text = Text::new(txt_error);
+                row = row.push(txt_error);
+            }
+        };
+
+        row.into()
     }
 
     /// Zone pour sélection du message courant
@@ -224,10 +241,20 @@ impl Application for AppView {
     /// Traitement des messages de l'application
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
-            Message::SelectionMessage(message_num) => self.set_current_message_num(message_num),
-            Message::DoMessageVacation => (),
+            Message::SelectionMessage(message_num) => {
+                self.set_current_message_num(message_num);
+                self.st2150.last_req = vec![];
+                self.st2150.last_rep = vec![];
+                self.st2150.last_error = String::new();
+                Command::none()
+            }
+            Message::DoMessageVacation(message_num) => {
+                let _ = self
+                    .st2150
+                    .do_message_vacation(&mut self.context, message_num);
+                Command::none()
+            }
         }
-        Command::none()
     }
 
     /// Mise à jour affichage de l'application
