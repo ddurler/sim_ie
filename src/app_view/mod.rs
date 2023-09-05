@@ -81,41 +81,6 @@ impl AppView {
         self.dyn_message = get_dyn_message(message_num);
     }
 
-    /// Contenu du header en affichage
-    pub fn view_header(&self) -> Element<Message> {
-        let mut row = Row::new();
-
-        /* Disponibilité ? */
-        match ST2150::message_availability(&self.context, self.dyn_message.message_num()) {
-            Ok(_) => {
-                // Bouton pour exécuter cette commande
-                let txt_do_it = format!(
-                    "Run Message {:02} ({}) sur le port {}",
-                    self.dyn_message.message_num(),
-                    self.dyn_message.str_message(),
-                    self.st2150.port.name,
-                );
-                let txt_do_it: Text = Text::new(txt_do_it);
-                let btn_do_it = Button::new(txt_do_it)
-                    .on_press(Message::DoMessageVacation(self.dyn_message.message_num()));
-                row = row.push(btn_do_it);
-            }
-            Err(e) => {
-                // Texte de l'erreur ne permettant pas d'exécuter cette commande
-                let txt_error = format!(
-                    "Message '{:02}' sur le port {} : {}",
-                    self.dyn_message.message_num(),
-                    self.st2150.port.name,
-                    e
-                );
-                let txt_error: Text = Text::new(txt_error);
-                row = row.push(txt_error);
-            }
-        };
-
-        row.into()
-    }
-
     /// Zone pour sélection du message courant
     pub fn body_message_selection(&self) -> Element<Message> {
         // Numéro de message actuellement sélectionné
@@ -180,8 +145,43 @@ impl AppView {
         col.into()
     }
 
-    /// Contenu du footer en affichage
-    pub fn view_footer(&self) -> Element<Message> {
+    /// Zone avec Status ou bouton action selon le contexte
+    pub fn view_do_vacation(&self) -> Element<Message> {
+        let mut row = Row::new();
+
+        /* Disponibilité ? */
+        match ST2150::message_availability(&self.context, self.dyn_message.message_num()) {
+            Ok(_) => {
+                // Bouton pour exécuter cette commande
+                let txt_do_it = format!(
+                    "Run Message {:02} ({}) sur le port {}",
+                    self.dyn_message.message_num(),
+                    self.dyn_message.str_message(),
+                    self.st2150.port.name,
+                );
+                let txt_do_it: Text = Text::new(txt_do_it);
+                let btn_do_it = Button::new(txt_do_it)
+                    .on_press(Message::DoMessageVacation(self.dyn_message.message_num()));
+                row = row.push(btn_do_it);
+            }
+            Err(e) => {
+                // Texte de l'erreur ne permettant pas d'exécuter cette commande
+                let txt_error = format!(
+                    "Message '{:02}' sur le port {} : {}",
+                    self.dyn_message.message_num(),
+                    self.st2150.port.name,
+                    e
+                );
+                let txt_error: Text = Text::new(txt_error);
+                row = row.push(txt_error);
+            }
+        };
+
+        row.into()
+    }
+
+    /// Zone avec les traces / erreur de la dernière vacation
+    pub fn view_vacation(&self) -> Element<Message> {
         let col = Column::new();
 
         // Dernière requête
@@ -260,10 +260,6 @@ impl Application for AppView {
     /// Mise à jour affichage de l'application
     fn view(&self) -> Element<Message> {
         column![
-            // Un header de status sur la 1er ligne
-            self.view_header(),
-            // Le corps du simulateur
-            horizontal_rule(10),
             container(row![
                 // Sélection du message courant
                 self.body_message_selection(),
@@ -274,10 +270,13 @@ impl Application for AppView {
                 vertical_rule(10),
                 self.view_response(),
             ])
-            .max_height(500),
-            // Un footer avec les traces dernières requête/réponse/erreur
+            .max_height(650), // TODO : Pifométrie à adapter...
+            // Status/Vacation selon action
             horizontal_rule(10),
-            self.view_footer(),
+            self.view_do_vacation(),
+            // Trace dernières requête/réponse/erreur
+            horizontal_rule(10),
+            self.view_vacation(),
         ]
         .into()
     }
