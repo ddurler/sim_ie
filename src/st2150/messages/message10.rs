@@ -8,19 +8,39 @@ use super::ProtocolError;
 use super::ST2150;
 use crate::context::IdInfo;
 
+/// Numéro de ce message
+const MESSAGE_NUM: u8 = 10;
+
 /// Message 10 : Informations instantanées
 #[derive(Default)]
 pub struct Message10 {}
 
 impl CommonMessageTrait for Message10 {
-    fn availability(_context: &Context) -> Result<(), ProtocolError> {
-        // Toujours possible car pas d'information dans la requête
-        Ok(())
+    fn message_num(&self) -> u8 {
+        MESSAGE_NUM
     }
 
-    fn do_vacation(st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError> {
+    fn str_message(&self) -> &'static str {
+        "Informations instantanées"
+    }
+
+    fn id_infos_request(&self) -> Vec<IdInfo> {
+        vec![]
+    }
+
+    fn id_infos_response(&self) -> Vec<IdInfo> {
+        vec![
+            IdInfo::Totalisateur,
+            IdInfo::DebitInstant,
+            IdInfo::QuantiteChargee,
+            IdInfo::TemperatureInstant,
+            IdInfo::Predetermination,
+        ]
+    }
+
+    fn do_vacation(&self, st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError> {
         // Contexte OK ?
-        Message10::availability(context)?;
+        Message10::availability(self, context)?;
 
         // Création et envoi requête
         let req = frame::Frame::new(10);

@@ -4,19 +4,13 @@
 //!
 
 mod infos;
-mod message00;
-mod message10;
-mod messages;
-
-use message00::Message00;
-use message10::Message10;
-use messages::CommonMessageTrait;
 
 use iced::widget::{
     column, container, horizontal_rule, row, vertical_rule, Button, Column, Row, Text,
 };
 use iced::{executor, theme, window, Application, Command, Element, Settings, Theme};
 
+use crate::st2150::messages::{get_dyn_message, message00::Message00, CommonMessageTrait};
 use crate::st2150::ST2150_MESSAGE_NUMBERS;
 use crate::Context;
 use crate::ST2150;
@@ -57,15 +51,6 @@ pub fn run(st2150: ST2150) {
         flags: app_setting,
         ..Settings::default()
     });
-}
-
-/// Accès au `CommonMessageTrait` des différents messages gérés
-fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
-    match message_num {
-        0 => Box::<Message00>::default(),
-        10 => Box::<Message10>::default(),
-        _ => panic!("Numéro de message non géré {message_num}"),
-    }
 }
 
 /// Message (Command) pour les actions de l'utilisateur

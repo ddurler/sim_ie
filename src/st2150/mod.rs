@@ -2,13 +2,11 @@
 use std::error::Error;
 use std::fmt::Display;
 
-use super::context::Context;
+use crate::context;
+
 use crate::serial_com::SerialCom;
 use crate::CommonSerialComTrait;
-
-use self::messages::CommonMessageTrait;
-use messages::message00;
-use messages::message10;
+use context::{Context, IdInfo};
 
 pub mod field;
 pub mod frame;
@@ -58,9 +56,6 @@ pub enum ProtocolError {
 
     /// Information manquante dans le contexte (nom_de_l_info)
     ContextMissing(String),
-
-    /// Message inexistant ou non implémenté (num_message)
-    IllegalMessageNumber(u8),
 }
 
 impl Display for ProtocolError {
@@ -104,10 +99,6 @@ impl Display for ProtocolError {
             ProtocolError::ContextMissing(nom) => write!(
                 f,
                 "Valeur non renseignée du champ '{nom}'"
-            ),
-            ProtocolError::IllegalMessageNumber(message_num) => write!(
-                f,
-                "Le message '{message_num:02}' n'existe pas ou n'est pas implémenté"
             ),
         }
     }
@@ -206,17 +197,7 @@ impl ST2150 {
 
     /// Message disponible (toutes les informations nécessaires disponibles dans le contexte) ?
     pub fn message_availability(context: &Context, message_num: u8) -> Result<(), ProtocolError> {
-        match message_num {
-            0 => messages::message00::Message00::availability(context),
-            10 => messages::message10::Message10::availability(context),
-            _ => {
-                assert!(
-                    !ST2150_MESSAGE_NUMBERS.contains(&message_num),
-                    "Manque implémentation du message {message_num:02} !!!"
-                );
-                Err(ProtocolError::IllegalMessageNumber(message_num))
-            }
-        }
+        messages::get_dyn_message(message_num).availability(context)
     }
 
     /// Vacation (requête/réponse) d'un message
@@ -225,16 +206,6 @@ impl ST2150 {
         context: &mut Context,
         message_num: u8,
     ) -> Result<(), ProtocolError> {
-        match message_num {
-            0 => message00::Message00::do_vacation(self, context),
-            10 => message10::Message10::do_vacation(self, context),
-            _ => {
-                assert!(
-                    !ST2150_MESSAGE_NUMBERS.contains(&message_num),
-                    "Manque implémentation du message {message_num:02} !!!"
-                );
-                Err(ProtocolError::IllegalMessageNumber(message_num))
-            }
-        }
+        messages::get_dyn_message(message_num).do_vacation(self, context)
     }
 }

@@ -13,15 +13,35 @@ use crate::context::IdInfo;
 #[derive(Default)]
 pub struct Message00 {}
 
+/// Numéro de ce message
+const MESSAGE_NUM: u8 = 0;
+
 impl CommonMessageTrait for Message00 {
-    fn availability(_context: &Context) -> Result<(), ProtocolError> {
-        // Toujours possible car pas d'information dans la requête
-        Ok(())
+    fn message_num(&self) -> u8 {
+        MESSAGE_NUM
     }
 
-    fn do_vacation(st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError> {
+    fn str_message(&self) -> &'static str {
+        "Signe de vie"
+    }
+
+    fn id_infos_request(&self) -> Vec<IdInfo> {
+        vec![]
+    }
+
+    fn id_infos_response(&self) -> Vec<IdInfo> {
+        vec![
+            IdInfo::EnMesurage,
+            IdInfo::CodeDefaut,
+            IdInfo::ArretIntermediaire,
+            IdInfo::ForcagePetitDebit,
+            IdInfo::ModeConnecte,
+        ]
+    }
+
+    fn do_vacation(&self, st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError> {
         // Contexte OK ?
-        Message00::availability(context)?;
+        Message00::availability(self, context)?;
 
         // Création et envoi requête
         let req = frame::Frame::new(0);
