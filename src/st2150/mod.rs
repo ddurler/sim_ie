@@ -15,9 +15,6 @@ pub mod protocol;
 
 use field::Field;
 
-/// Liste des numéros de messages implémentés
-pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[0_u8, 10_u8];
-
 /// Erreur détectée
 #[derive(Debug, PartialEq, Eq)]
 pub enum ProtocolError {

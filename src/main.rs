@@ -85,13 +85,14 @@ fn print_help() {
         r#"
 Simulateur d'informatique embarquée - ALMA 2023.
 
-Usage :
+Usage en mode graphique :
     sim_ie COM1             # Pour une machine Windows avec un port série 'COM1'
     sim_ie "\.\COM10"       # Syntaxe de Windows après COM9 (étrange, mais bon...)
     sim_ie "/dev/ttyUSB0"   # Pour une machine Linux
 
+Usage en mode terminal :
     sim --help              # Pour ce message d'aide
-    sim --ports ou --list   #Liste des ports de la machine
+    sim --ports ou --list   # Liste des ports de la machine
 "#
     );
 }

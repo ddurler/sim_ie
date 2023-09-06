@@ -5,13 +5,14 @@
 
 mod infos;
 
-use iced::widget::{
-    column, container, horizontal_rule, row, vertical_rule, Button, Column, Row, Text,
-};
-use iced::{executor, theme, window, Application, Command, Element, Settings, Theme};
+use iced::widget::{column, container, horizontal_rule, row, vertical_rule};
+use iced::widget::{Button, Column, Row, Text};
+use iced::{executor, theme, window};
+use iced::{Application, Command, Element, Settings, Theme};
 
-use crate::st2150::messages::{get_dyn_message, message00::Message00, CommonMessageTrait};
-use crate::st2150::ST2150_MESSAGE_NUMBERS;
+use crate::st2150::messages::{
+    get_dyn_message, message00::Message00, CommonMessageTrait, ST2150_MESSAGE_NUMBERS,
+};
 use crate::Context;
 use crate::ST2150;
 
@@ -99,7 +100,7 @@ impl AppView {
         let mut col = Column::new();
 
         if id_infos.is_empty() {
-            let txt = Text::new("(Pas d'information)");
+            let txt = Text::new("(Pas de champ)");
             col = col.push(txt);
         } else {
             for id_info in &id_infos {

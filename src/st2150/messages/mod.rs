@@ -9,10 +9,14 @@ use super::ST2150;
 
 // Pour implémenter un nouveau message XX, il suffit de :
 
-// 1 - implémenter un nouveau module messageXX.rs à l'image de ceux déjà existants
-// 2 - Ajout pub messageXX et use messageXX::MessageXX ci-dessous
-// 3 - Ajout MessageXX dans la primitive `get_dyn_message` ci-dessous
+// 1 - Mettre à jour la liste des numéros de messages implémentés `ST2150_MESSAGE_NUMBERS`
+// 2 - implémenter un nouveau module messageXX.rs à l'image de ceux déjà existants
+// 3 - Ajout pub messageXX et use messageXX::MessageXX ci-dessous
+// 4 - Ajout MessageXX dans la primitive `get_dyn_message` ci-dessous
 // C'est tout...
+
+/// Liste des numéros de messages implémentés
+pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[0_u8, 10_u8];
 
 pub mod message00;
 use message00::Message00;
