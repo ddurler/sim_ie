@@ -49,6 +49,7 @@ pub fn run(st2150: ST2150) {
             position: window::Position::Centered,
             ..window::Settings::default()
         },
+        default_text_size: 12.0,
         flags: app_setting,
         ..Settings::default()
     });
@@ -76,8 +77,7 @@ impl AppView {
 
         for message_num in ST2150_MESSAGE_NUMBERS {
             let dyn_message = get_dyn_message(*message_num);
-            let text: Text =
-                Text::new(format!("{:02} {}", message_num, dyn_message.str_message())).size(12);
+            let text: Text = Text::new(format!("{:02} {}", message_num, dyn_message.str_message()));
             let btn = if *message_num == cur_message_num {
                 // C'est le numéro de message actuellement sélectionné
                 Button::new(text).on_press(Message::SelectionMessage(*message_num))
@@ -104,7 +104,7 @@ impl AppView {
             col = col.push(txt);
         } else {
             for id_info in &id_infos {
-                let w = infos::show_info(id_info);
+                let w = infos::show_info(&self.context, id_info);
                 col = col.push(w);
             }
         }
@@ -123,7 +123,7 @@ impl AppView {
             col = col.push(txt);
         } else {
             for id_info in &id_infos {
-                let w = infos::show_info(id_info);
+                let w = infos::show_info(&self.context, id_info);
                 col = col.push(w);
             }
         }
@@ -171,7 +171,7 @@ impl AppView {
         let col = Column::new();
 
         // Dernière requête
-        let my_str = if self.st2150.last_error.is_empty() {
+        let my_str = if self.st2150.last_req.is_empty() {
             "(Pas de requête)".to_string()
         } else {
             format!("Requête : {:?}", self.st2150.last_req)

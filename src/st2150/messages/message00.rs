@@ -44,7 +44,7 @@ impl CommonMessageTrait for Message00 {
         Message00::availability(self, context)?;
 
         // Création et envoi requête
-        let req = frame::Frame::new(0);
+        let req = frame::Frame::new(MESSAGE_NUM);
         st2150.send_req(&req);
 
         // Réception réponse
@@ -52,7 +52,7 @@ impl CommonMessageTrait for Message00 {
         let len_rep = st2150.wait_rep(&mut buffer, 17)?;
 
         // Décodage de la réponse reçue
-        let frame = st2150.try_from_buffer(&buffer[..len_rep], 0, &[1, 1, 1, 1, 1])?;
+        let frame = st2150.try_from_buffer(&buffer[..len_rep], MESSAGE_NUM, &[1, 1, 1, 1, 1])?;
 
         // Mise à jour du contexte
 
@@ -177,10 +177,10 @@ mod tests {
         let mut context = Context::default();
 
         // Le message est possible
-        assert!(ST2150::message_availability(&context, 0).is_ok());
+        assert!(ST2150::message_availability(&context, MESSAGE_NUM).is_ok());
 
         // Vacation requête/réponse du message via le FAKE port
-        assert_eq!(st.do_message_vacation(&mut context, 0), Ok(()));
+        assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(context.get_info_bool(&IdInfo::EnMesurage), Some(false));
