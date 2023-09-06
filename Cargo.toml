@@ -8,3 +8,8 @@ edition = "2021"
 [dependencies]
 serialport = "4.2"
 iced = "0.10"
+
+[profile.release]
+strip = true  # Automatically strip symboles from the binary
+lto = true  # Enable link time optimization
+codegen-units = 1  # Maximize size reduction optimizations

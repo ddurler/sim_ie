@@ -10,6 +10,9 @@ use context::Context;
 use serial_com::{CommonSerialComTrait, SerialCom};
 use st2150::ST2150;
 
+/// Version de l'application (selon définition dans Cargo.toml)
+pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 /// Point d'entrée de l'outil
 fn main() {
     let command_args: Vec<String> = env::args().collect();
@@ -83,7 +86,7 @@ fn run_on_terminal(st2150: &mut ST2150) {
 fn print_help() {
     eprintln!(
         r#"
-Simulateur d'informatique embarquée - ALMA 2023.
+Simulateur d'informatique embarquée v{APP_VERSION} - ALMA 2023.
 
 Usage en mode graphique :
     sim_ie COM1             # Pour une machine Windows avec un port série 'COM1'
@@ -93,8 +96,7 @@ Usage en mode graphique :
 Usage en mode terminal :
     sim --help              # Pour ce message d'aide
     sim --ports ou --list   # Liste des ports de la machine
-"#
-    );
+"#);
 }
 
 /// Affiche la liste des noms des ports séries de la machine

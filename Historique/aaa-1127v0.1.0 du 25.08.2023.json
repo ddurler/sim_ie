@@ -1,0 +1,28 @@
+{
+  "soft": {
+    "type": "Outil",
+    "group": "Générique",
+    "number": 1127,
+    "branch": "main",
+    "name": "sim_ie",
+    "date": 20230825,
+    "version": "0.1.0"
+  },
+  "changes": {
+    "imputation": 9501,
+    "short_description": "Création initiale",
+    "long_description": [
+      "Création initiale de l'outil (POC)",
+      "Gestion des messages 00 (Signe de vie) et 10 (Informations instantanées)"
+    ],
+    "author": "DD",
+    "configuration": null,
+    "risk": null
+  },
+  "livrables": ["target/release/*.exe"],
+  "ignore": [".*",
+    "target/debug*", "target/doc*", "target/release/.*", "target/release/build*", "target/release/deps*",
+    "target/release/examples*", "target/release/incremental*",
+    "tests_output*", "4053*", "-352*"
+  ]
+}

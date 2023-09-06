@@ -5,6 +5,8 @@
 
 mod infos;
 
+use super::APP_VERSION;
+
 use iced::widget::{column, container, horizontal_rule, row, vertical_rule};
 use iced::widget::{Button, Column, Row, Text};
 use iced::{executor, theme, window};
@@ -221,7 +223,7 @@ impl Application for AppView {
 
     /// Titre de l'application
     fn title(&self) -> String {
-        "Simulateur Informatique Embarquée ALMA - ST2150".to_string()
+        format!("Simulateur v{APP_VERSION} - Informatique Embarquée ALMA")
     }
 
     /// Traitement des messages de l'application
