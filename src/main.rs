@@ -96,7 +96,8 @@ Usage en mode graphique :
 Usage en mode terminal :
     sim --help              # Pour ce message d'aide
     sim --ports ou --list   # Liste des ports de la machine
-"#);
+"#
+    );
 }
 
 /// Affiche la liste des noms des ports séries de la machine

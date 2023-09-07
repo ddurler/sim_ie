@@ -193,9 +193,58 @@ impl Context {
     }
 }
 
+/** Implémentation générique des getters/setters **/
+
+pub trait CommonContextTrait<T> {
+    fn get_info(&self, id_info: &IdInfo) -> Option<T>;
+
+    fn set_info(&mut self, id_info: &IdInfo, value: T);
+}
+
+impl CommonContextTrait<bool> for Context {
+    fn get_info(&self, id_info: &IdInfo) -> Option<bool> {
+        self.get_info_bool(id_info)
+    }
+
+    fn set_info(&mut self, id_info: &IdInfo, value: bool) {
+        self.set_info_bool(id_info, value);
+    }
+}
+
+impl CommonContextTrait<u8> for Context {
+    fn get_info(&self, id_info: &IdInfo) -> Option<u8> {
+        self.get_info_u8(id_info)
+    }
+
+    fn set_info(&mut self, id_info: &IdInfo, value: u8) {
+        self.set_info_u8(id_info, value);
+    }
+}
+
+impl CommonContextTrait<u32> for Context {
+    fn get_info(&self, id_info: &IdInfo) -> Option<u32> {
+        self.get_info_u32(id_info)
+    }
+
+    fn set_info(&mut self, id_info: &IdInfo, value: u32) {
+        self.set_info_u32(id_info, value);
+    }
+}
+
+impl CommonContextTrait<f32> for Context {
+    fn get_info(&self, id_info: &IdInfo) -> Option<f32> {
+        self.get_info_f32(id_info)
+    }
+
+    fn set_info(&mut self, id_info: &IdInfo, value: f32) {
+        self.set_info_f32(id_info, value);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    // use crate::context::CommonContextTrait;
 
     #[test]
     fn test_get_set() {
@@ -247,5 +296,54 @@ mod tests {
         check_id_code(&mut context, &IdInfo::QuantiteChargee);
         check_id_code(&mut context, &IdInfo::TemperatureInstant);
         check_id_code(&mut context, &IdInfo::Predetermination);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_get_set_panic() {
+        // Le getter va panic! si on demande une information avec un format différent
+        // du format de cette info
+
+        let context: Context = Context::default();
+
+        // Lecture d'une température (F_32) dans un bool
+        let _ = context.get_info_bool(&IdInfo::TemperatureInstant);
+    }
+
+    #[test]
+    fn test_get_set_generic() {
+        let mut context: Context = Context::default();
+
+        // On utilise ici les getters et les setters génériques (via `CommonContextTrait`)
+        // Il faut bien préciser les types des informations à gérer et ne pas se tromper
+        // sinon panic!
+
+        context.set_info(&IdInfo::EnMesurage, true);
+        let my_value: Option<bool> = context.get_info(&IdInfo::EnMesurage);
+        assert_eq!(my_value, Some(true));
+
+        context.set_info(&IdInfo::CodeDefaut, 10_u8);
+        let my_value: Option<u8> = context.get_info(&IdInfo::CodeDefaut);
+        assert_eq!(my_value, Some(10_u8));
+
+        context.set_info(&IdInfo::Predetermination, 1000_u32);
+        let my_value: Option<u32> = context.get_info(&IdInfo::Predetermination);
+        assert_eq!(my_value, Some(1000_u32));
+
+        context.set_info(&IdInfo::TemperatureInstant, -12.3);
+        let my_value: Option<f32> = context.get_info(&IdInfo::TemperatureInstant);
+        assert_eq!(my_value, Some(-12.3));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_get_set_generic_panic() {
+        // Le getter générique va panic! si on demande une information avec un format différent
+        // du format de cette info
+
+        let context: Context = Context::default();
+
+        // Lecture d'une température (F_32) dans un u32
+        let _: Option<u32> = context.get_info(&IdInfo::TemperatureInstant);
     }
 }
