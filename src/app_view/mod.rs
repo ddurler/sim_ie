@@ -3,7 +3,8 @@
 //! On utilise ici le [crate iced](https://iced.rs/) pour l'interface graphique
 //!
 
-mod infos;
+mod input_infos;
+mod show_infos;
 
 use super::APP_VERSION;
 
@@ -12,6 +13,7 @@ use iced::widget::{Button, Column, Row, Text};
 use iced::{executor, theme, window};
 use iced::{Application, Command, Element, Settings, Theme};
 
+use crate::context::IdInfo;
 use crate::st2150::messages::{
     get_dyn_message, message00::Message00, CommonMessageTrait, ST2150_MESSAGE_NUMBERS,
 };
@@ -60,8 +62,9 @@ pub fn run(st2150: ST2150) {
 /// Message (Command) pour les actions de l'utilisateur
 #[derive(Debug, Clone)]
 pub enum Message {
-    SelectionMessage(u8),
+    SelectionMessageST2150(u8),
     DoMessageVacation(u8),
+    InputInfo(String, IdInfo),
 }
 
 impl AppView {
@@ -82,11 +85,11 @@ impl AppView {
             let text: Text = Text::new(format!("{:02} {}", message_num, dyn_message.str_message()));
             let btn = if *message_num == cur_message_num {
                 // C'est le numéro de message actuellement sélectionné
-                Button::new(text).on_press(Message::SelectionMessage(*message_num))
+                Button::new(text).on_press(Message::SelectionMessageST2150(*message_num))
             } else {
                 // Numéro de message non sélectionné. On l'affiche en noir sur fond gris
                 Button::new(text)
-                    .on_press(Message::SelectionMessage(*message_num))
+                    .on_press(Message::SelectionMessageST2150(*message_num))
                     .style(theme::Button::Secondary)
             };
             col = col.push(btn);
@@ -102,11 +105,13 @@ impl AppView {
         let mut col = Column::new();
 
         if id_infos.is_empty() {
-            let txt = Text::new("(Pas de champ)");
-            col = col.push(txt);
+            // let txt = Text::new("(Pas de champ)");
+            // col = col.push(txt);
+            let txt_input = input_infos::input_info(&self.context, &IdInfo::CodeDefaut);
+            col = col.push(txt_input);
         } else {
             for id_info in &id_infos {
-                let w = infos::show_info(&self.context, id_info);
+                let w = show_infos::show_info(&self.context, id_info);
                 col = col.push(w);
             }
         }
@@ -125,7 +130,7 @@ impl AppView {
             col = col.push(txt);
         } else {
             for id_info in &id_infos {
-                let w = infos::show_info(&self.context, id_info);
+                let w = show_infos::show_info(&self.context, id_info);
                 col = col.push(w);
             }
         }
@@ -229,7 +234,7 @@ impl Application for AppView {
     /// Traitement des messages de l'application
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
-            Message::SelectionMessage(message_num) => {
+            Message::SelectionMessageST2150(message_num) => {
                 self.set_current_message_num(message_num);
                 self.st2150.last_req = vec![];
                 self.st2150.last_rep = vec![];
@@ -240,6 +245,13 @@ impl Application for AppView {
                 let _ = self
                     .st2150
                     .do_message_vacation(&mut self.context, message_num);
+                Command::none()
+            }
+            Message::InputInfo(txt, id_info) => {
+                match txt.parse::<u8>() {
+                    Ok(value) => self.context.set_info_u8(&id_info, value),
+                    Err(_e) => (),
+                };
                 Command::none()
             }
         }

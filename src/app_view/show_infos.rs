@@ -1,4 +1,4 @@
-//! Helpers pour l'affichage et/ou l'édition des informations du contexte dans l'IHM
+//! Helpers pour l'affichage des informations du contexte dans l'IHM
 
 use iced::widget::Text;
 
