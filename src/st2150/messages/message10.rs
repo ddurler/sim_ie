@@ -57,7 +57,7 @@ impl CommonMessageTrait for Message10 {
 
         // #0 : Totalisateur
         context.set_info_u32(
-            &IdInfo::Totalisateur,
+            IdInfo::Totalisateur,
             frame.fields[0].decode_number::<u32>()?,
         );
 
@@ -67,11 +67,11 @@ impl CommonMessageTrait for Message10 {
             ProtocolError::ErrFieldConversion("débit".to_string(), frame.fields[1].clone())
         })?;
 
-        context.set_info_f32(&IdInfo::DebitInstant, debit10 / 10_f32);
+        context.set_info_f32(IdInfo::DebitInstant, debit10 / 10_f32);
 
         // #2 : Quantité courante
         context.set_info_u32(
-            &IdInfo::QuantiteChargee,
+            IdInfo::QuantiteChargee,
             frame.fields[2].decode_number::<u32>()?,
         );
 
@@ -80,11 +80,11 @@ impl CommonMessageTrait for Message10 {
         let tempe10 = f32::try_from(tempe10).map_err(|_e| {
             ProtocolError::ErrFieldConversion("température".to_string(), frame.fields[1].clone())
         })?;
-        context.set_info_f32(&IdInfo::TemperatureInstant, tempe10 / 10_f32);
+        context.set_info_f32(IdInfo::TemperatureInstant, tempe10 / 10_f32);
 
         // #4 : Prédétermination
         context.set_info_u32(
-            &IdInfo::Predetermination,
+            IdInfo::Predetermination,
             frame.fields[4].decode_number::<u32>()?,
         );
 
@@ -172,16 +172,10 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(
-            context.get_info_u32(&IdInfo::Totalisateur),
-            Some(12_345_678)
-        );
-        assert_eq!(context.get_info_f32(&IdInfo::DebitInstant), Some(123.4));
-        assert_eq!(context.get_info_u32(&IdInfo::QuantiteChargee), Some(12345));
-        assert_eq!(
-            context.get_info_f32(&IdInfo::TemperatureInstant),
-            Some(12.3)
-        );
-        assert_eq!(context.get_info_u32(&IdInfo::Predetermination), Some(12345));
+        assert_eq!(context.get_info_u32(IdInfo::Totalisateur), Some(12_345_678));
+        assert_eq!(context.get_info_f32(IdInfo::DebitInstant), Some(123.4));
+        assert_eq!(context.get_info_u32(IdInfo::QuantiteChargee), Some(12345));
+        assert_eq!(context.get_info_f32(IdInfo::TemperatureInstant), Some(12.3));
+        assert_eq!(context.get_info_u32(IdInfo::Predetermination), Some(12345));
     }
 }

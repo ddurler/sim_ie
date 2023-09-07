@@ -105,13 +105,11 @@ impl AppView {
         let mut col = Column::new();
 
         if id_infos.is_empty() {
-            // let txt = Text::new("(Pas de champ)");
-            // col = col.push(txt);
-            let txt_input = input_infos::input_info(&self.context, &IdInfo::CodeDefaut);
-            col = col.push(txt_input);
+            let txt = Text::new("(Pas de champ)");
+            col = col.push(txt);
         } else {
-            for id_info in &id_infos {
-                let w = show_infos::show_info(&self.context, id_info);
+            for id_info in id_infos {
+                let w = input_infos::input_info(&self.context, id_info);
                 col = col.push(w);
             }
         }
@@ -129,7 +127,7 @@ impl AppView {
             let txt = Text::new("(Pas d'information)");
             col = col.push(txt);
         } else {
-            for id_info in &id_infos {
+            for id_info in id_infos {
                 let w = show_infos::show_info(&self.context, id_info);
                 col = col.push(w);
             }
@@ -247,11 +245,8 @@ impl Application for AppView {
                     .do_message_vacation(&mut self.context, message_num);
                 Command::none()
             }
-            Message::InputInfo(txt, id_info) => {
-                match txt.parse::<u8>() {
-                    Ok(value) => self.context.set_info_u8(&id_info, value),
-                    Err(_e) => (),
-                };
+            Message::InputInfo(input, id_info) => {
+                input_infos::callback_input_info(&mut self.context, &input, id_info);
                 Command::none()
             }
         }

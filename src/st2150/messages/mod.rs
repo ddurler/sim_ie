@@ -51,25 +51,25 @@ pub trait CommonMessageTrait {
     /// (note: pas de `self` dans cette fonction)
     fn availability(&self, context: &Context) -> Result<(), ProtocolError> {
         for id_info in self.id_infos_request() {
-            let info_name = context::get_info_name(&id_info);
-            match context::get_info_format(&id_info) {
+            let info_name = context::get_info_name(id_info);
+            match context::get_info_format(id_info) {
                 context::FormatInfo::FormatBool => {
-                    if context.get_info_bool(&id_info).is_none() {
+                    if context.get_info_bool(id_info).is_none() {
                         return Err(ProtocolError::ContextMissing(info_name.to_string()));
                     }
                 }
                 context::FormatInfo::FormatU8 => {
-                    if context.get_info_u8(&id_info).is_none() {
+                    if context.get_info_u8(id_info).is_none() {
                         return Err(ProtocolError::ContextMissing(info_name.to_string()));
                     }
                 }
                 context::FormatInfo::FormatU32 => {
-                    if context.get_info_u32(&id_info).is_none() {
+                    if context.get_info_u32(id_info).is_none() {
                         return Err(ProtocolError::ContextMissing(info_name.to_string()));
                     }
                 }
                 context::FormatInfo::FormatF32 => {
-                    if context.get_info_f32(&id_info).is_none() {
+                    if context.get_info_f32(id_info).is_none() {
                         return Err(ProtocolError::ContextMissing(info_name.to_string()));
                     }
                 }

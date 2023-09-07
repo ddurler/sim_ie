@@ -25,7 +25,7 @@ pub enum FormatInfo {
 }
 
 /// Énumération des informations du contexte
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum IdInfo {
     EnMesurage,
     CodeDefaut,
@@ -39,6 +39,7 @@ pub enum IdInfo {
     Predetermination,
 }
 
+/// Dictionnaire des données pour les requêtes et les réponses
 #[derive(Debug, Default)]
 pub struct Context {
     /* Réponse Message 00 */
@@ -78,7 +79,7 @@ pub struct Context {
 }
 
 /// Retourne le libellé d'un information du contexte
-pub fn get_info_name(id_info: &IdInfo) -> &str {
+pub fn get_info_name(id_info: IdInfo) -> &'static str {
     match id_info {
         IdInfo::EnMesurage => "En mesurage",
         IdInfo::CodeDefaut => "Code défaut",
@@ -94,7 +95,7 @@ pub fn get_info_name(id_info: &IdInfo) -> &str {
 }
 
 /// Retourne le type de format pour une information du contexte
-pub fn get_info_format(id_info: &IdInfo) -> FormatInfo {
+pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
     match id_info {
         /* Booléen */
         IdInfo::EnMesurage
@@ -116,7 +117,7 @@ pub fn get_info_format(id_info: &IdInfo) -> FormatInfo {
 }
 
 impl Context {
-    pub fn get_info_bool(&self, id_info: &IdInfo) -> Option<bool> {
+    pub fn get_info_bool(&self, id_info: IdInfo) -> Option<bool> {
         match id_info {
             IdInfo::EnMesurage => self.en_mesurage,
             IdInfo::ArretIntermediaire => self.arret_intermediaire,
@@ -127,7 +128,7 @@ impl Context {
         }
     }
 
-    pub fn set_info_bool(&mut self, id_info: &IdInfo, value: bool) {
+    pub fn set_info_bool(&mut self, id_info: IdInfo, value: bool) {
         match id_info {
             IdInfo::EnMesurage => self.en_mesurage = Some(value),
             IdInfo::ArretIntermediaire => self.arret_intermediaire = Some(value),
@@ -138,7 +139,7 @@ impl Context {
         }
     }
 
-    pub fn get_info_u8(&self, id_info: &IdInfo) -> Option<u8> {
+    pub fn get_info_u8(&self, id_info: IdInfo) -> Option<u8> {
         match id_info {
             IdInfo::CodeDefaut => self.code_defaut,
 
@@ -146,7 +147,7 @@ impl Context {
         }
     }
 
-    pub fn set_info_u8(&mut self, id_info: &IdInfo, value: u8) {
+    pub fn set_info_u8(&mut self, id_info: IdInfo, value: u8) {
         match id_info {
             IdInfo::CodeDefaut => self.code_defaut = Some(value),
 
@@ -154,7 +155,7 @@ impl Context {
         }
     }
 
-    pub fn get_info_u32(&self, id_info: &IdInfo) -> Option<u32> {
+    pub fn get_info_u32(&self, id_info: IdInfo) -> Option<u32> {
         match id_info {
             IdInfo::Totalisateur => self.totalisateur,
             IdInfo::QuantiteChargee => self.quantite_chargee,
@@ -164,7 +165,7 @@ impl Context {
         }
     }
 
-    pub fn set_info_u32(&mut self, id_info: &IdInfo, value: u32) {
+    pub fn set_info_u32(&mut self, id_info: IdInfo, value: u32) {
         match id_info {
             IdInfo::Totalisateur => self.totalisateur = Some(value),
             IdInfo::QuantiteChargee => self.quantite_chargee = Some(value),
@@ -174,7 +175,7 @@ impl Context {
         }
     }
 
-    pub fn get_info_f32(&self, id_info: &IdInfo) -> Option<f32> {
+    pub fn get_info_f32(&self, id_info: IdInfo) -> Option<f32> {
         match id_info {
             IdInfo::DebitInstant => self.debit_instant,
             IdInfo::TemperatureInstant => self.temperature_instant,
@@ -183,7 +184,7 @@ impl Context {
         }
     }
 
-    pub fn set_info_f32(&mut self, id_info: &IdInfo, value: f32) {
+    pub fn set_info_f32(&mut self, id_info: IdInfo, value: f32) {
         match id_info {
             IdInfo::DebitInstant => self.debit_instant = Some(value),
             IdInfo::TemperatureInstant => self.temperature_instant = Some(value),
@@ -193,50 +194,49 @@ impl Context {
     }
 }
 
-/** Implémentation générique des getters/setters **/
-
+/// Implémentation générique des getters/setters
 pub trait CommonContextTrait<T> {
-    fn get_info(&self, id_info: &IdInfo) -> Option<T>;
+    fn get_info(&self, id_info: IdInfo) -> Option<T>;
 
-    fn set_info(&mut self, id_info: &IdInfo, value: T);
+    fn set_info(&mut self, id_info: IdInfo, value: T);
 }
 
 impl CommonContextTrait<bool> for Context {
-    fn get_info(&self, id_info: &IdInfo) -> Option<bool> {
+    fn get_info(&self, id_info: IdInfo) -> Option<bool> {
         self.get_info_bool(id_info)
     }
 
-    fn set_info(&mut self, id_info: &IdInfo, value: bool) {
+    fn set_info(&mut self, id_info: IdInfo, value: bool) {
         self.set_info_bool(id_info, value);
     }
 }
 
 impl CommonContextTrait<u8> for Context {
-    fn get_info(&self, id_info: &IdInfo) -> Option<u8> {
+    fn get_info(&self, id_info: IdInfo) -> Option<u8> {
         self.get_info_u8(id_info)
     }
 
-    fn set_info(&mut self, id_info: &IdInfo, value: u8) {
+    fn set_info(&mut self, id_info: IdInfo, value: u8) {
         self.set_info_u8(id_info, value);
     }
 }
 
 impl CommonContextTrait<u32> for Context {
-    fn get_info(&self, id_info: &IdInfo) -> Option<u32> {
+    fn get_info(&self, id_info: IdInfo) -> Option<u32> {
         self.get_info_u32(id_info)
     }
 
-    fn set_info(&mut self, id_info: &IdInfo, value: u32) {
+    fn set_info(&mut self, id_info: IdInfo, value: u32) {
         self.set_info_u32(id_info, value);
     }
 }
 
 impl CommonContextTrait<f32> for Context {
-    fn get_info(&self, id_info: &IdInfo) -> Option<f32> {
+    fn get_info(&self, id_info: IdInfo) -> Option<f32> {
         self.get_info_f32(id_info)
     }
 
-    fn set_info(&mut self, id_info: &IdInfo, value: f32) {
+    fn set_info(&mut self, id_info: IdInfo, value: f32) {
         self.set_info_f32(id_info, value);
     }
 }
@@ -248,7 +248,7 @@ mod tests {
 
     #[test]
     fn test_get_set() {
-        fn check_id_code(context: &mut Context, id_info: &IdInfo) {
+        fn check_id_code(context: &mut Context, id_info: IdInfo) {
             match self::get_info_format(id_info) {
                 FormatInfo::FormatBool => {
                     assert!(context.get_info_bool(id_info).is_none());
@@ -286,16 +286,16 @@ mod tests {
         // Pas besoin de mettre ici tous les IdInfos... Au moins tester les différents formats :)
         // TODO : Pas réussi à mettre en oeuvre le crate `enum-iterator` qui permettrait d'itérer
         //        sur toutes les valeurs d'un Enum :(
-        check_id_code(&mut context, &IdInfo::EnMesurage);
-        check_id_code(&mut context, &IdInfo::CodeDefaut);
-        check_id_code(&mut context, &IdInfo::ArretIntermediaire);
-        check_id_code(&mut context, &IdInfo::ForcagePetitDebit);
-        check_id_code(&mut context, &IdInfo::ModeConnecte);
-        check_id_code(&mut context, &IdInfo::Totalisateur);
-        check_id_code(&mut context, &IdInfo::DebitInstant);
-        check_id_code(&mut context, &IdInfo::QuantiteChargee);
-        check_id_code(&mut context, &IdInfo::TemperatureInstant);
-        check_id_code(&mut context, &IdInfo::Predetermination);
+        check_id_code(&mut context, IdInfo::EnMesurage);
+        check_id_code(&mut context, IdInfo::CodeDefaut);
+        check_id_code(&mut context, IdInfo::ArretIntermediaire);
+        check_id_code(&mut context, IdInfo::ForcagePetitDebit);
+        check_id_code(&mut context, IdInfo::ModeConnecte);
+        check_id_code(&mut context, IdInfo::Totalisateur);
+        check_id_code(&mut context, IdInfo::DebitInstant);
+        check_id_code(&mut context, IdInfo::QuantiteChargee);
+        check_id_code(&mut context, IdInfo::TemperatureInstant);
+        check_id_code(&mut context, IdInfo::Predetermination);
     }
 
     #[test]
@@ -307,7 +307,7 @@ mod tests {
         let context: Context = Context::default();
 
         // Lecture d'une température (F_32) dans un bool
-        let _ = context.get_info_bool(&IdInfo::TemperatureInstant);
+        let _ = context.get_info_bool(IdInfo::TemperatureInstant);
     }
 
     #[test]
@@ -318,20 +318,20 @@ mod tests {
         // Il faut bien préciser les types des informations à gérer et ne pas se tromper
         // sinon panic!
 
-        context.set_info(&IdInfo::EnMesurage, true);
-        let my_value: Option<bool> = context.get_info(&IdInfo::EnMesurage);
+        context.set_info(IdInfo::EnMesurage, true);
+        let my_value: Option<bool> = context.get_info(IdInfo::EnMesurage);
         assert_eq!(my_value, Some(true));
 
-        context.set_info(&IdInfo::CodeDefaut, 10_u8);
-        let my_value: Option<u8> = context.get_info(&IdInfo::CodeDefaut);
+        context.set_info(IdInfo::CodeDefaut, 10_u8);
+        let my_value: Option<u8> = context.get_info(IdInfo::CodeDefaut);
         assert_eq!(my_value, Some(10_u8));
 
-        context.set_info(&IdInfo::Predetermination, 1000_u32);
-        let my_value: Option<u32> = context.get_info(&IdInfo::Predetermination);
+        context.set_info(IdInfo::Predetermination, 1000_u32);
+        let my_value: Option<u32> = context.get_info(IdInfo::Predetermination);
         assert_eq!(my_value, Some(1000_u32));
 
-        context.set_info(&IdInfo::TemperatureInstant, -12.3);
-        let my_value: Option<f32> = context.get_info(&IdInfo::TemperatureInstant);
+        context.set_info(IdInfo::TemperatureInstant, -12.3);
+        let my_value: Option<f32> = context.get_info(IdInfo::TemperatureInstant);
         assert_eq!(my_value, Some(-12.3));
     }
 
@@ -344,6 +344,6 @@ mod tests {
         let context: Context = Context::default();
 
         // Lecture d'une température (F_32) dans un u32
-        let _: Option<u32> = context.get_info(&IdInfo::TemperatureInstant);
+        let _: Option<u32> = context.get_info(IdInfo::TemperatureInstant);
     }
 }
