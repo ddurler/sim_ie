@@ -79,18 +79,18 @@ pub struct Context {
 }
 
 /// Retourne le libellé d'un information du contexte
-pub fn get_info_name(id_info: IdInfo) -> &'static str {
+pub fn get_info_name(id_info: IdInfo) -> String {
     match id_info {
-        IdInfo::EnMesurage => "En mesurage",
-        IdInfo::CodeDefaut => "Code défaut",
-        IdInfo::ArretIntermediaire => "Arrêt intermédiaire",
-        IdInfo::ForcagePetitDebit => "Forçage petit débit",
-        IdInfo::ModeConnecte => "Mode connecté",
-        IdInfo::Totalisateur => "Totalisateur",
-        IdInfo::DebitInstant => "Débit instantané",
-        IdInfo::QuantiteChargee => "Quantité chargée",
-        IdInfo::TemperatureInstant => "Température instantanée",
-        IdInfo::Predetermination => "Prédétermination",
+        IdInfo::EnMesurage => "En mesurage".to_string(),
+        IdInfo::CodeDefaut => "Code défaut".to_string(),
+        IdInfo::ArretIntermediaire => "Arrêt intermédiaire".to_string(),
+        IdInfo::ForcagePetitDebit => "Forçage petit débit".to_string(),
+        IdInfo::ModeConnecte => "Mode connecté".to_string(),
+        IdInfo::Totalisateur => "Totalisateur".to_string(),
+        IdInfo::DebitInstant => "Débit instantané".to_string(),
+        IdInfo::QuantiteChargee => "Quantité chargée".to_string(),
+        IdInfo::TemperatureInstant => "Température instantanée".to_string(),
+        IdInfo::Predetermination => "Prédétermination".to_string(),
     }
 }
 

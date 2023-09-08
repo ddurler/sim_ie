@@ -25,7 +25,7 @@ pub fn input_info(context: &Context, id_info: IdInfo) -> Element<Message> {
 
     let str_place_holder = crate::context::get_info_name(id_info);
     let str_value = show_infos::str_info(context, id_info, STR_INPUT_INFO_NONE);
-    let txt_input = TextInput::new(str_place_holder, &str_value)
+    let txt_input = TextInput::new(&str_place_holder, &str_value)
         .width(INPUT_WIDTH)
         .on_input(move |str| Message::InputInfo(str, id_info));
     let row = row.push(txt_input);
