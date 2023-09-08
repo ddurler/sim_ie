@@ -48,25 +48,19 @@ pub fn str_info_f32(context: &Context, id_info: IdInfo, str_none: &str) -> Strin
     }
 }
 
-/// Visualisation IHM générique de la valeur du champ `IdInfo`
-/// On utilise ici une fonction qui retourne le texte à afficher pour un `IdInfo`
-fn show_info_generic(
-    context: &Context,
-    id_info: IdInfo,
-    f: fn(&Context, IdInfo, &str) -> String,
-    str_none: &str,
-) -> Element<'static, Message> {
-    let txt = f(context, id_info, str_none);
-    let txt = format!("{} : {}", context::get_info_name(id_info), txt);
-    Text::new(txt).into()
+/// Affichage d'un champ `IdInfo`
+pub fn str_info(context: &Context, id_info: IdInfo, str_none: &str) -> String {
+    match context::get_info_format(id_info) {
+        FormatInfo::FormatBool => str_info_bool(context, id_info, str_none),
+        FormatInfo::FormatU8 => str_info_u8(context, id_info, str_none),
+        FormatInfo::FormatU32 => str_info_u32(context, id_info, str_none),
+        FormatInfo::FormatF32 => str_info_f32(context, id_info, str_none),
+    }
 }
 
 /// Visualisation IHM de la valeur du champ `IdInfo`
 pub fn show_info(context: &Context, id_info: IdInfo) -> Element<'static, Message> {
-    match context::get_info_format(id_info) {
-        FormatInfo::FormatBool => show_info_generic(context, id_info, str_info_bool, STR_INFO_NONE),
-        FormatInfo::FormatU8 => show_info_generic(context, id_info, str_info_u8, STR_INFO_NONE),
-        FormatInfo::FormatU32 => show_info_generic(context, id_info, str_info_u32, STR_INFO_NONE),
-        FormatInfo::FormatF32 => show_info_generic(context, id_info, str_info_f32, STR_INFO_NONE),
-    }
+    let txt = str_info(context, id_info, STR_INFO_NONE);
+    let txt = format!("{} : {}", context::get_info_name(id_info), txt);
+    Text::new(txt).into()
 }
