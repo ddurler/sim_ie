@@ -2,9 +2,13 @@
 
 use iced::widget::{Row, Text, TextInput};
 
+use super::show_infos;
 use super::{Element, Message};
 use crate::context;
 use context::{Context, FormatInfo, IdInfo};
+
+/// Affichage en édition d'un champ non défini
+const STR_INPUT_INFO_NONE: &str = "";
 
 /// Largeur harmonisée de tous les libellés en saisie
 const LABEL_WIDTH: f32 = 100.0;
@@ -20,17 +24,7 @@ fn input_info_bool(context: &Context, id_info: IdInfo) -> Element<Message> {
     let row = row.push(txt);
 
     let str_place_holder = crate::context::get_info_name(id_info);
-    let option_value = context.get_info_bool(id_info);
-    let str_value = match option_value {
-        None => "",
-        Some(value) => {
-            if value {
-                "O"
-            } else {
-                "N "
-            }
-        }
-    };
+    let str_value = &show_infos::str_info_bool(context, id_info, STR_INPUT_INFO_NONE);
     let txt_input = TextInput::new(str_place_holder, str_value)
         .width(INPUT_WIDTH)
         .on_input(move |str| Message::InputInfo(str, id_info));
@@ -54,12 +48,8 @@ fn input_info_u8(context: &Context, id_info: IdInfo) -> Element<Message> {
     let row = row.push(txt);
 
     let str_place_holder = crate::context::get_info_name(id_info);
-    let option_value = context.get_info_u8(id_info);
-    let txt_value = match option_value {
-        None => String::new(),
-        Some(value) => format!("{value}"),
-    };
-    let txt_input = TextInput::new(str_place_holder, &txt_value)
+    let str_value = show_infos::str_info_u8(context, id_info, STR_INPUT_INFO_NONE);
+    let txt_input = TextInput::new(str_place_holder, &str_value)
         .width(INPUT_WIDTH)
         .on_input(move |str| Message::InputInfo(str, id_info));
     let row = row.push(txt_input);
@@ -84,12 +74,8 @@ fn input_info_u32(context: &Context, id_info: IdInfo) -> Element<Message> {
     let row = row.push(txt);
 
     let str_place_holder = crate::context::get_info_name(id_info);
-    let option_value = context.get_info_u32(id_info);
-    let txt_value = match option_value {
-        None => String::new(),
-        Some(value) => format!("{value}"),
-    };
-    let txt_input = TextInput::new(str_place_holder, &txt_value)
+    let str_value = show_infos::str_info_u32(context, id_info, STR_INPUT_INFO_NONE);
+    let txt_input = TextInput::new(str_place_holder, &str_value)
         .width(INPUT_WIDTH)
         .on_input(move |str| Message::InputInfo(str, id_info));
     let row = row.push(txt_input);
@@ -114,12 +100,8 @@ fn input_info_f32(context: &Context, id_info: IdInfo) -> Element<Message> {
     let row = row.push(txt);
 
     let str_place_holder = crate::context::get_info_name(id_info);
-    let option_value = context.get_info_f32(id_info);
-    let txt_value = match option_value {
-        None => String::new(),
-        Some(value) => format!("{value:.1}"),
-    };
-    let txt_input = TextInput::new(str_place_holder, &txt_value)
+    let str_value = show_infos::str_info_f32(context, id_info, STR_INPUT_INFO_NONE);
+    let txt_input = TextInput::new(str_place_holder, &str_value)
         .width(INPUT_WIDTH)
         .on_input(move |str| Message::InputInfo(str, id_info));
     let row = row.push(txt_input);
