@@ -13,7 +13,12 @@
 
 ///
 /// Nota : C'est un peu relou à maintenir mais très pratique pour l'IHM...
-///
+
+/// Nombre max de produit
+const NB_PRODUITS: usize = 16;
+
+/// Nombre de caractères pour un libellé produit
+const LIBELLE_PRODUIT_WIDTH: usize = 10;
 
 /// Format possible d'une information du contexte
 #[derive(Clone, Debug)]
@@ -22,6 +27,7 @@ pub enum FormatInfo {
     FormatU8,
     FormatU32,
     FormatF32,
+    FormatString(usize),
 }
 
 /// Énumération des informations du contexte
@@ -37,6 +43,7 @@ pub enum IdInfo {
     QuantiteChargee,
     TemperatureInstant,
     Predetermination,
+    LibelleProduit(usize),
 }
 
 /// Dictionnaire des données pour les requêtes et les réponses
@@ -76,6 +83,10 @@ pub struct Context {
 
     /// Prédétermination (en échelon = Litre ou kg)
     predetermination: Option<u32>,
+
+    /* Pour + tard... */
+    /// Libellés des max. NB_PRODUITS produits
+    libelle_produits: Vec<String>,
 }
 
 /// Retourne le libellé d'un information du contexte
@@ -91,6 +102,7 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::QuantiteChargee => "Quantité chargée".to_string(),
         IdInfo::TemperatureInstant => "Température instantanée".to_string(),
         IdInfo::Predetermination => "Prédétermination".to_string(),
+        IdInfo::LibelleProduit(prod_num) => format!("Libellé produit #{prod_num}"),
     }
 }
 
@@ -113,6 +125,9 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
 
         /* F32 */
         IdInfo::DebitInstant | IdInfo::TemperatureInstant => FormatInfo::FormatF32,
+
+        /* String */
+        IdInfo::LibelleProduit(_prod_num) => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
     }
 }
 
@@ -192,6 +207,50 @@ impl Context {
             _ => panic!("Cette information n'est pas f32 : {id_info:?}"),
         }
     }
+
+    /// Getter particulier pour les produits
+    /// (la table des produits est construite par morceaux...)
+    fn get_info_libelle_produits(&self, prod_num: usize) -> Option<String> {
+        assert!(prod_num <= NB_PRODUITS);
+        if self.libelle_produits.len() <= prod_num {
+            None
+        } else {
+            Some(self.libelle_produits[prod_num].clone())
+        }
+    }
+
+    pub fn get_info_string(&self, id_info: IdInfo) -> Option<String> {
+        match id_info {
+            IdInfo::LibelleProduit(prod_num) => self.get_info_libelle_produits(prod_num),
+
+            _ => panic!("Cette information n'est pas string : {id_info:?}"),
+        }
+    }
+
+    /// Setter particulier pour les produits
+    /// (la table des produits est construite par morceaux...)
+    fn set_info_libelle_produits(&mut self, prod_num: usize, value: &str) {
+        assert!(prod_num <= NB_PRODUITS);
+        while self.libelle_produits.len() <= prod_num {
+            self.libelle_produits.push("???".to_string());
+        }
+        let txt = if value.len() > LIBELLE_PRODUIT_WIDTH {
+            // Tronque si libellé trop long
+            // /!\ format! ne le fait pas...
+            value[..LIBELLE_PRODUIT_WIDTH].to_string()
+        } else {
+            value.to_string()
+        };
+        self.libelle_produits[prod_num] = txt;
+    }
+
+    pub fn set_info_string(&mut self, id_info: IdInfo, value: &str) {
+        match id_info {
+            IdInfo::LibelleProduit(prod_num) => self.set_info_libelle_produits(prod_num, value),
+
+            _ => panic!("Cette information n'est pas string : {id_info:?}"),
+        };
+    }
 }
 
 /// Implémentation générique des getters/setters
@@ -241,6 +300,16 @@ impl CommonContextTrait<f32> for Context {
     }
 }
 
+impl CommonContextTrait<String> for Context {
+    fn get_info(&self, id_info: IdInfo) -> Option<String> {
+        self.get_info_string(id_info)
+    }
+
+    fn set_info(&mut self, id_info: IdInfo, value: String) {
+        self.set_info_string(id_info, &value);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -278,6 +347,13 @@ mod tests {
                         assert_eq!(context.get_info_f32(id_info), Some(value));
                     }
                 }
+                FormatInfo::FormatString(_width) => {
+                    assert!(context.get_info_string(id_info).is_none());
+                    for value in ["", "ABC"] {
+                        context.set_info_string(id_info, value);
+                        assert_eq!(context.get_info_string(id_info), Some(value.to_string()));
+                    }
+                }
             }
         }
 
@@ -296,6 +372,9 @@ mod tests {
         check_id_code(&mut context, IdInfo::QuantiteChargee);
         check_id_code(&mut context, IdInfo::TemperatureInstant);
         check_id_code(&mut context, IdInfo::Predetermination);
+        for prod_num in 0..=NB_PRODUITS {
+            check_id_code(&mut context, IdInfo::LibelleProduit(prod_num));
+        }
     }
 
     #[test]
@@ -333,6 +412,10 @@ mod tests {
         context.set_info(IdInfo::TemperatureInstant, -12.3);
         let my_value: Option<f32> = context.get_info(IdInfo::TemperatureInstant);
         assert_eq!(my_value, Some(-12.3));
+
+        context.set_info(IdInfo::LibelleProduit(5), "TEST".to_string());
+        let my_value: Option<String> = context.get_info(IdInfo::LibelleProduit(5));
+        assert_eq!(my_value, Some("TEST".to_string()));
     }
 
     #[test]

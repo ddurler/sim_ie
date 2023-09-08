@@ -41,6 +41,12 @@ fn callback_input_info_bool(context: &mut Context, input: &str, id_info: IdInfo)
     context.set_info_bool(id_info, value);
 }
 
+/// Callback IHM modification de la valeur d'un champ String
+fn callback_input_info_string(context: &mut Context, input: &str, id_info: IdInfo, width: usize) {
+    let value = format!("{input:width$}");
+    context.set_info_string(id_info, &value);
+}
+
 /// Callback IHM modification de la valeur d'un champ numérique (U8, U32, F32, etc...)
 /// (Le type `<T>` doit être également géré par `context.set_info`)
 fn callback_input_info_generic<T>(context: &mut Context, input: &str, id_info: IdInfo)
@@ -61,5 +67,8 @@ pub fn callback_input_info(context: &mut Context, input: &str, id_info: IdInfo) 
         FormatInfo::FormatU8 => callback_input_info_generic::<u8>(context, input, id_info),
         FormatInfo::FormatU32 => callback_input_info_generic::<u32>(context, input, id_info),
         FormatInfo::FormatF32 => callback_input_info_generic::<f32>(context, input, id_info),
+        FormatInfo::FormatString(width) => {
+            callback_input_info_string(context, input, id_info, width);
+        }
     }
 }
