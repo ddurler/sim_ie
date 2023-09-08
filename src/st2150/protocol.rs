@@ -7,7 +7,6 @@
 
 use std::time::SystemTime;
 
-use super::ProtocolError;
 use crate::serial_com::{CommonSerialComTrait, SerialCom};
 
 /// Début de message
@@ -55,17 +54,10 @@ pub fn calcul_checksum(data: &[u8]) -> u8 {
 /// Primitive générique pour attendre une réponse sur la liaison série
 /// `port` : Référence au port série (true ou FAKE) à utiliser
 /// `buffer` : Buffer pour les octets reçus sur le port
-/// `expected_len` : Longueur de la réponse attendue. Dès qu'un nombre au moins égal à cette longueur
-/// est reçu, la fonction retourne à l'appelant. Sinon, un timeout court pour retourner une erreur
-/// à l'appelant
-/// # Errors
-/// `ProtocolError::NoReply` : Rien n'a été reçue en réponse
-/// `ProtocolError::ReplyTooShort` : Reçu quelques octets mais pas autant qu'attendus
-pub fn waiting_frame(
-    port: &mut SerialCom,
-    buffer: &mut [u8],
-    expected_len: usize,
-) -> Result<usize, ProtocolError> {
+/// `max_expected_len` : Longueur max. de la réponse attendue. Dès que ce nombre max. est reçu,
+/// la fonction retourne. Sinon, c'est le timeout qui agit (un timeout différent entre aucune réponse
+/// et un timeout inter-caractères)
+pub fn waiting_frame(port: &mut SerialCom, buffer: &mut [u8], max_expected_len: usize) -> usize {
     let mut total_len_received = 0;
     let mut start_time = SystemTime::now();
 
@@ -77,25 +69,22 @@ pub fn waiting_frame(
             total_len_received += len_received;
             start_time = SystemTime::now();
         }
-        if total_len_received >= expected_len {
-            // On a reçu au moins le nombre d'octets attendus, on retourne
-            return Ok(total_len_received);
+        if total_len_received >= max_expected_len {
+            // On a reçu au moins le nombre max d'octets attendus, on retourne
+            return total_len_received;
         }
         if total_len_received > 0 {
-            // On a reçu qq. chose (mais pas assez), c'est le timeout fin de trame qui compte
+            // On a reçu qq. chose (mais pas le max assez), c'est le timeout fin de trame qui compte
             if let Ok(elapsed) = start_time.elapsed() {
                 if elapsed.as_secs_f32() > TIMEOUT_END_FRAME {
-                    return Err(ProtocolError::ReplyTooShort(
-                        total_len_received,
-                        expected_len,
-                    ));
+                    return total_len_received;
                 }
             }
         } else {
             // Absolument rien reçu en réponse
             if let Ok(elapsed) = start_time.elapsed() {
                 if elapsed.as_secs_f32() > TIMEOUT_READ_FRAME {
-                    return Err(ProtocolError::NoReply);
+                    return 0;
                 }
             }
         }
@@ -128,10 +117,9 @@ mod tests {
         fake_port.will_read(&[0x01, 0x02, 0x03]);
 
         let mut buffer = [0; 500];
-        let rep = waiting_frame(&mut fake_port, &mut buffer, 3);
+        let rep_len = waiting_frame(&mut fake_port, &mut buffer, 3);
 
-        assert!(rep.is_ok());
-        assert_eq!(rep.unwrap(), 3);
+        assert_eq!(rep_len, 3);
         assert_eq!(buffer[0..3], [0x01, 0x02, 0x03]);
     }
 }

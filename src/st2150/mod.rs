@@ -21,9 +21,6 @@ pub enum ProtocolError {
     /// Pas de réponse du calculateur
     NoReply,
 
-    /// Réponse incomplète du calculateur (nb octets reçus, attendus)
-    ReplyTooShort(usize, usize),
-
     /// Longueur incorrecte de message (nb octets message, attendus)
     BadMessageLen(usize, usize),
 
@@ -59,10 +56,6 @@ impl Display for ProtocolError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ProtocolError::NoReply => write!(f, "Pas de réponse du calculateur"),
-            ProtocolError::ReplyTooShort(nb, nb_expected) => write!(
-                f,
-                "Réponse incomplète du calculateur ({nb}/{nb_expected} cars)"
-            ),
             ProtocolError::BadMessageLen(nb, nb_expected) => write!(
                 f,
                 "Longueur incorrecte du message ({nb}/{nb_expected} cars)"
@@ -149,29 +142,26 @@ impl ST2150 {
     }
 
     /// Attente d'un message (réponse)
-    fn wait_rep(&mut self, buffer: &mut [u8], expected_len: usize) -> Result<usize, ProtocolError> {
+    fn wait_rep(
+        &mut self,
+        buffer: &mut [u8],
+        expected_lens: &[usize],
+    ) -> Result<usize, ProtocolError> {
         self.last_rep = vec![];
-        let rep = protocol::waiting_frame(&mut self.port, buffer, expected_len);
-        let len_rep = match rep {
-            Err(e) => {
-                match e {
-                    ProtocolError::ReplyTooShort(len_rep, _) => {
-                        self.set_last_rep(buffer, len_rep, format!("{e}"));
-                    }
-                    ProtocolError::NoReply => {
-                        self.set_last_rep(&[], 0, format!("{e}"));
-                    }
-                    // Pas de trace dans les autres cas (qui ne peuvent pas revenir de `waiting_frame`)
-                    _ => (),
-                }
-                return Err(e);
-            }
-            Ok(n) => {
-                self.set_last_rep(buffer, n, String::new());
-                n // Nombre de caractères reçus
-            }
-        };
+        let max_expected_len = *expected_lens.iter().max().unwrap_or(&0);
+        let len_rep = protocol::waiting_frame(&mut self.port, buffer, max_expected_len);
+        if len_rep == 0 {
+            let e = ProtocolError::NoReply;
+            self.set_last_rep(buffer, len_rep, format!("{e}"));
+            return Err(e);
+        }
+        if !expected_lens.contains(&len_rep) {
+            let e = ProtocolError::BadMessageLen(len_rep, max_expected_len);
+            self.set_last_rep(buffer, len_rep, format!("{e}"));
+            return Err(e);
+        }
 
+        self.set_last_rep(buffer, len_rep, String::new());
         Ok(len_rep)
     }
 
