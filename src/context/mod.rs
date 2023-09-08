@@ -43,14 +43,14 @@ pub enum IdInfo {
     QuantiteChargee,
     TemperatureInstant,
     Predetermination,
+    CodeProduit,
+    Ack,
     LibelleProduit(usize),
 }
 
 /// Dictionnaire des données pour les requêtes et les réponses
 #[derive(Debug, Default)]
 pub struct Context {
-    /* Réponse Message 00 */
-    /* ------------------ */
     /// En mesurage
     en_mesurage: Option<bool>,
 
@@ -67,8 +67,6 @@ pub struct Context {
     /// En mode connecté
     mode_connecte: Option<bool>,
 
-    /* Réponse Message 10 */
-    /* ------------------ */
     /// Totalisateur (en échelon = Litre ou kg)
     totalisateur: Option<u32>,
 
@@ -83,6 +81,12 @@ pub struct Context {
 
     /// Prédétermination (en échelon = Litre ou kg)
     predetermination: Option<u32>,
+
+    /// Code produit
+    code_produit: Option<u8>,
+
+    /// ACK du dernier message
+    ack: Option<bool>,
 
     /* Pour + tard... */
     /// Libellés des max. NB_PRODUITS produits
@@ -102,6 +106,8 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::QuantiteChargee => "Quantité chargée".to_string(),
         IdInfo::TemperatureInstant => "Température instantanée".to_string(),
         IdInfo::Predetermination => "Prédétermination".to_string(),
+        IdInfo::CodeProduit => "Code produit".to_string(),
+        IdInfo::Ack => "Acquit message".to_string(),
         IdInfo::LibelleProduit(prod_num) => format!("Libellé produit #{prod_num}"),
     }
 }
@@ -113,10 +119,11 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         IdInfo::EnMesurage
         | IdInfo::ArretIntermediaire
         | IdInfo::ForcagePetitDebit
-        | IdInfo::ModeConnecte => FormatInfo::FormatBool,
+        | IdInfo::ModeConnecte
+        | IdInfo::Ack => FormatInfo::FormatBool,
 
         /* U8 */
-        IdInfo::CodeDefaut => FormatInfo::FormatU8,
+        IdInfo::CodeDefaut | IdInfo::CodeProduit => FormatInfo::FormatU8,
 
         /* U32 */
         IdInfo::Totalisateur | IdInfo::QuantiteChargee | IdInfo::Predetermination => {
@@ -138,6 +145,7 @@ impl Context {
             IdInfo::ArretIntermediaire => self.arret_intermediaire,
             IdInfo::ForcagePetitDebit => self.forcage_petit_debit,
             IdInfo::ModeConnecte => self.mode_connecte,
+            IdInfo::Ack => self.ack,
 
             _ => panic!("Cette information n'est pas booléenne : {id_info:?}"),
         }
@@ -149,6 +157,7 @@ impl Context {
             IdInfo::ArretIntermediaire => self.arret_intermediaire = Some(value),
             IdInfo::ForcagePetitDebit => self.forcage_petit_debit = Some(value),
             IdInfo::ModeConnecte => self.mode_connecte = Some(value),
+            IdInfo::Ack => self.ack = Some(value),
 
             _ => panic!("Cette information n'est pas booléenne : {id_info:?}"),
         }
@@ -157,6 +166,7 @@ impl Context {
     pub fn get_info_u8(&self, id_info: IdInfo) -> Option<u8> {
         match id_info {
             IdInfo::CodeDefaut => self.code_defaut,
+            IdInfo::CodeProduit => self.code_produit,
 
             _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
         }
@@ -165,6 +175,7 @@ impl Context {
     pub fn set_info_u8(&mut self, id_info: IdInfo, value: u8) {
         match id_info {
             IdInfo::CodeDefaut => self.code_defaut = Some(value),
+            IdInfo::CodeProduit => self.code_produit = Some(value),
 
             _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
         }
@@ -372,6 +383,9 @@ mod tests {
         check_id_code(&mut context, IdInfo::QuantiteChargee);
         check_id_code(&mut context, IdInfo::TemperatureInstant);
         check_id_code(&mut context, IdInfo::Predetermination);
+        check_id_code(&mut context, IdInfo::CodeProduit);
+        check_id_code(&mut context, IdInfo::Ack);
+
         for prod_num in 0..=NB_PRODUITS {
             check_id_code(&mut context, IdInfo::LibelleProduit(prod_num));
         }
