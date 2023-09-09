@@ -31,7 +31,7 @@ pub enum FormatInfo {
 }
 
 /// Énumération des informations du contexte
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IdInfo {
     EnMesurage,
     CodeDefaut,

@@ -119,12 +119,25 @@ impl AppView {
 
     /// Informations pour la réponse courante
     pub fn view_response(&self) -> Element<Message> {
+        // Si la réponse contient NACK à true, on n'affiche que cette info
+        fn is_nack(context: &Context, id_infos: &[IdInfo]) -> bool {
+            if id_infos.contains(&IdInfo::Nack) {
+                if let Some(value) = context.get_info_bool(IdInfo::Nack) {
+                    return value;
+                }
+            }
+            false
+        }
+
         let id_infos = self.dyn_message.id_infos_response();
 
         let mut col = Column::new();
 
         if id_infos.is_empty() {
             let txt = Text::new("(Pas d'information)");
+            col = col.push(txt);
+        } else if is_nack(&self.context, &id_infos) {
+            let txt = Text::new("REPONSE : NACK !!!");
             col = col.push(txt);
         } else {
             for id_info in id_infos {
@@ -136,7 +149,7 @@ impl AppView {
         col.into()
     }
 
-    /// Zone avec Status ou bouton action selon le contexte
+    /// Zone avec bouton action selon le contexte
     pub fn view_do_vacation(&self) -> Element<Message> {
         let mut row = Row::new();
 
@@ -156,15 +169,15 @@ impl AppView {
                 row = row.push(btn_do_it);
             }
             Err(e) => {
-                // Texte de l'erreur ne permettant pas d'exécuter cette commande
-                let txt_error = format!(
+                // Info de cette commande (indisponible)
+                let txt_info = format!(
                     "Message '{:02}' sur le port {} : {}",
                     self.dyn_message.message_num(),
                     self.st2150.port.name,
                     e
                 );
-                let txt_error: Text = Text::new(txt_error);
-                row = row.push(txt_error);
+                let txt_info: Text = Text::new(txt_info);
+                row = row.push(txt_info);
             }
         };
 
