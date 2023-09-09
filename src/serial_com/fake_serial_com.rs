@@ -4,10 +4,10 @@ use crate::CommonSerialComTrait;
 /// Port série fictif
 #[derive(Default)]
 pub struct FakeSerialCom {
-    /// Ecriture attendue pour les 'write'
+    /// Ecriture attendue pour le prochain 'write'
     should_write: Vec<u8>,
 
-    /// Réponse à faire pour un `read`
+    /// Réponse à faire pour le prochain `read`
     will_read: Vec<u8>,
 }
 
@@ -17,7 +17,9 @@ impl CommonSerialComTrait for FakeSerialCom {
         for (dst, src) in buffer.iter_mut().zip(self.will_read.iter()) {
             *dst = *src;
         }
-        self.will_read.len()
+        let len = self.will_read.len();
+        self.will_read = vec![]; // valable 1 fois
+        len
     }
 
     /// Fake write
@@ -26,6 +28,7 @@ impl CommonSerialComTrait for FakeSerialCom {
         if !self.should_write.is_empty() {
             // Si un 'should_write' a été défini, on doit le retrouver ici
             assert_eq!(buffer, self.should_write);
+            self.should_write = vec![]; // Valable qu'une seule fois
         }
     }
 
@@ -65,11 +68,32 @@ mod tests {
         fake.will_read(&[1, 2, 3]);
         assert_eq!(fake.read(&mut buffer), 3);
         assert_eq!(buffer[..3], [1, 2, 3]);
+
+        // Mais valable que pour un 'read'
+        let mut buffer: [u8; 512] = [0; 512];
+        assert_eq!(fake.read(&mut buffer), 0);
+    }
+
+    #[test]
+    fn test_fake_serial_port_should_write() {
+        let mut fake = FakeSerialCom::default();
+
+        // On peut écrire un FAKE port (c'est sans effet sans should_write)
+        fake.write(&[1, 2, 3]);
+
+        // Par contre, si on indique le contenu de la prochaine écriture
+        fake.should_write(&[1, 2, 3]);
+
+        // Pas de panic! si c'est ce qui est effectivement écrit
+        fake.write(&[1, 2, 3]);
+
+        // Valable qu'un fois, donc pas de panic! sur les écritures suivantes
+        fake.write(&[2, 3, 4]);
     }
 
     #[test]
     #[should_panic]
-    fn test_fake_serial_port_should_write() {
+    fn test_fake_serial_port_should_write_panic() {
         let mut fake = FakeSerialCom::default();
 
         // On peut écrire un FAKE port (c'est sans effet sans should_write)
