@@ -20,6 +20,18 @@ const NB_PRODUITS: usize = 16;
 /// Nombre de caractères pour un libellé produit
 const LIBELLE_PRODUIT_WIDTH: usize = 10;
 
+// Pour ajouter un nouveau format de données pour le contexte :
+//
+// 1 - Ajouter ce format dans la liste des enum de `FormatInfo`
+// 2 - Créer au moins une information dans le contexte avec ce format pour pouvoir tester
+//     (Voir ci-dessous les instructions pour créer une nouvelle information dans le contexte)
+// 3 - Ajouter la fonction `get_info_mon_nouveau_format` dans l'implémentation de `Context`
+// 4 - Ajouter la fonction `set_info_mon_nouveau_format` dans l'implémentation de `Context`
+// 5 - Implémenter `CommonContextTrait` pour ce nouveau format
+//     `impl CommonContextTrait<NouveauFormat> for Context { ...`
+// 6 - Completer les tests pour ce nouveau format : `test_get_set` et `test_get_set_generic`
+// C'est tout :)
+
 /// Format possible d'une information du contexte
 #[derive(Clone, Debug)]
 pub enum FormatInfo {
@@ -29,6 +41,18 @@ pub enum FormatInfo {
     FormatF32,
     FormatString(usize),
 }
+
+// Pour ajouter une nouvelle information 'Xxx' d'un format `mon_format` dans le contexte :
+// 1 - Ajouter `Xxx` dans l'énumération de `IdInfo`
+// 2 - Ajouter 'xxx: `Option<mon_format>`` dans la structure `Context`
+//      (d'autres implémentations sont également possibles. Adapter alors la suite des modifications)
+// 3 - Ajouter le libellé de cette information Xxx dans `get_info_name`
+// 4 - Ajouter le type de format de cette information Xxx dans `get_info_format`
+// 5 - Ajouter le cas IdInfo::Xxx dans la fonction `get_info_format` dans l'implémentation de `Context`
+// 6 - Ajouter le cas IdInfo::Xxx dans la fonction `set_info_format` dans l'implémentation de `Context`
+// 7 - Pour les tests, ajouter `check_id_code(&mut context, IdInfo::Xxx);` dans la fonction `test_get_set`
+// Et c'est tout :)
+
 
 /// Énumération des informations du contexte
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -336,6 +360,7 @@ mod tests {
 
     #[test]
     fn test_get_set() {
+        // Cette fonction devrait être appelée avec des `IdInfo` de tous les `FormatInfo` possibles
         fn check_id_code(context: &mut Context, id_info: IdInfo) {
             match self::get_info_format(id_info) {
                 FormatInfo::FormatBool => {
@@ -378,7 +403,7 @@ mod tests {
 
         let mut context = Context::default();
 
-        // Pas besoin de mettre ici tous les IdInfos... Au moins tester les différents formats :)
+        // Idéalement, mettre ici tous les IdInfos... Au moins tester les différents formats :)
         // TODO : Pas réussi à mettre en oeuvre le crate `enum-iterator` qui permettrait d'itérer
         //        sur toutes les valeurs d'un Enum :(
         check_id_code(&mut context, IdInfo::EnMesurage);
