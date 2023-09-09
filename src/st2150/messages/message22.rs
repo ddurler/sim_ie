@@ -1,31 +1,32 @@
-//! Message 20 : Présélection
+//! Message 22 : Identification TAG
 
-use crate::context::{Context, IdInfo};
+use crate::context::Context;
 
 use super::field::Field;
 use super::frame;
 use super::CommonMessageTrait;
 use super::ProtocolError;
 use super::ST2150;
+use crate::context::IdInfo;
 
 /// Numéro de ce message
-const MESSAGE_NUM: u8 = 20;
+const MESSAGE_NUM: u8 = 22;
 
-/// Message 20 : Présélection
+/// Message 22 : Identification TAG
 #[derive(Default)]
-pub struct Message20 {}
+pub struct Message22 {}
 
-impl CommonMessageTrait for Message20 {
+impl CommonMessageTrait for Message22 {
     fn message_num(&self) -> u8 {
         MESSAGE_NUM
     }
 
     fn str_message(&self) -> &'static str {
-        "Présélection"
+        "Identification TAG"
     }
 
     fn id_infos_request(&self) -> Vec<IdInfo> {
-        vec![IdInfo::Predetermination, IdInfo::CodeProduit]
+        vec![IdInfo::IdentificationTag]
     }
 
     fn id_infos_response(&self) -> Vec<IdInfo> {
@@ -34,18 +35,28 @@ impl CommonMessageTrait for Message20 {
 
     fn do_vacation(&self, st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError> {
         // Contexte OK ?
-        Message20::availability(self, context)?;
+        Message22::availability(self, context)?;
 
         // Création et envoi requête
         let mut req = frame::Frame::new(MESSAGE_NUM);
 
-        // Valeur de la prédétermination
-        let prede = context.get_info_u32(IdInfo::Predetermination).unwrap();
-        req.add_field(Field::encode_number(prede, 5));
+        let identification_tag = match context.get_info_string(IdInfo::IdentificationTag) {
+            None => String::new(),
+            Some(txt) => txt.trim().to_string(),
+        };
 
-        // Code produit
-        let code_prod = context.get_info_u8(IdInfo::CodeProduit).unwrap();
-        req.add_field(Field::encode_binary(code_prod + b'0'));
+        // #0 : Longueur de l'identification tag sur 3
+        req.add_field(Field::encode_number(identification_tag.len(), 3));
+
+        // #1 : Identification tag
+        if identification_tag.is_empty() {
+            req.add_field(Field::new(&[]));
+        } else {
+            req.add_field(Field::encode_str(
+                &identification_tag,
+                identification_tag.len(),
+            ));
+        }
 
         st2150.send_req(&req);
 
@@ -76,33 +87,33 @@ mod tests {
     use crate::SerialCom;
 
     #[test]
-    fn test_message20() {
+    fn test_message22() {
         // On utilise le FAKE serial port pour contrôler ce qui circule...
         let mut fake_port = SerialCom::new("FAKE", 9600);
 
         // Contexte pour le protocole
         let mut context = Context::default();
 
-        // Infos pour la requête de test
-        context.set_info_u32(IdInfo::Predetermination, 12345);
-        context.set_info_u8(IdInfo::CodeProduit, 1);
+        context.set_info_string(IdInfo::IdentificationTag, "ABCDE");
 
         // Trame pour message
         fake_port.should_write(&[
             protocol::STX,
             b'2', //  Numéro de message
-            b'0',
-            protocol::SEPARATOR,
-            b'1', // Prédétermination
             b'2',
-            b'3',
-            b'4',
+            protocol::SEPARATOR,
+            b'0', // Longueur du TAG
+            b'0',
             b'5',
             protocol::SEPARATOR,
-            b'1', // Code produit
+            b'A',
+            b'B',
+            b'C',
+            b'D',
+            b'E',
             protocol::SEPARATOR,
-            70, // Checksum
-            67,
+            56, // Checksum
+            65,
             protocol::ETX,
         ]);
 
@@ -110,12 +121,12 @@ mod tests {
         fake_port.will_read(&[
             protocol::STX,
             b'2', // Numéro de message
-            b'0',
+            b'2',
             protocol::SEPARATOR,
             protocol::ACK, // ACK
             protocol::SEPARATOR,
             b'0', // Checksum
-            b'4',
+            b'6',
             protocol::ETX,
         ]);
 
@@ -128,6 +139,7 @@ mod tests {
         // Vacation requête/réponse du message via le FAKE port
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
+        // Vérification de ce qui a été mis à jour dans le contexte
         // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(context.get_info_bool(IdInfo::Nack), Some(false));
         assert_eq!(context.get_info_bool(IdInfo::Ack), Some(true));

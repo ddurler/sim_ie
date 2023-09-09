@@ -57,10 +57,19 @@ pub fn str_info_f32(context: &Context, id_info: IdInfo, str_none: &str) -> Strin
 }
 
 /// Affichage d'un champ String(len)
-pub fn str_info_string(context: &Context, id_info: IdInfo, str_none: &str, width: usize) -> String {
+pub fn str_info_string(
+    context: &Context,
+    id_info: IdInfo,
+    str_none: &str,
+    _width: usize,
+) -> String {
     match context.get_info_string(id_info) {
         None => str_none.to_string(),
-        Some(value) => format!("{value:width$}"),
+        Some(value) => {
+            // format!("{value:width$}");
+            // On supprime les espaces de fin en édition
+            value.trim_end().to_string()
+        }
     }
 }
 

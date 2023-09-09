@@ -87,6 +87,7 @@ pub enum IdInfo {
     Quantieme,
     HeureDebut,
     HeureFin,
+    IdentificationTag,
     LibelleProduit(usize),
 }
 
@@ -154,6 +155,9 @@ pub struct Context {
     /// Heure de fin (de mesurage)
     heure_fin: Option<u16>,
 
+    /// Identification par TAG
+    identification_tag: Option<String>,
+
     /* Pour + tard... */
     /// Libellés des max. NB_PRODUITS produits
     libelle_produits: Vec<String>,
@@ -182,6 +186,7 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::Quantieme => "Quantième".to_string(),
         IdInfo::HeureDebut => "Heure de début (HHMM)".to_string(),
         IdInfo::HeureFin => "Heure de fin (HHMM)".to_string(),
+        IdInfo::IdentificationTag => "TAG indentification".to_string(),
         IdInfo::LibelleProduit(prod_num) => format!("Libellé produit #{prod_num}"),
     }
 }
@@ -219,6 +224,7 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         }
 
         /* String */
+        IdInfo::IdentificationTag => FormatInfo::FormatString(100),
         IdInfo::LibelleProduit(_prod_num) => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
     }
 }
@@ -347,6 +353,7 @@ impl Context {
 
     pub fn get_info_string(&self, id_info: IdInfo) -> Option<String> {
         match id_info {
+            IdInfo::IdentificationTag => self.identification_tag.clone(),
             IdInfo::LibelleProduit(prod_num) => self.get_info_libelle_produits(prod_num),
 
             _ => panic!("Cette information n'est pas string : {id_info:?}"),
@@ -372,6 +379,7 @@ impl Context {
 
     pub fn set_info_string(&mut self, id_info: IdInfo, value: &str) {
         match id_info {
+            IdInfo::IdentificationTag => self.identification_tag = Some(value.to_string()),
             IdInfo::LibelleProduit(prod_num) => self.set_info_libelle_produits(prod_num, value),
 
             _ => panic!("Cette information n'est pas string : {id_info:?}"),
@@ -526,6 +534,7 @@ mod tests {
         check_id_code(&mut context, IdInfo::Quantieme);
         check_id_code(&mut context, IdInfo::HeureDebut);
         check_id_code(&mut context, IdInfo::HeureFin);
+        check_id_code(&mut context, IdInfo::IdentificationTag);
 
         for prod_num in 0..=NB_PRODUITS {
             check_id_code(&mut context, IdInfo::LibelleProduit(prod_num));

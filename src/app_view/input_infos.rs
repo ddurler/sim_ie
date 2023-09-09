@@ -43,7 +43,14 @@ fn callback_input_info_bool(context: &mut Context, input: &str, id_info: IdInfo)
 
 /// Callback IHM modification de la valeur d'un champ String
 fn callback_input_info_string(context: &mut Context, input: &str, id_info: IdInfo, width: usize) {
-    let value = format!("{input:width$}");
+    let input = input.trim_end();
+    let value = if input.len() > width {
+        // Tronque si trop long
+        // /!\ format! ne le fait pas...
+        input[..width].to_string()
+    } else {
+        input.to_string()
+    };
     context.set_info_string(id_info, &value);
 }
 
