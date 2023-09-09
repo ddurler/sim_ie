@@ -135,6 +135,9 @@ mod tests {
 
     #[test]
     fn test_message00() {
+        // Contexte pour le protocole
+        let mut context = Context::default();
+
         // On utilise le FAKE serial port pour contrôler ce qui circule...
         let mut fake_port = SerialCom::new("FAKE", 9600);
 
@@ -172,9 +175,6 @@ mod tests {
 
         // Création du protocole ST2150 avec ce FAKE port
         let mut st = ST2150::new(fake_port);
-
-        // Contexte pour le protocole
-        let mut context = Context::default();
 
         // Le message est possible
         assert!(ST2150::message_availability(&context, MESSAGE_NUM).is_ok());

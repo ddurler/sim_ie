@@ -77,11 +77,11 @@ mod tests {
 
     #[test]
     fn test_message20() {
-        // On utilise le FAKE serial port pour contrôler ce qui circule...
-        let mut fake_port = SerialCom::new("FAKE", 9600);
-
         // Contexte pour le protocole
         let mut context = Context::default();
+
+        // On utilise le FAKE serial port pour contrôler ce qui circule...
+        let mut fake_port = SerialCom::new("FAKE", 9600);
 
         // Infos pour la requête de test
         context.set_info_u32(IdInfo::Predetermination, 12345);

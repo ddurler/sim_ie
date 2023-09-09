@@ -21,6 +21,9 @@ pub enum ProtocolError {
     /// Pas de réponse du calculateur
     NoReply,
 
+    /// Longueur inattendue de la trame reçue (nb octets lus)
+    BadFrameLen(usize, Vec<usize>),
+
     /// Longueur incorrecte de message (nb octets message, attendus)
     BadMessageLen(usize, usize),
 
@@ -56,6 +59,10 @@ impl Display for ProtocolError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ProtocolError::NoReply => write!(f, "Pas de réponse du calculateur"),
+            ProtocolError::BadFrameLen(nb, expected_lens) => write!(
+                f,
+                "Longueur inattendue de la trame ({nb} / {expected_lens:?} cars)"
+            ),
             ProtocolError::BadMessageLen(nb, nb_expected) => write!(
                 f,
                 "Longueur incorrecte du message ({nb}/{nb_expected} cars)"
@@ -156,7 +163,7 @@ impl ST2150 {
             return Err(e);
         }
         if !expected_lens.contains(&len_rep) {
-            let e = ProtocolError::BadMessageLen(len_rep, max_expected_len);
+            let e = ProtocolError::BadFrameLen(len_rep, expected_lens.to_vec());
             self.set_last_rep(buffer, len_rep, format!("{e}"));
             return Err(e);
         }

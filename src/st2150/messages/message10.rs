@@ -32,7 +32,7 @@ impl CommonMessageTrait for Message10 {
         vec![
             IdInfo::Totalisateur,
             IdInfo::DebitInstant,
-            IdInfo::QuantiteChargee,
+            IdInfo::QuantitePrincipale,
             IdInfo::TemperatureInstant,
             IdInfo::Predetermination,
         ]
@@ -71,7 +71,7 @@ impl CommonMessageTrait for Message10 {
 
         // #2 : Quantité courante
         context.set_info_u32(
-            IdInfo::QuantiteChargee,
+            IdInfo::QuantitePrincipale,
             frame.fields[2].decode_number::<u32>()?,
         );
 
@@ -103,6 +103,9 @@ mod tests {
 
     #[test]
     fn test_message10() {
+        // Contexte pour le protocole
+        let mut context = Context::default();
+
         // On utilise le FAKE serial port pour contrôler ce qui circule...
         let mut fake_port = SerialCom::new("FAKE", 9600);
 
@@ -162,9 +165,6 @@ mod tests {
         // Création du protocole ST2150 avec ce FAKE port
         let mut st = ST2150::new(fake_port);
 
-        // Contexte pour le protocole
-        let mut context = Context::default();
-
         // Le message est possible
         assert!(ST2150::message_availability(&context, MESSAGE_NUM).is_ok());
 
@@ -174,7 +174,10 @@ mod tests {
         // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(context.get_info_u32(IdInfo::Totalisateur), Some(12_345_678));
         assert_eq!(context.get_info_f32(IdInfo::DebitInstant), Some(123.4));
-        assert_eq!(context.get_info_u32(IdInfo::QuantiteChargee), Some(12345));
+        assert_eq!(
+            context.get_info_u32(IdInfo::QuantitePrincipale),
+            Some(12345)
+        );
         assert_eq!(context.get_info_f32(IdInfo::TemperatureInstant), Some(12.3));
         assert_eq!(context.get_info_u32(IdInfo::Predetermination), Some(12345));
     }
