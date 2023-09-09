@@ -45,6 +45,7 @@ pub enum IdInfo {
     Predetermination,
     CodeProduit,
     Ack,
+    Nack,
     LibelleProduit(usize),
 }
 
@@ -88,6 +89,9 @@ pub struct Context {
     /// ACK du dernier message
     ack: Option<bool>,
 
+    /// NACK du dernier message
+    nack: Option<bool>,
+
     /* Pour + tard... */
     /// Libellés des max. NB_PRODUITS produits
     libelle_produits: Vec<String>,
@@ -108,6 +112,7 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::Predetermination => "Prédétermination".to_string(),
         IdInfo::CodeProduit => "Code produit".to_string(),
         IdInfo::Ack => "Acquit message".to_string(),
+        IdInfo::Nack => "Refus message".to_string(),
         IdInfo::LibelleProduit(prod_num) => format!("Libellé produit #{prod_num}"),
     }
 }
@@ -120,7 +125,8 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::ArretIntermediaire
         | IdInfo::ForcagePetitDebit
         | IdInfo::ModeConnecte
-        | IdInfo::Ack => FormatInfo::FormatBool,
+        | IdInfo::Ack
+        | IdInfo::Nack => FormatInfo::FormatBool,
 
         /* U8 */
         IdInfo::CodeDefaut | IdInfo::CodeProduit => FormatInfo::FormatU8,
@@ -146,6 +152,7 @@ impl Context {
             IdInfo::ForcagePetitDebit => self.forcage_petit_debit,
             IdInfo::ModeConnecte => self.mode_connecte,
             IdInfo::Ack => self.ack,
+            IdInfo::Nack => self.nack,
 
             _ => panic!("Cette information n'est pas booléenne : {id_info:?}"),
         }
@@ -158,6 +165,7 @@ impl Context {
             IdInfo::ForcagePetitDebit => self.forcage_petit_debit = Some(value),
             IdInfo::ModeConnecte => self.mode_connecte = Some(value),
             IdInfo::Ack => self.ack = Some(value),
+            IdInfo::Nack => self.nack = Some(value),
 
             _ => panic!("Cette information n'est pas booléenne : {id_info:?}"),
         }
@@ -385,6 +393,7 @@ mod tests {
         check_id_code(&mut context, IdInfo::Predetermination);
         check_id_code(&mut context, IdInfo::CodeProduit);
         check_id_code(&mut context, IdInfo::Ack);
+        check_id_code(&mut context, IdInfo::Nack);
 
         for prod_num in 0..=NB_PRODUITS {
             check_id_code(&mut context, IdInfo::LibelleProduit(prod_num));

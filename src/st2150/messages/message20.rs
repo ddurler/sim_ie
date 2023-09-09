@@ -29,7 +29,7 @@ impl CommonMessageTrait for Message20 {
     }
 
     fn id_infos_response(&self) -> Vec<IdInfo> {
-        vec![IdInfo::Ack]
+        vec![IdInfo::Nack, IdInfo::Ack]
     }
 
     fn do_vacation(&self, st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError> {
@@ -58,7 +58,8 @@ impl CommonMessageTrait for Message20 {
 
         // Mise à jour du contexte
 
-        // #0 : ACK
+        // #0 : ACK ou NACK
+        context.set_info_bool(IdInfo::Nack, frame.is_nack());
         context.set_info_bool(IdInfo::Ack, frame.is_ack());
 
         // C'est tout bon
@@ -128,6 +129,7 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
+        assert_eq!(context.get_info_bool(IdInfo::Nack), Some(false));
         assert_eq!(context.get_info_bool(IdInfo::Ack), Some(true));
     }
 }
