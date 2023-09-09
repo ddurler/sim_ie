@@ -22,21 +22,32 @@ const LIBELLE_PRODUIT_WIDTH: usize = 10;
 
 // Pour ajouter un nouveau format de données pour le contexte :
 //
-// 1 - Ajouter ce format dans la liste des enum de `FormatInfo`
-// 2 - Créer au moins une information dans le contexte avec ce format pour pouvoir tester
-//     (Voir ci-dessous les instructions pour créer une nouvelle information dans le contexte)
-// 3 - Ajouter la fonction `get_info_mon_nouveau_format` dans l'implémentation de `Context`
-// 4 - Ajouter la fonction `set_info_mon_nouveau_format` dans l'implémentation de `Context`
-// 5 - Implémenter `CommonContextTrait` pour ce nouveau format
-//     `impl CommonContextTrait<NouveauFormat> for Context { ...`
-// 6 - Completer les tests pour ce nouveau format : `test_get_set` et `test_get_set_generic`
+// Dans ce module (`context`) :
+//  1 - Ajouter ce format dans la liste des enum de `FormatInfo`
+//  2 - Créer au moins une information dans le contexte avec ce format pour pouvoir tester
+//      (Voir ci-dessous les instructions pour créer une nouvelle information dans le contexte)
+//  3 - Ajouter la fonction `get_info_mon_nouveau_format` dans l'implémentation de `Context`
+//  4 - Ajouter la fonction `set_info_mon_nouveau_format` dans l'implémentation de `Context`
+//  5 - Implémenter `CommonContextTrait` pour ce nouveau format
+//      `impl CommonContextTrait<NouveauFormat> for Context { ...`
+//  6 - Completer les tests pour ce nouveau format : `test_get_set` et `test_get_set_generic`
+// Dans le module st2150::messages :
+//  1 - Ajouter ce format dans la fonction `availability` pour `CommonMessageTrait`
+// Dans le module `app_view::show_infos` :
+//  1 - Ajouter une fonction `str_info_mon_nouveau_format`
+//  2 - Ajouter ce format dans la fonction `str_info`
+// Dans le module `app_view::input_infos` :
+//  1 - Ajouter ce format dans la fonction `callback_input_info` de `app_view::input_infos`
 // C'est tout :)
+//
+// Ou si on est courageux, une macro! qui fait tout ça...
 
 /// Format possible d'une information du contexte
 #[derive(Clone, Debug)]
 pub enum FormatInfo {
     FormatBool,
     FormatU8,
+    FormatU16,
     FormatU32,
     FormatF32,
     FormatString(usize),
@@ -53,10 +64,11 @@ pub enum FormatInfo {
 // 7 - Pour les tests, ajouter `check_id_code(&mut context, IdInfo::Xxx);` dans la fonction `test_get_set`
 // Et c'est tout :)
 
-
 /// Énumération des informations du contexte
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IdInfo {
+    Ack,
+    Nack,
     EnMesurage,
     CodeDefaut,
     ArretIntermediaire,
@@ -64,18 +76,29 @@ pub enum IdInfo {
     ModeConnecte,
     Totalisateur,
     DebitInstant,
-    QuantiteChargee,
+    QuantitePrincipale,
+    QuantiteSecondaire,
     TemperatureInstant,
+    TemperatureMoyen,
     Predetermination,
     CodeProduit,
-    Ack,
-    Nack,
+    IndexSansRaz,
+    IndexJournalier,
+    Quantieme,
+    HeureDebut,
+    HeureFin,
     LibelleProduit(usize),
 }
 
 /// Dictionnaire des données pour les requêtes et les réponses
 #[derive(Debug, Default)]
 pub struct Context {
+    /// ACK du dernier message
+    ack: Option<bool>,
+
+    /// NACK du dernier message
+    nack: Option<bool>,
+
     /// En mesurage
     en_mesurage: Option<bool>,
 
@@ -98,11 +121,17 @@ pub struct Context {
     /// Débit instantané en m3/h (ou tonne/h)
     debit_instant: Option<f32>,
 
-    /// Quantité chargée (en échelon = Litre ou kg)
-    quantite_chargee: Option<u32>,
+    /// Quantité (volume mesuré, volume de base ou masse)  principale
+    quantite_principale: Option<u32>,
+
+    /// Quantité secondaire (alternative à la quantité principale)
+    quantite_secondaire: Option<u32>,
 
     /// Température instantanée
     temperature_instant: Option<f32>,
+
+    /// Température moyenne (d'un mesurage)
+    temperature_moyen: Option<f32>,
 
     /// Prédétermination (en échelon = Litre ou kg)
     predetermination: Option<u32>,
@@ -110,11 +139,20 @@ pub struct Context {
     /// Code produit
     code_produit: Option<u8>,
 
-    /// ACK du dernier message
-    ack: Option<bool>,
+    /// Index sans remise à 0
+    index_sans_raz: Option<u16>,
 
-    /// NACK du dernier message
-    nack: Option<bool>,
+    /// Index journalier
+    index_journalier: Option<u16>,
+
+    /// Quantième
+    quantieme: Option<u16>,
+
+    /// Heure de début (de mesurage)
+    heure_debut: Option<u16>,
+
+    /// Heure de fin (de mesurage)
+    heure_fin: Option<u16>,
 
     /* Pour + tard... */
     /// Libellés des max. NB_PRODUITS produits
@@ -124,6 +162,8 @@ pub struct Context {
 /// Retourne le libellé d'un information du contexte
 pub fn get_info_name(id_info: IdInfo) -> String {
     match id_info {
+        IdInfo::Ack => "Acquit message".to_string(),
+        IdInfo::Nack => "Refus message".to_string(),
         IdInfo::EnMesurage => "En mesurage".to_string(),
         IdInfo::CodeDefaut => "Code défaut".to_string(),
         IdInfo::ArretIntermediaire => "Arrêt intermédiaire".to_string(),
@@ -131,12 +171,17 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::ModeConnecte => "Mode connecté".to_string(),
         IdInfo::Totalisateur => "Totalisateur".to_string(),
         IdInfo::DebitInstant => "Débit instantané".to_string(),
-        IdInfo::QuantiteChargee => "Quantité chargée".to_string(),
+        IdInfo::QuantitePrincipale => "Quantité".to_string(),
+        IdInfo::QuantiteSecondaire => "Quantité secondaire".to_string(),
         IdInfo::TemperatureInstant => "Température instantanée".to_string(),
+        IdInfo::TemperatureMoyen => "Température moyenne".to_string(),
         IdInfo::Predetermination => "Prédétermination".to_string(),
         IdInfo::CodeProduit => "Code produit".to_string(),
-        IdInfo::Ack => "Acquit message".to_string(),
-        IdInfo::Nack => "Refus message".to_string(),
+        IdInfo::IndexSansRaz => "Index sans remise à zéro".to_string(),
+        IdInfo::IndexJournalier => "Index journalier".to_string(),
+        IdInfo::Quantieme => "Quantième".to_string(),
+        IdInfo::HeureDebut => "Heure de début (HHMM)".to_string(),
+        IdInfo::HeureFin => "Heure de fin (HHMM)".to_string(),
         IdInfo::LibelleProduit(prod_num) => format!("Libellé produit #{prod_num}"),
     }
 }
@@ -145,23 +190,33 @@ pub fn get_info_name(id_info: IdInfo) -> String {
 pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
     match id_info {
         /* Booléen */
-        IdInfo::EnMesurage
+        IdInfo::Ack
+        | IdInfo::Nack
+        | IdInfo::EnMesurage
         | IdInfo::ArretIntermediaire
         | IdInfo::ForcagePetitDebit
-        | IdInfo::ModeConnecte
-        | IdInfo::Ack
-        | IdInfo::Nack => FormatInfo::FormatBool,
+        | IdInfo::ModeConnecte => FormatInfo::FormatBool,
 
         /* U8 */
         IdInfo::CodeDefaut | IdInfo::CodeProduit => FormatInfo::FormatU8,
 
+        /* U16 */
+        IdInfo::IndexSansRaz
+        | IdInfo::IndexJournalier
+        | IdInfo::Quantieme
+        | IdInfo::HeureDebut
+        | IdInfo::HeureFin => FormatInfo::FormatU16,
+
         /* U32 */
-        IdInfo::Totalisateur | IdInfo::QuantiteChargee | IdInfo::Predetermination => {
-            FormatInfo::FormatU32
-        }
+        IdInfo::Totalisateur
+        | IdInfo::QuantitePrincipale
+        | IdInfo::QuantiteSecondaire
+        | IdInfo::Predetermination => FormatInfo::FormatU32,
 
         /* F32 */
-        IdInfo::DebitInstant | IdInfo::TemperatureInstant => FormatInfo::FormatF32,
+        IdInfo::DebitInstant | IdInfo::TemperatureInstant | IdInfo::TemperatureMoyen => {
+            FormatInfo::FormatF32
+        }
 
         /* String */
         IdInfo::LibelleProduit(_prod_num) => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
@@ -171,12 +226,12 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
 impl Context {
     pub fn get_info_bool(&self, id_info: IdInfo) -> Option<bool> {
         match id_info {
+            IdInfo::Ack => self.ack,
+            IdInfo::Nack => self.nack,
             IdInfo::EnMesurage => self.en_mesurage,
             IdInfo::ArretIntermediaire => self.arret_intermediaire,
             IdInfo::ForcagePetitDebit => self.forcage_petit_debit,
             IdInfo::ModeConnecte => self.mode_connecte,
-            IdInfo::Ack => self.ack,
-            IdInfo::Nack => self.nack,
 
             _ => panic!("Cette information n'est pas booléenne : {id_info:?}"),
         }
@@ -184,12 +239,12 @@ impl Context {
 
     pub fn set_info_bool(&mut self, id_info: IdInfo, value: bool) {
         match id_info {
+            IdInfo::Ack => self.ack = Some(value),
+            IdInfo::Nack => self.nack = Some(value),
             IdInfo::EnMesurage => self.en_mesurage = Some(value),
             IdInfo::ArretIntermediaire => self.arret_intermediaire = Some(value),
             IdInfo::ForcagePetitDebit => self.forcage_petit_debit = Some(value),
             IdInfo::ModeConnecte => self.mode_connecte = Some(value),
-            IdInfo::Ack => self.ack = Some(value),
-            IdInfo::Nack => self.nack = Some(value),
 
             _ => panic!("Cette information n'est pas booléenne : {id_info:?}"),
         }
@@ -213,10 +268,35 @@ impl Context {
         }
     }
 
+    pub fn get_info_u16(&self, id_info: IdInfo) -> Option<u16> {
+        match id_info {
+            IdInfo::IndexSansRaz => self.index_sans_raz,
+            IdInfo::IndexJournalier => self.index_journalier,
+            IdInfo::Quantieme => self.quantieme,
+            IdInfo::HeureDebut => self.heure_debut,
+            IdInfo::HeureFin => self.heure_fin,
+
+            _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
+        }
+    }
+
+    pub fn set_info_u16(&mut self, id_info: IdInfo, value: u16) {
+        match id_info {
+            IdInfo::IndexSansRaz => self.index_sans_raz = Some(value),
+            IdInfo::IndexJournalier => self.index_journalier = Some(value),
+            IdInfo::Quantieme => self.quantieme = Some(value),
+            IdInfo::HeureDebut => self.heure_debut = Some(value),
+            IdInfo::HeureFin => self.heure_fin = Some(value),
+
+            _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
+        }
+    }
+
     pub fn get_info_u32(&self, id_info: IdInfo) -> Option<u32> {
         match id_info {
             IdInfo::Totalisateur => self.totalisateur,
-            IdInfo::QuantiteChargee => self.quantite_chargee,
+            IdInfo::QuantitePrincipale => self.quantite_principale,
+            IdInfo::QuantiteSecondaire => self.quantite_secondaire,
             IdInfo::Predetermination => self.predetermination,
 
             _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
@@ -226,7 +306,8 @@ impl Context {
     pub fn set_info_u32(&mut self, id_info: IdInfo, value: u32) {
         match id_info {
             IdInfo::Totalisateur => self.totalisateur = Some(value),
-            IdInfo::QuantiteChargee => self.quantite_chargee = Some(value),
+            IdInfo::QuantitePrincipale => self.quantite_principale = Some(value),
+            IdInfo::QuantiteSecondaire => self.quantite_secondaire = Some(value),
             IdInfo::Predetermination => self.predetermination = Some(value),
 
             _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
@@ -237,6 +318,7 @@ impl Context {
         match id_info {
             IdInfo::DebitInstant => self.debit_instant,
             IdInfo::TemperatureInstant => self.temperature_instant,
+            IdInfo::TemperatureMoyen => self.temperature_moyen,
 
             _ => panic!("Cette information n'est pas f32 : {id_info:?}"),
         }
@@ -246,6 +328,7 @@ impl Context {
         match id_info {
             IdInfo::DebitInstant => self.debit_instant = Some(value),
             IdInfo::TemperatureInstant => self.temperature_instant = Some(value),
+            IdInfo::TemperatureMoyen => self.temperature_moyen = Some(value),
 
             _ => panic!("Cette information n'est pas f32 : {id_info:?}"),
         }
@@ -323,6 +406,16 @@ impl CommonContextTrait<u8> for Context {
     }
 }
 
+impl CommonContextTrait<u16> for Context {
+    fn get_info(&self, id_info: IdInfo) -> Option<u16> {
+        self.get_info_u16(id_info)
+    }
+
+    fn set_info(&mut self, id_info: IdInfo, value: u16) {
+        self.set_info_u16(id_info, value);
+    }
+}
+
 impl CommonContextTrait<u32> for Context {
     fn get_info(&self, id_info: IdInfo) -> Option<u32> {
         self.get_info_u32(id_info)
@@ -377,6 +470,13 @@ mod tests {
                         assert_eq!(context.get_info_u8(id_info), Some(value));
                     }
                 }
+                FormatInfo::FormatU16 => {
+                    assert!(context.get_info_u16(id_info).is_none());
+                    for value in [0_u16, 1000_u16, 10_000_u16] {
+                        context.set_info_u16(id_info, value);
+                        assert_eq!(context.get_info_u16(id_info), Some(value));
+                    }
+                }
                 FormatInfo::FormatU32 => {
                     assert!(context.get_info_u32(id_info).is_none());
                     for value in [0_u32, 1000_u32, 100_000_u32] {
@@ -406,6 +506,8 @@ mod tests {
         // Idéalement, mettre ici tous les IdInfos... Au moins tester les différents formats :)
         // TODO : Pas réussi à mettre en oeuvre le crate `enum-iterator` qui permettrait d'itérer
         //        sur toutes les valeurs d'un Enum :(
+        check_id_code(&mut context, IdInfo::Ack);
+        check_id_code(&mut context, IdInfo::Nack);
         check_id_code(&mut context, IdInfo::EnMesurage);
         check_id_code(&mut context, IdInfo::CodeDefaut);
         check_id_code(&mut context, IdInfo::ArretIntermediaire);
@@ -413,12 +515,17 @@ mod tests {
         check_id_code(&mut context, IdInfo::ModeConnecte);
         check_id_code(&mut context, IdInfo::Totalisateur);
         check_id_code(&mut context, IdInfo::DebitInstant);
-        check_id_code(&mut context, IdInfo::QuantiteChargee);
+        check_id_code(&mut context, IdInfo::QuantitePrincipale);
+        check_id_code(&mut context, IdInfo::QuantiteSecondaire);
         check_id_code(&mut context, IdInfo::TemperatureInstant);
+        check_id_code(&mut context, IdInfo::TemperatureMoyen);
         check_id_code(&mut context, IdInfo::Predetermination);
         check_id_code(&mut context, IdInfo::CodeProduit);
-        check_id_code(&mut context, IdInfo::Ack);
-        check_id_code(&mut context, IdInfo::Nack);
+        check_id_code(&mut context, IdInfo::IndexSansRaz);
+        check_id_code(&mut context, IdInfo::IndexJournalier);
+        check_id_code(&mut context, IdInfo::Quantieme);
+        check_id_code(&mut context, IdInfo::HeureDebut);
+        check_id_code(&mut context, IdInfo::HeureFin);
 
         for prod_num in 0..=NB_PRODUITS {
             check_id_code(&mut context, IdInfo::LibelleProduit(prod_num));

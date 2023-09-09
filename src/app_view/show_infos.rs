@@ -32,6 +32,14 @@ pub fn str_info_u8(context: &Context, id_info: IdInfo, str_none: &str) -> String
     }
 }
 
+/// Affichage d'un champ U16
+pub fn str_info_u16(context: &Context, id_info: IdInfo, str_none: &str) -> String {
+    match context.get_info_u16(id_info) {
+        None => str_none.to_string(),
+        Some(value) => format!("{value}"),
+    }
+}
+
 /// Affichage d'un champ U32
 pub fn str_info_u32(context: &Context, id_info: IdInfo, str_none: &str) -> String {
     match context.get_info_u32(id_info) {
@@ -61,6 +69,7 @@ pub fn str_info(context: &Context, id_info: IdInfo, str_none: &str) -> String {
     match context::get_info_format(id_info) {
         FormatInfo::FormatBool => str_info_bool(context, id_info, str_none),
         FormatInfo::FormatU8 => str_info_u8(context, id_info, str_none),
+        FormatInfo::FormatU16 => str_info_u16(context, id_info, str_none),
         FormatInfo::FormatU32 => str_info_u32(context, id_info, str_none),
         FormatInfo::FormatF32 => str_info_f32(context, id_info, str_none),
         FormatInfo::FormatString(width) => str_info_string(context, id_info, str_none, width),
