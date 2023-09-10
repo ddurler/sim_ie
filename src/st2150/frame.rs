@@ -280,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    fn test_try_from_buffer_is_err() {
+    fn test_try_from_buffer_is_err_part_1() {
         /* buffer / num message / len_fields / ProtocolError */
         let err_tests: Vec<(&[u8], u8, &[usize], ProtocolError)> = vec![
             // Message trop court (au moins 7 cars)
@@ -358,6 +358,19 @@ mod tests {
                 &[],
                 ProtocolError::ErrorMessage50(MESSAGE_50_MALFORMED.to_string()),
             ),
+        ];
+
+        for (buffer, message_num, len_fields, expected) in err_tests {
+            let res = Frame::try_from_buffer(buffer, message_num, len_fields);
+            assert!(res.is_err());
+            assert_eq!(expected, res.err().unwrap());
+        }
+    }
+
+    #[test]
+    fn test_try_from_buffer_is_err_part_2() {
+        /* buffer / num message / len_fields / ProtocolError */
+        let err_tests: Vec<(&[u8], u8, &[usize], ProtocolError)> = vec![
             // Message avec une longueur inattendue (selon la longueur attendue des champs (ici aucun))
             (
                 &[
@@ -375,7 +388,7 @@ mod tests {
                 &[],
                 ProtocolError::BadMessageLen(9, 7),
             ),
-            // // Message avec un mauvais numéro (autre que celui attendu)
+            // Message avec un mauvais numéro (autre que celui attendu)
             (
                 &[
                     protocol::STX,
@@ -390,7 +403,7 @@ mod tests {
                 &[],
                 ProtocolError::BadMessageNumber(0, 12),
             ),
-            // // Message avec un séparateur au mauvais endroit (au moins 2 champs)
+            // Message avec un séparateur au mauvais endroit (au moins 2 champs)
             (
                 &[
                     protocol::STX,
