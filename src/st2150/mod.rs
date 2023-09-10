@@ -14,6 +14,7 @@ pub mod messages;
 pub mod protocol;
 
 use field::Field;
+use frame::Frame;
 
 /// Erreur détectée
 #[derive(Debug, PartialEq, Eq)]
@@ -35,6 +36,9 @@ pub enum ProtocolError {
 
     /// Pas de ETX en fin de message
     MissingETX,
+
+    /// Réponse avec un message d'erreur 50
+    ErrorMessage50(String),
 
     /// Numéro de message incorrect (num, attendu)
     BadMessageNumber(u8, u8),
@@ -73,6 +77,7 @@ impl Display for ProtocolError {
             ),
             ProtocolError::MissingSTX => write!(f, "Pas de 'STX' en début de message"),
             ProtocolError::MissingETX => write!(f, "Pas de 'ETX' en fin de message"),
+            ProtocolError::ErrorMessage50(txt) => write!(f, "Réponse avec un message 50 d'erreur : {txt}"),
             ProtocolError::BadMessageNumber(num, num_expected) => write!(
                 f,
                 "Numéro incorrect du message ({num} vs {num_expected} attendu)"
@@ -131,7 +136,7 @@ impl ST2150 {
     }
 
     /// Envoi d'un message (requête)
-    fn send_req(&mut self, req: &frame::Frame) {
+    fn send_req(&mut self, req: &Frame) {
         self.last_req = req.to_frame();
         self.last_rep = vec![];
         self.last_error = String::new();
@@ -178,8 +183,8 @@ impl ST2150 {
         buffer: &[u8],
         num_message: u8,
         len_fields: &[usize],
-    ) -> Result<frame::Frame, ProtocolError> {
-        let ret = frame::Frame::try_from_buffer(buffer, num_message, len_fields);
+    ) -> Result<Frame, ProtocolError> {
+        let ret = Frame::try_from_buffer(buffer, num_message, len_fields);
         match ret {
             Ok(frame) => Ok(frame),
             Err(e) => {

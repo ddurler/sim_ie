@@ -4,6 +4,9 @@ use super::field::Field;
 use super::protocol;
 use super::ProtocolError;
 
+/// Libellé pour un message d'erreur mal formé
+const MESSAGE_50_MALFORMED: &str = "??? Malformed ???";
+
 /// Support générique pour un message du protocole
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Frame {
@@ -82,6 +85,13 @@ impl Frame {
         message_num: u8,
         len_fields: &[usize],
     ) -> Result<Self, ProtocolError> {
+        let rec_len = buffer.len();
+
+        // Le message doit faire au moins STX + num(2) + SEPARATOR + checksum(2) + ETX
+        if rec_len < 7 {
+            return Err(ProtocolError::BadMessageLen(rec_len, 7));
+        }
+
         // Commence par STX ?
         if buffer[0] != protocol::STX {
             return Err(ProtocolError::MissingSTX);
@@ -92,15 +102,7 @@ impl Frame {
             return Err(ProtocolError::MissingETX);
         }
 
-        // Longueur du message OK ?
-        let mut rec_len = 1 + 2; // STX + numéro de message
-        rec_len += len_fields.len() + len_fields.iter().sum::<usize>(); // SEPARATOR avant chaque champs + champs
-        rec_len += 1 + 2 + 1; // SEPARATOR + checksum + ETX
-        if buffer.len() != rec_len {
-            return Err(ProtocolError::BadMessageLen(buffer.len(), rec_len));
-        }
-
-        // checksum OK ?
+        // Checksum OK ?
         let rec_checksum = protocol::car_hexa_to_value(buffer[rec_len - 3]) * 16
             + protocol::car_hexa_to_value(buffer[rec_len - 2]);
         let checksum = protocol::calcul_checksum(&buffer[1..rec_len - 3]);
@@ -108,13 +110,36 @@ impl Frame {
             return Err(ProtocolError::BadChecksum(rec_checksum, checksum));
         }
 
-        // Numéro de message OK ?
+        // Numéro de message
         let rec_message_num = (buffer[1] - b'0') * 10 + (buffer[2] - b'0');
+
+        // Message 50 d'erreur ?
+        if rec_message_num == 50 {
+            /* Un message 50 devrait être de la forme STX + "50" + SEP  + "ERREUR" + SEP + checksum(2) + ETX */
+            if rec_len == 14 {
+                let txt = String::from_utf8(buffer[4..=9].to_vec())
+                    .unwrap_or(MESSAGE_50_MALFORMED.to_string());
+                return Err(ProtocolError::ErrorMessage50(txt));
+            }
+            return Err(ProtocolError::ErrorMessage50(
+                MESSAGE_50_MALFORMED.to_string(),
+            ));
+        }
+
+        // Numéro de message OK ?
         if rec_message_num != message_num {
             return Err(ProtocolError::BadMessageNumber(
                 rec_message_num,
                 message_num,
             ));
+        }
+
+        // Longueur du message OK ?
+        let mut expected_rec_len = 1 + 2; // STX + numéro de message
+        expected_rec_len += len_fields.len() + len_fields.iter().sum::<usize>(); // SEPARATOR avant chaque champs + champs
+        expected_rec_len += 1 + 2 + 1; // SEPARATOR + checksum + ETX
+        if rec_len != expected_rec_len {
+            return Err(ProtocolError::BadMessageLen(rec_len, expected_rec_len));
         }
 
         // On est plutôt bien parti, reste à valider les champs..
@@ -258,16 +283,26 @@ mod tests {
     fn test_try_from_buffer_is_err() {
         /* buffer / num message / len_fields / ProtocolError */
         let err_tests: Vec<(&[u8], u8, &[usize], ProtocolError)> = vec![
-            // Message sans STX au début
-            (&[0x01], 0, &[], ProtocolError::MissingSTX),
-            // Message dans ETX à la fin
-            (&[protocol::STX, 0x01], 0, &[], ProtocolError::MissingETX),
-            // Message avec une longueur inattendue (selon la longueur attendue des champs (ici aucun))
+            // Message trop court (au moins 7 cars)
             (
                 &[protocol::STX, 0x01, protocol::ETX],
                 0,
                 &[],
                 ProtocolError::BadMessageLen(3, 7),
+            ),
+            // Message sans STX au début
+            (
+                &[0x01, 0, 0, 0, 0, 0, 0, protocol::ETX],
+                0,
+                &[],
+                ProtocolError::MissingSTX,
+            ),
+            // Message sans ETX à la fin
+            (
+                &[protocol::STX, 0, 0, 0, 0, 0, 0, 0x01],
+                0,
+                &[],
+                ProtocolError::MissingETX,
             ),
             // Message avec un mauvais checksum
             (
@@ -284,7 +319,63 @@ mod tests {
                 &[],
                 ProtocolError::BadChecksum(0, 0xFE),
             ),
-            // Message avec un mauvais numéro (autre que celui attendu)
+            // Message d'erreur 50
+            (
+                &[
+                    protocol::STX,
+                    b'5', /* Message d'erreur 50 */
+                    b'0',
+                    protocol::SEPARATOR,
+                    b'E',
+                    b'R',
+                    b'R',
+                    b'E',
+                    b'U',
+                    b'R',
+                    protocol::SEPARATOR,
+                    b'0',
+                    b'2',
+                    protocol::ETX,
+                ],
+                12, /* ... alors que message 12 attendu */
+                &[],
+                ProtocolError::ErrorMessage50("ERREUR".to_string()),
+            ),
+            // Message d'erreur 50 mal formé
+            (
+                &[
+                    protocol::STX,
+                    b'5', /* Message d'erreur 50 */
+                    b'0',
+                    protocol::SEPARATOR,
+                    // Manque "ERREUR" ici...
+                    protocol::SEPARATOR,
+                    b'0',
+                    b'5',
+                    protocol::ETX,
+                ],
+                12,
+                &[],
+                ProtocolError::ErrorMessage50(MESSAGE_50_MALFORMED.to_string()),
+            ),
+            // Message avec une longueur inattendue (selon la longueur attendue des champs (ici aucun))
+            (
+                &[
+                    protocol::STX,
+                    b'0',
+                    b'0',
+                    protocol::SEPARATOR,
+                    b'0',
+                    protocol::SEPARATOR,
+                    b'3',
+                    b'0',
+                    protocol::ETX,
+                ],
+                0,
+                &[],
+                ProtocolError::BadMessageLen(9, 7),
+            ),
+            // // Message avec un mauvais numéro (autre que celui attendu)
             (
                 &[
                     protocol::STX,
@@ -299,7 +390,7 @@ mod tests {
                 &[],
                 ProtocolError::BadMessageNumber(0, 12),
             ),
-            // Message avec un séparateur au mauvais endroit (au moins 2 champs)
+            // // Message avec un séparateur au mauvais endroit (au moins 2 champs)
             (
                 &[
                     protocol::STX,
