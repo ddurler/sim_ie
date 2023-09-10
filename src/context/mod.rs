@@ -49,6 +49,7 @@ pub enum FormatInfo {
     FormatU8,
     FormatU16,
     FormatU32,
+    FormatU64,
     FormatF32,
     FormatString(usize),
 }
@@ -88,6 +89,10 @@ pub enum IdInfo {
     HeureDebut,
     HeureFin,
     IdentificationTag,
+    ReferenceEtImmatriculation,
+    VersionLogiciel,
+    DateHeure,
+    TypeCompteur,
     LibelleProduit(usize),
 }
 
@@ -158,6 +163,18 @@ pub struct Context {
     /// Identification par TAG
     identification_tag: Option<String>,
 
+    /// Version du logiciel
+    version_logiciel: Option<String>,
+
+    /// Numéro de référence du compteur et immatriculation du camion
+    reference_et_immatriculation: Option<String>,
+
+    /// Date et heure AAMMJJHHMMSS
+    date_heure: Option<u64>,
+
+    /// Type de compteur 0: Vm, 1:Vb, 2:Masse
+    type_compteur: Option<u8>,
+
     /* Pour + tard... */
     /// Libellés des max. NB_PRODUITS produits
     libelle_produits: Vec<String>,
@@ -186,7 +203,11 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::Quantieme => "Quantième".to_string(),
         IdInfo::HeureDebut => "Heure de début (HHMM)".to_string(),
         IdInfo::HeureFin => "Heure de fin (HHMM)".to_string(),
-        IdInfo::IdentificationTag => "TAG indentification".to_string(),
+        IdInfo::IdentificationTag => "TAG identification".to_string(),
+        IdInfo::ReferenceEtImmatriculation => "Référence et immatriculation".to_string(),
+        IdInfo::VersionLogiciel => "Version du logiciel".to_string(),
+        IdInfo::DateHeure => "Date et Heure (AAMMJJHHMMSS)".to_string(),
+        IdInfo::TypeCompteur => "Type de compteur (0:Vm, 1:Vb, 2:Masse)".to_string(),
         IdInfo::LibelleProduit(prod_num) => format!("Libellé produit #{prod_num}"),
     }
 }
@@ -203,7 +224,7 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::ModeConnecte => FormatInfo::FormatBool,
 
         /* U8 */
-        IdInfo::CodeDefaut | IdInfo::CodeProduit => FormatInfo::FormatU8,
+        IdInfo::CodeDefaut | IdInfo::CodeProduit | IdInfo::TypeCompteur => FormatInfo::FormatU8,
 
         /* U16 */
         IdInfo::IndexSansRaz
@@ -218,6 +239,9 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::QuantiteSecondaire
         | IdInfo::Predetermination => FormatInfo::FormatU32,
 
+        /* U64 */
+        IdInfo::DateHeure => FormatInfo::FormatU64,
+
         /* F32 */
         IdInfo::DebitInstant | IdInfo::TemperatureInstant | IdInfo::TemperatureMoyen => {
             FormatInfo::FormatF32
@@ -225,6 +249,8 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
 
         /* String */
         IdInfo::IdentificationTag => FormatInfo::FormatString(100),
+        IdInfo::ReferenceEtImmatriculation => FormatInfo::FormatString(15),
+        IdInfo::VersionLogiciel => FormatInfo::FormatString(10),
         IdInfo::LibelleProduit(_prod_num) => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
     }
 }
@@ -260,6 +286,7 @@ impl Context {
         match id_info {
             IdInfo::CodeDefaut => self.code_defaut,
             IdInfo::CodeProduit => self.code_produit,
+            IdInfo::TypeCompteur => self.type_compteur,
 
             _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
         }
@@ -269,6 +296,7 @@ impl Context {
         match id_info {
             IdInfo::CodeDefaut => self.code_defaut = Some(value),
             IdInfo::CodeProduit => self.code_produit = Some(value),
+            IdInfo::TypeCompteur => self.type_compteur = Some(value),
 
             _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
         }
@@ -320,6 +348,22 @@ impl Context {
         }
     }
 
+    pub fn get_info_u64(&self, id_info: IdInfo) -> Option<u64> {
+        match id_info {
+            IdInfo::DateHeure => self.date_heure,
+
+            _ => panic!("Cette information n'est pas u64 : {id_info:?}"),
+        }
+    }
+
+    pub fn set_info_u64(&mut self, id_info: IdInfo, value: u64) {
+        match id_info {
+            IdInfo::DateHeure => self.date_heure = Some(value),
+
+            _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
+        }
+    }
+
     pub fn get_info_f32(&self, id_info: IdInfo) -> Option<f32> {
         match id_info {
             IdInfo::DebitInstant => self.debit_instant,
@@ -354,6 +398,8 @@ impl Context {
     pub fn get_info_string(&self, id_info: IdInfo) -> Option<String> {
         match id_info {
             IdInfo::IdentificationTag => self.identification_tag.clone(),
+            IdInfo::ReferenceEtImmatriculation => self.reference_et_immatriculation.clone(),
+            IdInfo::VersionLogiciel => self.version_logiciel.clone(),
             IdInfo::LibelleProduit(prod_num) => self.get_info_libelle_produits(prod_num),
 
             _ => panic!("Cette information n'est pas string : {id_info:?}"),
@@ -380,6 +426,10 @@ impl Context {
     pub fn set_info_string(&mut self, id_info: IdInfo, value: &str) {
         match id_info {
             IdInfo::IdentificationTag => self.identification_tag = Some(value.to_string()),
+            IdInfo::ReferenceEtImmatriculation => {
+                self.reference_et_immatriculation = Some(value.to_string());
+            }
+            IdInfo::VersionLogiciel => self.version_logiciel = Some(value.to_string()),
             IdInfo::LibelleProduit(prod_num) => self.set_info_libelle_produits(prod_num, value),
 
             _ => panic!("Cette information n'est pas string : {id_info:?}"),
@@ -431,6 +481,16 @@ impl CommonContextTrait<u32> for Context {
 
     fn set_info(&mut self, id_info: IdInfo, value: u32) {
         self.set_info_u32(id_info, value);
+    }
+}
+
+impl CommonContextTrait<u64> for Context {
+    fn get_info(&self, id_info: IdInfo) -> Option<u64> {
+        self.get_info_u64(id_info)
+    }
+
+    fn set_info(&mut self, id_info: IdInfo, value: u64) {
+        self.set_info_u64(id_info, value);
     }
 }
 
@@ -492,6 +552,13 @@ mod tests {
                         assert_eq!(context.get_info_u32(id_info), Some(value));
                     }
                 }
+                FormatInfo::FormatU64 => {
+                    assert!(context.get_info_u64(id_info).is_none());
+                    for value in [0_u64, 100_000_u64, 100_000_000_u64, 100_000_000_000_000_u64] {
+                        context.set_info_u64(id_info, value);
+                        assert_eq!(context.get_info_u64(id_info), Some(value));
+                    }
+                }
                 FormatInfo::FormatF32 => {
                     assert!(context.get_info_f32(id_info).is_none());
                     for value in [0.0_f32, 1000.0_f32, -1000.0_f32, 100_000.0_f32] {
@@ -535,6 +602,10 @@ mod tests {
         check_id_code(&mut context, IdInfo::HeureDebut);
         check_id_code(&mut context, IdInfo::HeureFin);
         check_id_code(&mut context, IdInfo::IdentificationTag);
+        check_id_code(&mut context, IdInfo::ReferenceEtImmatriculation);
+        check_id_code(&mut context, IdInfo::VersionLogiciel);
+        check_id_code(&mut context, IdInfo::DateHeure);
+        check_id_code(&mut context, IdInfo::TypeCompteur);
 
         for prod_num in 0..=NB_PRODUITS {
             check_id_code(&mut context, IdInfo::LibelleProduit(prod_num));
