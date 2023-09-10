@@ -139,6 +139,10 @@ impl AppView {
         } else if is_nack(&self.context, &id_infos) {
             let txt = Text::new("REPONSE : NACK !!!");
             col = col.push(txt);
+        } else if !self.st2150.last_error.is_empty() {
+            let txt = format!("ERREUR : {} !!!", self.st2150.last_error);
+            let txt = Text::new(txt);
+            col = col.push(txt);
         } else {
             for id_info in id_infos {
                 let w = show_infos::show_info(&self.context, id_info);
