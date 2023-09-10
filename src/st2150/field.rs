@@ -143,11 +143,8 @@ impl Field {
     /// Transforme une chaîne en un champ ASCII d'une taille définie (space padded à droite)
     /// Par exemple la valeur "ABC" sur une width de 4 retourne vec![0x41, 0x42, 0x43, 0x20]
     /// La chaîne est tronquée si trop grande pour la taille définie
-    /// # Panics
-    /// panic! si taille demandée = 0
     #[allow(dead_code)]
     pub fn encode_str(value: &str, width: usize) -> Self {
-        assert!(width > 0);
         let str = format!("{value:width$}");
         // Tronque les caractères de fin car format! ne le fait pas...
         let data: Vec<u8> = str.as_bytes().iter().copied().take(width).collect();
@@ -506,6 +503,17 @@ mod tests {
         // "ABC", width 5 -> 'ABC '
         let f = Field::encode_str("ABC", 5);
         assert_eq!(f.to_frame(), vec![0x41, 0x42, 0x43, 0x20, 0x20]);
+    }
+
+    #[test]
+    fn test_encode_str_0() {
+        // "ABC", width 0 -> ''
+        let f = Field::encode_str("ABC", 0);
+        assert_eq!(f.to_frame(), vec![]);
+
+        // "", width 0 -> '     '
+        let f = Field::encode_str("", 3);
+        assert_eq!(f.to_frame(), vec![0x20, 0x20, 0x20]);
     }
 
     #[test]

@@ -24,13 +24,11 @@ impl Frame {
     }
 
     /// Est-ce un message ACK ?
-    #[allow(dead_code)]
     pub fn is_ack(&self) -> bool {
         !self.fields.is_empty() && self.fields[0].to_frame() == vec![protocol::ACK]
     }
 
     /// Est-ce un message NACK ?
-    #[allow(dead_code)]
     pub fn is_nack(&self) -> bool {
         !self.fields.is_empty() && self.fields[0].to_frame() == vec![protocol::NACK]
     }
