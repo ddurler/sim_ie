@@ -16,7 +16,7 @@ use super::ST2150;
 // C'est tout...
 
 /// Liste des numéros de messages implémentés
-pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[0_u8, 10_u8, 20_u8, 21_u8, 22_u8];
+pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[0_u8, 10_u8, 20_u8, 21_u8, 22_u8, 30_u8];
 
 pub mod message00;
 use message00::Message00;
@@ -28,6 +28,8 @@ pub mod message21;
 use message21::Message21;
 pub mod message22;
 use message22::Message22;
+pub mod message30;
+use message30::Message30;
 
 use super::field;
 
@@ -39,6 +41,7 @@ pub fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
         20 => Box::<Message20>::default(),
         21 => Box::<Message21>::default(),
         22 => Box::<Message22>::default(),
+        30 => Box::<Message30>::default(),
 
         _ => panic!("Numéro de message non géré {message_num}"),
     }
@@ -69,6 +72,7 @@ pub trait CommonMessageTrait {
                 context::FormatInfo::FormatU8 => context.get_info_u8(id_info).is_none(),
                 context::FormatInfo::FormatU16 => context.get_info_u16(id_info).is_none(),
                 context::FormatInfo::FormatU32 => context.get_info_u32(id_info).is_none(),
+                context::FormatInfo::FormatU64 => context.get_info_u64(id_info).is_none(),
                 context::FormatInfo::FormatF32 => context.get_info_f32(id_info).is_none(),
                 context::FormatInfo::FormatString(_width) => {
                     context.get_info_string(id_info).is_none()

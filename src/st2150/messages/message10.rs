@@ -78,7 +78,7 @@ impl CommonMessageTrait for Message10 {
         // #3 : Température instantanée +123 pour 12.3°C
         let tempe10 = frame.fields[3].decode_signed_number::<i16>()?;
         let tempe10 = f32::try_from(tempe10).map_err(|_e| {
-            ProtocolError::ErrFieldConversion("température".to_string(), frame.fields[1].clone())
+            ProtocolError::ErrFieldConversion("température".to_string(), frame.fields[3].clone())
         })?;
         context.set_info_f32(IdInfo::TemperatureInstant, tempe10 / 10_f32);
 
