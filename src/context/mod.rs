@@ -94,7 +94,7 @@ pub enum IdInfo {
     DateHeure,
     TypeCompteur,
     NbMesuragesQuantieme,
-    LibelleProduit(usize),
+    LibelleTableProduits(usize),
 }
 
 /// Dictionnaire des données pour les requêtes et les réponses
@@ -180,8 +180,8 @@ pub struct Context {
     nb_mesurages_quantieme: Option<u16>,
 
     /* Pour + tard... */
-    /// Libellés des max. NB_PRODUITS produits
-    libelle_produits: Vec<String>,
+    /// Libellés de la table des max. NB_PRODUITS produits
+    libelle_table_produits: Vec<String>,
 }
 
 /// Retourne le libellé d'un information du contexte
@@ -213,7 +213,7 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::DateHeure => "Date et Heure (AAMMJJHHMMSS)".to_string(),
         IdInfo::TypeCompteur => "Type de compteur (0:Vm, 1:Vb, 2:Masse)".to_string(),
         IdInfo::NbMesuragesQuantieme => "Nombre de mesurages pour un quantième".to_string(),
-        IdInfo::LibelleProduit(prod_num) => format!("Libellé produit #{prod_num}"),
+        IdInfo::LibelleTableProduits(prod_num) => format!("Libellé table produit #{prod_num}"),
     }
 }
 
@@ -257,7 +257,7 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         IdInfo::IdentificationTag => FormatInfo::FormatString(100),
         IdInfo::ReferenceEtImmatriculation => FormatInfo::FormatString(15),
         IdInfo::VersionLogiciel => FormatInfo::FormatString(10),
-        IdInfo::LibelleProduit(_prod_num) => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
+        IdInfo::LibelleTableProduits(_prod_num) => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
     }
 }
 
@@ -392,14 +392,14 @@ impl Context {
         }
     }
 
-    /// Getter particulier pour les produits
+    /// Getter particulier pour la tables des produits
     /// (la table des produits est construite par morceaux...)
-    fn get_info_libelle_produits(&self, prod_num: usize) -> Option<String> {
+    fn get_info_libelle_table_produits(&self, prod_num: usize) -> Option<String> {
         assert!(prod_num <= NB_PRODUITS);
-        if self.libelle_produits.len() <= prod_num {
+        if self.libelle_table_produits.len() <= prod_num {
             None
         } else {
-            Some(self.libelle_produits[prod_num].clone())
+            Some(self.libelle_table_produits[prod_num].clone())
         }
     }
 
@@ -408,18 +408,20 @@ impl Context {
             IdInfo::IdentificationTag => self.identification_tag.clone(),
             IdInfo::ReferenceEtImmatriculation => self.reference_et_immatriculation.clone(),
             IdInfo::VersionLogiciel => self.version_logiciel.clone(),
-            IdInfo::LibelleProduit(prod_num) => self.get_info_libelle_produits(prod_num),
+            IdInfo::LibelleTableProduits(prod_num) => {
+                self.get_info_libelle_table_produits(prod_num)
+            }
 
             _ => panic!("Cette information n'est pas string : {id_info:?}"),
         }
     }
 
-    /// Setter particulier pour les produits
+    /// Setter particulier pour table des produits
     /// (la table des produits est construite par morceaux...)
-    fn set_info_libelle_produits(&mut self, prod_num: usize, value: &str) {
+    fn set_info_libelle_table_produits(&mut self, prod_num: usize, value: &str) {
         assert!(prod_num <= NB_PRODUITS);
-        while self.libelle_produits.len() <= prod_num {
-            self.libelle_produits.push("???".to_string());
+        while self.libelle_table_produits.len() <= prod_num {
+            self.libelle_table_produits.push("???".to_string());
         }
         let txt = if value.len() > LIBELLE_PRODUIT_WIDTH {
             // Tronque si libellé trop long
@@ -428,7 +430,7 @@ impl Context {
         } else {
             value.to_string()
         };
-        self.libelle_produits[prod_num] = txt;
+        self.libelle_table_produits[prod_num] = txt;
     }
 
     pub fn set_info_string(&mut self, id_info: IdInfo, value: &str) {
@@ -438,7 +440,9 @@ impl Context {
                 self.reference_et_immatriculation = Some(value.to_string());
             }
             IdInfo::VersionLogiciel => self.version_logiciel = Some(value.to_string()),
-            IdInfo::LibelleProduit(prod_num) => self.set_info_libelle_produits(prod_num, value),
+            IdInfo::LibelleTableProduits(prod_num) => {
+                self.set_info_libelle_table_produits(prod_num, value);
+            }
 
             _ => panic!("Cette information n'est pas string : {id_info:?}"),
         };
@@ -617,7 +621,7 @@ mod tests {
         check_id_code(&mut context, IdInfo::NbMesuragesQuantieme);
 
         for prod_num in 0..=NB_PRODUITS {
-            check_id_code(&mut context, IdInfo::LibelleProduit(prod_num));
+            check_id_code(&mut context, IdInfo::LibelleTableProduits(prod_num));
         }
     }
 
@@ -657,8 +661,8 @@ mod tests {
         let my_value: Option<f32> = context.get_info(IdInfo::TemperatureInstant);
         assert_eq!(my_value, Some(-12.3));
 
-        context.set_info(IdInfo::LibelleProduit(5), "TEST".to_string());
-        let my_value: Option<String> = context.get_info(IdInfo::LibelleProduit(5));
+        context.set_info(IdInfo::LibelleTableProduits(5), "TEST".to_string());
+        let my_value: Option<String> = context.get_info(IdInfo::LibelleTableProduits(5));
         assert_eq!(my_value, Some("TEST".to_string()));
     }
 
