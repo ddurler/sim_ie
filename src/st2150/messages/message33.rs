@@ -59,7 +59,7 @@ impl CommonMessageTrait for Message33 {
 
         // Mise à jour du contexte
 
-        // #0 -#7 : Libellé table produits(i+1)
+        // #0 - #7 : Libellé table produits(i+1)
         for indice_champ in 0_usize..=7 {
             context.set_info_string(
                 IdInfo::LibelleTableProduits(indice_champ + 1),
