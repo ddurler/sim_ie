@@ -78,6 +78,7 @@ pub trait CommonMessageTrait {
             let info_name = context::get_info_name(id_info);
             if match context::get_info_format(id_info) {
                 context::FormatInfo::FormatBool => context.get_info_bool(id_info).is_none(),
+                context::FormatInfo::FormatChar => context.get_info_char(id_info).is_none(),
                 context::FormatInfo::FormatU8 => context.get_info_u8(id_info).is_none(),
                 context::FormatInfo::FormatU16 => context.get_info_u16(id_info).is_none(),
                 context::FormatInfo::FormatU32 => context.get_info_u32(id_info).is_none(),

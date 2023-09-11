@@ -46,6 +46,7 @@ const LIBELLE_PRODUIT_WIDTH: usize = 10;
 #[derive(Clone, Debug)]
 pub enum FormatInfo {
     FormatBool,
+    FormatChar,
     FormatU8,
     FormatU16,
     FormatU32,
@@ -97,6 +98,8 @@ pub enum IdInfo {
     LibelleProduit,
     NbFractionnements,
     LibelleTableProduits(usize),
+    IndexFractionnement,
+    TypeDistribution,
 }
 
 /// Dictionnaire des données pour les requêtes et les réponses
@@ -187,9 +190,14 @@ pub struct Context {
     /// Nombre de fractionnements
     nb_fractionnements: Option<u16>,
 
-    /* Pour + tard... */
     /// Libellés de la table des max. NB_PRODUITS produits
     libelle_table_produits: Vec<String>,
+
+    /// Numéro de fractionnement pour un mesurage
+    index_fractionnement: Option<u16>,
+
+    /// Type de distribution ('P' pour purge, 'L' pour libre, etc.)
+    type_distribution: Option<char>,
 }
 
 /// Retourne le libellé d'un information du contexte
@@ -224,6 +232,8 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::LibelleProduit => "Libellé produit".to_string(),
         IdInfo::NbFractionnements => "Nombre de fractionnements".to_lowercase(),
         IdInfo::LibelleTableProduits(prod_num) => format!("Libellé table produit #{prod_num}"),
+        IdInfo::IndexFractionnement => "Index fractionnement".to_string(),
+        IdInfo::TypeDistribution => "(A)nticipation purge, li(B)ération, (C)hargement, pré(D)é, (L)ibre, (P)urge, (T)ransfert, (V)idange, ".to_string()
     }
 }
 
@@ -238,6 +248,9 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::ForcagePetitDebit
         | IdInfo::ModeConnecte => FormatInfo::FormatBool,
 
+        /* Char */
+        IdInfo::TypeDistribution => FormatInfo::FormatChar,
+
         /* U8 */
         IdInfo::CodeDefaut | IdInfo::CodeProduit | IdInfo::TypeCompteur => FormatInfo::FormatU8,
 
@@ -248,7 +261,8 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::HeureDebut
         | IdInfo::HeureFin
         | IdInfo::NbMesuragesQuantieme
-        | IdInfo::NbFractionnements => FormatInfo::FormatU16,
+        | IdInfo::NbFractionnements
+        | IdInfo::IndexFractionnement => FormatInfo::FormatU16,
 
         /* U32 */
         IdInfo::Totalisateur
@@ -300,6 +314,22 @@ impl Context {
         }
     }
 
+    pub fn get_info_char(&self, id_info: IdInfo) -> Option<char> {
+        match id_info {
+            IdInfo::TypeDistribution => self.type_distribution,
+
+            _ => panic!("Cette information n'est pas char : {id_info:?}"),
+        }
+    }
+
+    pub fn set_info_char(&mut self, id_info: IdInfo, value: char) {
+        match id_info {
+            IdInfo::TypeDistribution => self.type_distribution = Some(value),
+
+            _ => panic!("Cette information n'est pas char : {id_info:?}"),
+        }
+    }
+
     pub fn get_info_u8(&self, id_info: IdInfo) -> Option<u8> {
         match id_info {
             IdInfo::CodeDefaut => self.code_defaut,
@@ -329,6 +359,7 @@ impl Context {
             IdInfo::HeureFin => self.heure_fin,
             IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme,
             IdInfo::NbFractionnements => self.nb_fractionnements,
+            IdInfo::IndexFractionnement => self.index_fractionnement,
 
             _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
         }
@@ -343,6 +374,7 @@ impl Context {
             IdInfo::HeureFin => self.heure_fin = Some(value),
             IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme = Some(value),
             IdInfo::NbFractionnements => self.nb_fractionnements = Some(value),
+            IdInfo::IndexFractionnement => self.index_fractionnement = Some(value),
 
             _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
         }
@@ -482,6 +514,16 @@ impl CommonContextTrait<bool> for Context {
     }
 }
 
+impl CommonContextTrait<char> for Context {
+    fn get_info(&self, id_info: IdInfo) -> Option<char> {
+        self.get_info_char(id_info)
+    }
+
+    fn set_info(&mut self, id_info: IdInfo, value: char) {
+        self.set_info_char(id_info, value);
+    }
+}
+
 impl CommonContextTrait<u8> for Context {
     fn get_info(&self, id_info: IdInfo) -> Option<u8> {
         self.get_info_u8(id_info)
@@ -557,6 +599,13 @@ mod tests {
                     for value in [true, false] {
                         context.set_info_bool(id_info, value);
                         assert_eq!(context.get_info_bool(id_info), Some(value));
+                    }
+                }
+                FormatInfo::FormatChar => {
+                    assert!(context.get_info_char(id_info).is_none());
+                    for value in ['A', 'B', 'é'] {
+                        context.set_info_char(id_info, value);
+                        assert_eq!(context.get_info_char(id_info), Some(value));
                     }
                 }
                 FormatInfo::FormatU8 => {
@@ -637,10 +686,11 @@ mod tests {
         check_id_code(&mut context, IdInfo::NbMesuragesQuantieme);
         check_id_code(&mut context, IdInfo::LibelleProduit);
         check_id_code(&mut context, IdInfo::NbFractionnements);
-
         for prod_num in 0..=NB_PRODUITS {
             check_id_code(&mut context, IdInfo::LibelleTableProduits(prod_num));
         }
+        check_id_code(&mut context, IdInfo::IndexFractionnement);
+        check_id_code(&mut context, IdInfo::TypeDistribution);
     }
 
     #[test]
@@ -666,6 +716,10 @@ mod tests {
         context.set_info(IdInfo::EnMesurage, true);
         let my_value: Option<bool> = context.get_info(IdInfo::EnMesurage);
         assert_eq!(my_value, Some(true));
+
+        context.set_info(IdInfo::TypeDistribution, 'C');
+        let my_value: Option<char> = context.get_info(IdInfo::TypeDistribution);
+        assert_eq!(my_value, Some('C'));
 
         context.set_info(IdInfo::CodeDefaut, 10_u8);
         let my_value: Option<u8> = context.get_info(IdInfo::CodeDefaut);

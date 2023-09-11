@@ -24,6 +24,14 @@ pub fn str_info_bool(context: &Context, id_info: IdInfo, str_none: &str) -> Stri
     .to_string()
 }
 
+/// Affichage d'un champ Char
+pub fn str_info_char(context: &Context, id_info: IdInfo, str_none: &str) -> String {
+    match context.get_info_char(id_info) {
+        None => str_none.to_string(),
+        Some(value) => format!("{value}"),
+    }
+}
+
 /// Affichage d'un champ U8
 pub fn str_info_u8(context: &Context, id_info: IdInfo, str_none: &str) -> String {
     match context.get_info_u8(id_info) {
@@ -85,6 +93,7 @@ pub fn str_info_string(
 pub fn str_info(context: &Context, id_info: IdInfo, str_none: &str) -> String {
     match context::get_info_format(id_info) {
         FormatInfo::FormatBool => str_info_bool(context, id_info, str_none),
+        FormatInfo::FormatChar => str_info_char(context, id_info, str_none),
         FormatInfo::FormatU8 => str_info_u8(context, id_info, str_none),
         FormatInfo::FormatU16 => str_info_u16(context, id_info, str_none),
         FormatInfo::FormatU32 => str_info_u32(context, id_info, str_none),

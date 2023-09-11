@@ -55,8 +55,7 @@ impl CommonMessageTrait for Message33 {
         let len_rep = st2150.wait_rep(&mut buffer, &[55])?;
 
         // Décodage de la réponse reçue
-        let frame =
-            st2150.try_from_buffer(&buffer[..len_rep], MESSAGE_NUM, &[5; 8])?;
+        let frame = st2150.try_from_buffer(&buffer[..len_rep], MESSAGE_NUM, &[5; 8])?;
 
         // Mise à jour du contexte
 
