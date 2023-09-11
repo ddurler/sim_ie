@@ -143,13 +143,13 @@ mod tests {
             b'3', // Numéro de message
             b'2',
             protocol::SEPARATOR,
-            b'A', //Libellé produit
+            b'A', // Libellé produit
             b'B',
             b'C',
             b'D',
             b'E',
             protocol::SEPARATOR,
-            b'1', //Quantité livrée
+            b'1', // Quantité livrée
             b'2',
             b'3',
             b'4',
