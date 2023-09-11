@@ -223,7 +223,7 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::Quantieme => "Quantième".to_string(),
         IdInfo::HeureDebut => "Heure de début (HHMM)".to_string(),
         IdInfo::HeureFin => "Heure de fin (HHMM)".to_string(),
-        IdInfo::IdentificationTag => "TAG identification".to_string(),
+        IdInfo::IdentificationTag => "Identification TAG".to_string(),
         IdInfo::ReferenceEtImmatriculation => "Référence et immatriculation".to_string(),
         IdInfo::VersionLogiciel => "Version du logiciel".to_string(),
         IdInfo::DateHeure => "Date et Heure (AAMMJJHHMMSS)".to_string(),
