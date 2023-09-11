@@ -44,19 +44,27 @@ impl Field {
     /// Constructeur champ numérique entier (supposé positif)
     /// Transforme une valeur entière en un champ ASCII d'une taille définie (0 padded à gauche)
     /// Par exemple la valeur 2 sur une width de 2 retourne vec![0x30, 0x32]
-    /// # Panics
-    /// panic! si la valeur est trop grande pour la taille demandée
-    /// panic! si taille demandée = 0
+    /// # Errors
+    /// si la valeur est trop grande pour la taille demandée
+    /// si taille demandée = 0
     #[allow(dead_code)]
-    pub fn encode_number<T>(value: T, width: usize) -> Self
+    pub fn encode_number<T>(value: T, width: usize) -> Result<Self, ProtocolError>
     where
         T: std::fmt::Display,
     {
-        assert!(width > 0);
+        if width == 0 {
+            return Err(ProtocolError::IllegalNumberEncoding(format!(
+                "Encoder {value} sur 0 car ?"
+            )));
+        }
         let str = format!("{value:0width$}");
         let data = str.as_bytes().to_vec();
-        assert_eq!(data.len(), width);
-        Self { data }
+        if data.len() != width {
+            return Err(ProtocolError::IllegalNumberEncoding(format!(
+                "Encoder {value} sur {width} cars ?"
+            )));
+        }
+        Ok(Self { data })
     }
 
     /// Extraction d'un valeur numérique entière encodée en ASCII
@@ -87,19 +95,27 @@ impl Field {
     /// Constructeur champ numérique entier signé (Le 1er car est un signe '+' ou '-')
     /// Transforme une valeur entière en un champ ASCII d'une taille définie (0 padded à gauche)
     /// Par exemple la valeur 2 sur une width de 2 retourne vec![0x30, 0x32]
-    /// # Panics
-    /// panic! si la valeur est trop grande pour la taille demandée
-    /// panic! si taille demandée = 0
+    /// # Errors
+    /// si la valeur est trop grande pour la taille demandée
+    /// si taille demandée = 0
     #[allow(dead_code)]
-    pub fn encode_signed_number<T>(value: T, width: usize) -> Self
+    pub fn encode_signed_number<T>(value: T, width: usize) -> Result<Self, ProtocolError>
     where
         T: std::fmt::Display,
     {
-        assert!(width > 0);
+        if width == 0 {
+            return Err(ProtocolError::IllegalNumberEncoding(format!(
+                "Encoder {value} sur 0 car ?"
+            )));
+        }
         let str = format!("{value:+0width$}");
         let data = str.as_bytes().to_vec();
-        assert_eq!(data.len(), width);
-        Self { data }
+        if data.len() != width {
+            return Err(ProtocolError::IllegalNumberEncoding(format!(
+                "Encoder {value} sur {width} cars ?"
+            )));
+        }
+        Ok(Self { data })
     }
 
     /// Extraction d'un valeur numérique entière et signée encodée en ASCII
@@ -166,9 +182,13 @@ impl Field {
     /// # Panics
     /// panic! si le caractère n'est pas de l'ASCII (0x20 - 0x7F)
     #[allow(dead_code)]
-    pub fn encode_char(car: char) -> Self {
-        assert!(car.is_ascii());
-        Self::new(&[car as u8])
+    pub fn encode_char(car: char) -> Result<Self, ProtocolError> {
+        if !car.is_ascii() {
+            return Err(ProtocolError::IllegalNumberEncoding(format!(
+                "{car} n'est pas ASCII"
+            )));
+        }
+        Ok(Self::new(&[car as u8]))
     }
 
     /// Extraction d'un caractère en ASCII
@@ -196,22 +216,29 @@ impl Field {
     /// Constructeur champ en hexadécimal
     /// Transforme une valeur entière en un champ hexadécimal d'une taille définie (cars hexadécimal en majuscule)
     /// Par exemple 0xA23 sur une width de 4 retourne vec![0x30, 0x41, 0x32, 0x33]
-    /// # Panics
-    /// panic! si la valeur est trop grande pour la taille demandée
-    /// panic! si taille demandée = 0
+    /// # Errors
+    /// si la valeur est trop grande pour la taille demandée
+    /// si taille demandée = 0
     #[allow(dead_code)]
-    pub fn encode_hexa<T>(value: T, width: usize) -> Self
+    pub fn encode_hexa<T>(value: T, width: usize) -> Result<Self, ProtocolError>
     where
         T: std::fmt::Display + std::fmt::UpperHex,
     {
-        assert!(width > 0);
-        // format! va ajouter un "0x" devant (on ajoute +2 à la taille demandée)
+        if width == 0 {
+            return Err(ProtocolError::IllegalNumberEncoding(format!(
+                "Encoder {value} en hexa sur 0 car ?"
+            )));
+        } // format! va ajouter un "0x" devant (on ajoute +2 à la taille demandée)
         let w = width + 2;
         let str = format!("{value:#0w$X}");
         // Supprime les 2 premiers caractères
         let data: Vec<u8> = str.as_bytes().iter().copied().skip(2).collect();
-        assert_eq!(data.len(), width);
-        Self { data }
+        if data.len() != width {
+            return Err(ProtocolError::IllegalNumberEncoding(format!(
+                "Encoder {value} en hexa sur {width} cars ?"
+            )));
+        }
+        Ok(Self { data })
     }
 
     /// Extraction d'une valeur hexa en ASCII
@@ -277,35 +304,34 @@ mod tests {
     #[test]
     fn test_encode_number() {
         // 0, width=1 -> '0'
-        let f = Field::encode_number(0, 1);
+        let f = Field::encode_number(0, 1).unwrap();
         assert_eq!(f.to_frame(), vec![0x30]);
 
         // 0, width=2 -> '00'
-        let f = Field::encode_number(0, 2);
+        let f = Field::encode_number(0, 2).unwrap();
         assert_eq!(f.to_frame(), vec![0x30, 0x30]);
 
         // 5, width=1 -> '5'
-        let f = Field::encode_number(5, 1);
+        let f = Field::encode_number(5, 1).unwrap();
         assert_eq!(f.to_frame(), vec![0x35]);
 
         // 5, width=2 -> '05'
-        let f = Field::encode_number(5, 2);
+        let f = Field::encode_number(5, 2).unwrap();
         assert_eq!(f.to_frame(), vec![0x30, 0x35]);
 
         // 5, width=2 -> '05'
-        let f = Field::encode_number(5, 2);
+        let f = Field::encode_number(5, 2).unwrap();
         assert_eq!(f.to_frame(), vec![0x30, 0x35]);
 
         // 56, width=2 -> '56'
-        let f = Field::encode_number(56, 2);
+        let f = Field::encode_number(56, 2).unwrap();
         assert_eq!(f.to_frame(), vec![0x35, 0x36]);
     }
 
     #[test]
-    #[should_panic]
-    fn test_panic_encode_number() {
-        // 567, width=2 -> '56'  /!\ ça dépasse en panic!
-        let _ = Field::encode_number(567, 2);
+    fn test_error_encode_number() {
+        // 567, width=2 -> '56'  /!\ ça dépasse
+        assert!(Field::encode_number(567, 2).is_err());
     }
 
     #[test]
@@ -313,28 +339,36 @@ mod tests {
         // Test type u8
         for value in [0_u8, 10_u8, 100_u8] {
             assert_eq!(
-                Field::encode_number(value, 3).decode_number::<u8>(),
+                Field::encode_number(value, 3)
+                    .unwrap()
+                    .decode_number::<u8>(),
                 Ok(value)
             );
         }
         // Test type i8
         for value in [0_i8, 10_i8, 100_i8] {
             assert_eq!(
-                Field::encode_number(value, 3).decode_number::<i8>(),
+                Field::encode_number(value, 3)
+                    .unwrap()
+                    .decode_number::<i8>(),
                 Ok(value)
             );
         }
         // Test type u16
         for value in [0_u16, 10_u16, 1_000_u16, 10_000_u16] {
             assert_eq!(
-                Field::encode_number(value, 5).decode_number::<u16>(),
+                Field::encode_number(value, 5)
+                    .unwrap()
+                    .decode_number::<u16>(),
                 Ok(value)
             );
         }
         // Test type i16
         for value in [0_i16, 10_i16, 1_000_i16, 10_000_i16] {
             assert_eq!(
-                Field::encode_number(value, 5).decode_number::<i16>(),
+                Field::encode_number(value, 5)
+                    .unwrap()
+                    .decode_number::<i16>(),
                 Ok(value)
             );
         }
@@ -348,7 +382,9 @@ mod tests {
             1_000_000_000_u32,
         ] {
             assert_eq!(
-                Field::encode_number(value, 10).decode_number::<u32>(),
+                Field::encode_number(value, 10)
+                    .unwrap()
+                    .decode_number::<u32>(),
                 Ok(value)
             );
         }
@@ -362,7 +398,9 @@ mod tests {
             1_000_000_000_i32,
         ] {
             assert_eq!(
-                Field::encode_number(value, 10).decode_number::<i32>(),
+                Field::encode_number(value, 10)
+                    .unwrap()
+                    .decode_number::<i32>(),
                 Ok(value)
             );
         }
@@ -384,27 +422,26 @@ mod tests {
     #[test]
     fn test_encode_signed_number() {
         // 0, width=3 -> '+00'
-        let f = Field::encode_signed_number(0, 3);
+        let f = Field::encode_signed_number(0, 3).unwrap();
         assert_eq!(f.to_frame(), vec![b'+', 0x30, 0x30]);
 
         // 12, width=4 -> '+012'
-        let f = Field::encode_signed_number(12, 4);
+        let f = Field::encode_signed_number(12, 4).unwrap();
         assert_eq!(f.to_frame(), vec![b'+', 0x30, 0x31, 0x32]);
 
         // -12, width=4 -> '-012'
-        let f = Field::encode_signed_number(-12, 4);
+        let f = Field::encode_signed_number(-12, 4).unwrap();
         assert_eq!(f.to_frame(), vec![b'-', 0x30, 0x31, 0x32]);
 
         // -123, width=4 -> '-123'
-        let f = Field::encode_signed_number(-123, 4);
+        let f = Field::encode_signed_number(-123, 4).unwrap();
         assert_eq!(f.to_frame(), vec![b'-', 0x31, 0x32, 0x33]);
     }
 
     #[test]
-    #[should_panic]
-    fn test_panic_encode_signed_number() {
-        // -1234, width=2 -> '-1234'  /!\ ça dépasse en panic!
-        let _ = Field::encode_hexa(-1234, 2);
+    fn test_error_encode_signed_number() {
+        // -1234, width=2 -> '-1234'  /!\ ça dépasse
+        assert!(Field::encode_hexa(-1234, 2).is_err());
     }
 
     #[test]
@@ -412,35 +449,45 @@ mod tests {
         // Test type u8
         for value in [0_u8, 10_u8, 100_u8] {
             assert_eq!(
-                Field::encode_signed_number(value, 4).decode_signed_number::<u8>(),
+                Field::encode_signed_number(value, 4)
+                    .unwrap()
+                    .decode_signed_number::<u8>(),
                 Ok(value)
             );
         }
         // Test type i8
         for value in [-10_i8, 0_i8, 10_i8] {
             assert_eq!(
-                Field::encode_signed_number(value, 4).decode_signed_number::<i8>(),
+                Field::encode_signed_number(value, 4)
+                    .unwrap()
+                    .decode_signed_number::<i8>(),
                 Ok(value)
             );
         }
         // Test type u16
         for value in [0_u16, 10_u16, 1_000_u16] {
             assert_eq!(
-                Field::encode_signed_number(value, 5).decode_signed_number::<u16>(),
+                Field::encode_signed_number(value, 5)
+                    .unwrap()
+                    .decode_signed_number::<u16>(),
                 Ok(value)
             );
         }
         // Test type i16
         for value in [-1_000_i16, -10_i16, 0_i16, 10_i16, 1_000_i16] {
             assert_eq!(
-                Field::encode_signed_number(value, 5).decode_signed_number::<i16>(),
+                Field::encode_signed_number(value, 5)
+                    .unwrap()
+                    .decode_signed_number::<i16>(),
                 Ok(value)
             );
         }
         // Test type u32
         for value in [0_u32, 10_u32, 1000_u32, 10_000_u32, 100_000_u32] {
             assert_eq!(
-                Field::encode_signed_number(value, 10).decode_signed_number::<u32>(),
+                Field::encode_signed_number(value, 10)
+                    .unwrap()
+                    .decode_signed_number::<u32>(),
                 Ok(value)
             );
         }
@@ -457,7 +504,9 @@ mod tests {
             100_000_i32,
         ] {
             assert_eq!(
-                Field::encode_signed_number(value, 10).decode_signed_number::<i32>(),
+                Field::encode_signed_number(value, 10)
+                    .unwrap()
+                    .decode_signed_number::<i32>(),
                 Ok(value)
             );
         }
@@ -531,21 +580,20 @@ mod tests {
 
     #[test]
     fn test_encode_char() {
-        let f = Field::encode_char('A');
+        let f = Field::encode_char('A').unwrap();
         assert_eq!(f.to_frame(), vec![0x41]);
     }
 
     #[test]
-    #[should_panic]
-    fn test_panic_encode_char() {
+    fn test_error_encode_char() {
         // Non ASCII
-        let _ = Field::encode_char('é');
+        assert!(Field::encode_char('é').is_err());
     }
 
     #[test]
     fn test_decode_char() {
         for value in [' ', 'A', '?'] {
-            assert_eq!(Field::encode_char(value).decode_char(), Ok(value));
+            assert_eq!(Field::encode_char(value).unwrap().decode_char(), Ok(value));
         }
     }
 
@@ -561,55 +609,69 @@ mod tests {
     #[test]
     fn test_encode_hexa() {
         // 0x1A, width=2 -> '1A'
-        let f = Field::encode_hexa(0x1A, 2);
+        let f = Field::encode_hexa(0x1A, 2).unwrap();
         assert_eq!(f.to_frame(), vec![0x31, 0x41]);
 
         // 0x1A, width=3 -> '01A'
-        let f = Field::encode_hexa(0x1A, 3);
+        let f = Field::encode_hexa(0x1A, 3).unwrap();
         assert_eq!(f.to_frame(), vec![0x30, 0x31, 0x41]);
 
         // 0x1A, width=4 -> '001A'
-        let f = Field::encode_hexa(0x1A, 4);
+        let f = Field::encode_hexa(0x1A, 4).unwrap();
         assert_eq!(f.to_frame(), vec![0x30, 0x30, 0x31, 0x41]);
 
         // 0xABCD, width=4 -> 'ABCD'
-        let f = Field::encode_hexa(0xABCD, 4);
+        let f = Field::encode_hexa(0xABCD, 4).unwrap();
         assert_eq!(f.to_frame(), vec![0x41, 0x42, 0x43, 0x44]);
     }
 
     #[test]
-    #[should_panic]
-    fn test_panic_encode_hexa() {
-        // 0x1234, width=2 -> '1234'  /!\ ça dépasse en panic!
-        let _ = Field::encode_hexa(0x1234, 2);
+    fn test_errorc_encode_hexa() {
+        // 0x1234, width=2 -> '1234'  /!\ ça dépasse
+        assert!(Field::encode_hexa(0x1234, 2).is_err());
     }
 
     #[test]
     fn test_decode_hexa() {
         // Test type u8
         for value in [0x00_u8, 0xAB_u8, 0x9A_u8] {
-            assert_eq!(Field::encode_hexa(value, 2).decode_hexa::<u8>(), Ok(value));
+            assert_eq!(
+                Field::encode_hexa(value, 2).unwrap().decode_hexa::<u8>(),
+                Ok(value)
+            );
         }
         // Test type i8
         for value in [0x00_i8, 0x12_i8, 0x23_i8] {
-            assert_eq!(Field::encode_hexa(value, 3).decode_hexa::<i8>(), Ok(value));
+            assert_eq!(
+                Field::encode_hexa(value, 3).unwrap().decode_hexa::<i8>(),
+                Ok(value)
+            );
         }
         // Test type u16
         for value in [0x1234_u16, 0xABCD_u16] {
-            assert_eq!(Field::encode_hexa(value, 4).decode_hexa::<u16>(), Ok(value));
+            assert_eq!(
+                Field::encode_hexa(value, 4).unwrap().decode_hexa::<u16>(),
+                Ok(value)
+            );
         }
         // Test type i16
         for value in [0x123_i16, 0x9AB_i16] {
-            assert_eq!(Field::encode_hexa(value, 4).decode_hexa::<i16>(), Ok(value));
+            assert_eq!(
+                Field::encode_hexa(value, 4).unwrap().decode_hexa::<i16>(),
+                Ok(value)
+            );
         }
         // Test type u32
         for value in [0x0_u32, 0x1234_ABCD_u32] {
-            assert_eq!(Field::encode_hexa(value, 8).decode_hexa::<u32>(), Ok(value));
+            assert_eq!(
+                Field::encode_hexa(value, 8).unwrap().decode_hexa::<u32>(),
+                Ok(value)
+            );
         }
         // Test type i32
         for value in [0x4567, 0xB_A987] {
             assert_eq!(
-                Field::encode_hexa(value, 10).decode_hexa::<i32>(),
+                Field::encode_hexa(value, 10).unwrap().decode_hexa::<i32>(),
                 Ok(value)
             );
         }

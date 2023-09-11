@@ -46,6 +46,9 @@ pub enum ProtocolError {
     /// Séparateur de champ attendu (position)
     SeparatorExpected(usize),
 
+    /// Impossible d'encoder le nombre dans le format demandé
+    IllegalNumberEncoding(String),
+
     /// Caractère incorrect dans un champ lors du décodage (type_de_champ, champ, caractère)
     IllegalFieldCharDecode(String, Field, u8),
 
@@ -85,6 +88,10 @@ impl Display for ProtocolError {
             ProtocolError::SeparatorExpected(pos) => write!(
                 f,
                 "Séparateur de champ attendu en position {pos} dans le message"
+            ),
+            ProtocolError::IllegalNumberEncoding(txt) => write!(
+                f,
+                "Encodage trame impossible : {txt}"
             ),
             ProtocolError::IllegalFieldCharDecode(str_decode, field, car) => write!(
                 f,
@@ -145,12 +152,11 @@ impl ST2150 {
     }
 
     /// Helper pour renseigner la trace de ce qu'on a reçu
-    fn set_last_rep(&mut self, buffer: &[u8], len_buffer: usize, error: String) {
+    fn set_last_rep(&mut self, buffer: &[u8], len_buffer: usize) {
         self.last_rep = Vec::with_capacity(len_buffer);
         for v in &buffer[0..len_buffer] {
             self.last_rep.push(*v);
         }
-        self.last_error = error;
     }
 
     /// Attente d'un message (réponse)
@@ -162,18 +168,14 @@ impl ST2150 {
         self.last_rep = vec![];
         let max_expected_len = *expected_lens.iter().max().unwrap_or(&0);
         let len_rep = protocol::waiting_frame(&mut self.port, buffer, max_expected_len);
+        self.set_last_rep(buffer, len_rep);
         if len_rep == 0 {
-            let e = ProtocolError::NoReply;
-            self.set_last_rep(buffer, len_rep, format!("{e}"));
-            return Err(e);
+            return Err(ProtocolError::NoReply);
         }
         if !expected_lens.contains(&len_rep) {
-            let e = ProtocolError::BadFrameLen(len_rep, expected_lens.to_vec());
-            self.set_last_rep(buffer, len_rep, format!("{e}"));
-            return Err(e);
+            return Err(ProtocolError::BadFrameLen(len_rep, expected_lens.to_vec()));
         }
 
-        self.set_last_rep(buffer, len_rep, String::new());
         Ok(len_rep)
     }
 
@@ -205,6 +207,15 @@ impl ST2150 {
         context: &mut Context,
         message_num: u8,
     ) -> Result<(), ProtocolError> {
-        messages::get_dyn_message(message_num).do_vacation(self, context)
+        self.last_req = vec![];
+        self.last_rep = vec![];
+        self.last_error = String::new();
+        match messages::get_dyn_message(message_num).do_vacation(self, context) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                self.last_error = format!("{e}");
+                Err(e)
+            }
+        }
     }
 }

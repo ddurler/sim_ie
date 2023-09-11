@@ -46,7 +46,7 @@ impl CommonMessageTrait for Message22 {
         };
 
         // #0 : Longueur de l'identification tag sur 3
-        req.add_field(Field::encode_number(identification_tag.len(), 3));
+        req.add_field(Field::encode_number(identification_tag.len(), 3)?);
 
         // #1 : Identification tag
         if identification_tag.is_empty() {

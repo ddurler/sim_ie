@@ -49,11 +49,11 @@ impl CommonMessageTrait for Message32 {
 
         // #0 : Quantième
         let quantieme = context.get_info_u16(IdInfo::Quantieme).unwrap();
-        req.add_field(Field::encode_number(quantieme, 3));
+        req.add_field(Field::encode_number(quantieme, 3)?);
 
         // #1 : Numéro d'ordre dans la journée
         let index_journalier = context.get_info_u16(IdInfo::IndexJournalier).unwrap();
-        req.add_field(Field::encode_number(index_journalier, 3));
+        req.add_field(Field::encode_number(index_journalier, 3)?);
 
         st2150.send_req(&req);
 

@@ -41,7 +41,7 @@ impl CommonMessageTrait for Message20 {
 
         // Valeur de la prédétermination
         let prede = context.get_info_u32(IdInfo::Predetermination).unwrap();
-        req.add_field(Field::encode_number(prede, 5));
+        req.add_field(Field::encode_number(prede, 5)?);
 
         // Code produit
         let code_prod = context.get_info_u8(IdInfo::CodeProduit).unwrap();

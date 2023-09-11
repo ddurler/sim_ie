@@ -41,7 +41,7 @@ impl CommonMessageTrait for Message31 {
         let mut req = frame::Frame::new(MESSAGE_NUM);
 
         let quantieme = context.get_info_u16(IdInfo::Quantieme).unwrap();
-        req.add_field(Field::encode_number(quantieme, 3));
+        req.add_field(Field::encode_number(quantieme, 3)?);
 
         st2150.send_req(&req);
 

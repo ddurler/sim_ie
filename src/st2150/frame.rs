@@ -49,7 +49,7 @@ impl Frame {
         req.push(protocol::STX);
 
         // Numéro de message sur 2 octets
-        let command_field = Field::encode_number(self.message_num, 2);
+        let command_field = Field::encode_number(self.message_num, 2).unwrap();
         req.extend(command_field.to_frame());
 
         // Tous le champs du message précédés d'un SEPARATOR
@@ -63,7 +63,7 @@ impl Frame {
         // Le checksum est calculé sur l'ensemble de la trame sans le STX initial mais
         // avec le SEPARATOR avant le checksum
         let checksum = protocol::calcul_checksum(&req[1..]);
-        let checksum_field = Field::encode_hexa(checksum, 2);
+        let checksum_field = Field::encode_hexa(checksum, 2).unwrap();
         req.extend(checksum_field.to_frame());
 
         // ETX final
@@ -265,7 +265,7 @@ mod tests {
 
         // Trame num = 12 avec 2 champs de longueur [5, 10]
         let mut frame = Frame::new(12);
-        frame.add_field(Field::encode_number(12345, 5));
+        frame.add_field(Field::encode_number(12345, 5).unwrap());
         frame.add_field(Field::encode_str("VALUE", 10));
         let ret = Frame::try_from_buffer(&frame.to_frame(), 12, &[5, 10]);
         assert_eq!(ret.unwrap(), frame);
@@ -274,7 +274,7 @@ mod tests {
         let mut frame = Frame::new(12);
         frame.add_field(Field::encode_str("VALUE", 10));
         frame.add_field(Field::new(&[]));
-        frame.add_field(Field::encode_number(123, 3));
+        frame.add_field(Field::encode_number(123, 3).unwrap());
         let ret = Frame::try_from_buffer(&frame.to_frame(), 12, &[10, 0, 3]);
         assert_eq!(ret.unwrap(), frame);
     }
