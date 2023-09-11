@@ -100,6 +100,11 @@ pub enum IdInfo {
     LibelleTableProduits(usize),
     IndexFractionnement,
     TypeDistribution,
+    Date,
+    Heure,
+    NbJEvents,
+    DataJEvent,
+    LibelleJEvent,
 }
 
 /// Dictionnaire des données pour les requêtes et les réponses
@@ -198,6 +203,21 @@ pub struct Context {
 
     /// Type de distribution ('P' pour purge, 'L' pour libre, etc.)
     type_distribution: Option<char>,
+
+    /// Date (AAMMJJ)
+    date: Option<u32>,
+
+    /// Heure (HHMMSS)
+    heure: Option<u32>,
+
+    /// Nombre d'événements pour une journée
+    nb_jevents: Option<u16>,
+
+    /// Données techniques d'un événement (voir doc ST2150)
+    data_jevent: Option<String>,
+
+    /// Libellé d'un événement
+    libelle_jevent: Option<String>,
 }
 
 /// Retourne le libellé d'un information du contexte
@@ -233,7 +253,12 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::NbFractionnements => "Nombre de fractionnements".to_lowercase(),
         IdInfo::LibelleTableProduits(prod_num) => format!("Libellé table produit #{prod_num}"),
         IdInfo::IndexFractionnement => "Index fractionnement".to_string(),
-        IdInfo::TypeDistribution => "(A)nticipation purge, li(B)ération, (C)hargement, pré(D)é, (L)ibre, (P)urge, (T)ransfert, (V)idange, ".to_string()
+        IdInfo::TypeDistribution => "(A)nticipation purge, li(B)ération, (C)hargement, pré(D)é, (L)ibre, (P)urge, (T)ransfert, (V)idange, ".to_string(),
+        IdInfo::Date=> "Date (AAMMJJ)".to_string(),
+        IdInfo::Heure=> "Heure (HHMMSS)".to_string(),
+        IdInfo::NbJEvents => "Nombre d'événements".to_string(),
+        IdInfo::DataJEvent => "Données techniques d'un événement".to_string(),
+        IdInfo::LibelleJEvent => "Libellé d'un événement".to_string(),
     }
 }
 
@@ -262,13 +287,16 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::HeureFin
         | IdInfo::NbMesuragesQuantieme
         | IdInfo::NbFractionnements
-        | IdInfo::IndexFractionnement => FormatInfo::FormatU16,
+        | IdInfo::IndexFractionnement
+        | IdInfo::NbJEvents => FormatInfo::FormatU16,
 
         /* U32 */
         IdInfo::Totalisateur
         | IdInfo::QuantitePrincipale
         | IdInfo::QuantiteSecondaire
-        | IdInfo::Predetermination => FormatInfo::FormatU32,
+        | IdInfo::Predetermination
+        | IdInfo::Date
+        | IdInfo::Heure => FormatInfo::FormatU32,
 
         /* U64 */
         IdInfo::DateHeure => FormatInfo::FormatU64,
@@ -284,6 +312,8 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         IdInfo::VersionLogiciel => FormatInfo::FormatString(10),
         IdInfo::LibelleProduit => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
         IdInfo::LibelleTableProduits(_prod_num) => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
+        IdInfo::DataJEvent => FormatInfo::FormatString(12),
+        IdInfo::LibelleJEvent => FormatInfo::FormatString(40),
     }
 }
 
@@ -360,6 +390,7 @@ impl Context {
             IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme,
             IdInfo::NbFractionnements => self.nb_fractionnements,
             IdInfo::IndexFractionnement => self.index_fractionnement,
+            IdInfo::NbJEvents => self.nb_jevents,
 
             _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
         }
@@ -375,6 +406,7 @@ impl Context {
             IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme = Some(value),
             IdInfo::NbFractionnements => self.nb_fractionnements = Some(value),
             IdInfo::IndexFractionnement => self.index_fractionnement = Some(value),
+            IdInfo::NbJEvents => self.nb_jevents = Some(value),
 
             _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
         }
@@ -386,6 +418,8 @@ impl Context {
             IdInfo::QuantitePrincipale => self.quantite_principale,
             IdInfo::QuantiteSecondaire => self.quantite_secondaire,
             IdInfo::Predetermination => self.predetermination,
+            IdInfo::Date => self.date,
+            IdInfo::Heure => self.heure,
 
             _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
         }
@@ -397,6 +431,8 @@ impl Context {
             IdInfo::QuantitePrincipale => self.quantite_principale = Some(value),
             IdInfo::QuantiteSecondaire => self.quantite_secondaire = Some(value),
             IdInfo::Predetermination => self.predetermination = Some(value),
+            IdInfo::Date => self.date = Some(value),
+            IdInfo::Heure => self.heure = Some(value),
 
             _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
         }
@@ -458,6 +494,8 @@ impl Context {
             IdInfo::LibelleTableProduits(prod_num) => {
                 self.get_info_libelle_table_produits(prod_num)
             }
+            IdInfo::DataJEvent => self.data_jevent.clone(),
+            IdInfo::LibelleJEvent => self.libelle_jevent.clone(),
 
             _ => panic!("Cette information n'est pas string : {id_info:?}"),
         }
@@ -491,6 +529,8 @@ impl Context {
             IdInfo::LibelleTableProduits(prod_num) => {
                 self.set_info_libelle_table_produits(prod_num, value);
             }
+            IdInfo::DataJEvent => self.data_jevent = Some(value.to_string()),
+            IdInfo::LibelleJEvent => self.libelle_jevent = Some(value.to_string()),
 
             _ => panic!("Cette information n'est pas string : {id_info:?}"),
         };
@@ -691,6 +731,11 @@ mod tests {
         }
         check_id_code(&mut context, IdInfo::IndexFractionnement);
         check_id_code(&mut context, IdInfo::TypeDistribution);
+        check_id_code(&mut context, IdInfo::Date);
+        check_id_code(&mut context, IdInfo::Heure);
+        check_id_code(&mut context, IdInfo::NbJEvents);
+        check_id_code(&mut context, IdInfo::DataJEvent);
+        check_id_code(&mut context, IdInfo::LibelleJEvent);
     }
 
     #[test]
