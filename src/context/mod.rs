@@ -94,6 +94,8 @@ pub enum IdInfo {
     DateHeure,
     TypeCompteur,
     NbMesuragesQuantieme,
+    LibelleProduit,
+    NbFractionnements,
     LibelleTableProduits(usize),
 }
 
@@ -179,6 +181,12 @@ pub struct Context {
     /// Nombre de mesurages pour un quantième
     nb_mesurages_quantieme: Option<u16>,
 
+    /// Libellé du produit
+    libelle_produit: Option<String>,
+
+    /// Nombre de fractionnements
+    nb_fractionnements: Option<u16>,
+
     /* Pour + tard... */
     /// Libellés de la table des max. NB_PRODUITS produits
     libelle_table_produits: Vec<String>,
@@ -213,6 +221,8 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::DateHeure => "Date et Heure (AAMMJJHHMMSS)".to_string(),
         IdInfo::TypeCompteur => "Type de compteur (0:Vm, 1:Vb, 2:Masse)".to_string(),
         IdInfo::NbMesuragesQuantieme => "Nombre de mesurages pour un quantième".to_string(),
+        IdInfo::LibelleProduit => "Libellé produit".to_string(),
+        IdInfo::NbFractionnements => "Nombre de fractionnements".to_lowercase(),
         IdInfo::LibelleTableProduits(prod_num) => format!("Libellé table produit #{prod_num}"),
     }
 }
@@ -237,7 +247,8 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::Quantieme
         | IdInfo::HeureDebut
         | IdInfo::HeureFin
-        | IdInfo::NbMesuragesQuantieme => FormatInfo::FormatU16,
+        | IdInfo::NbMesuragesQuantieme
+        | IdInfo::NbFractionnements => FormatInfo::FormatU16,
 
         /* U32 */
         IdInfo::Totalisateur
@@ -257,6 +268,7 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         IdInfo::IdentificationTag => FormatInfo::FormatString(100),
         IdInfo::ReferenceEtImmatriculation => FormatInfo::FormatString(15),
         IdInfo::VersionLogiciel => FormatInfo::FormatString(10),
+        IdInfo::LibelleProduit => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
         IdInfo::LibelleTableProduits(_prod_num) => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
     }
 }
@@ -316,6 +328,7 @@ impl Context {
             IdInfo::HeureDebut => self.heure_debut,
             IdInfo::HeureFin => self.heure_fin,
             IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme,
+            IdInfo::NbFractionnements => self.nb_fractionnements,
 
             _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
         }
@@ -329,6 +342,7 @@ impl Context {
             IdInfo::HeureDebut => self.heure_debut = Some(value),
             IdInfo::HeureFin => self.heure_fin = Some(value),
             IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme = Some(value),
+            IdInfo::NbFractionnements => self.nb_fractionnements = Some(value),
 
             _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
         }
@@ -408,6 +422,7 @@ impl Context {
             IdInfo::IdentificationTag => self.identification_tag.clone(),
             IdInfo::ReferenceEtImmatriculation => self.reference_et_immatriculation.clone(),
             IdInfo::VersionLogiciel => self.version_logiciel.clone(),
+            IdInfo::LibelleProduit => self.libelle_produit.clone(),
             IdInfo::LibelleTableProduits(prod_num) => {
                 self.get_info_libelle_table_produits(prod_num)
             }
@@ -440,6 +455,7 @@ impl Context {
                 self.reference_et_immatriculation = Some(value.to_string());
             }
             IdInfo::VersionLogiciel => self.version_logiciel = Some(value.to_string()),
+            IdInfo::LibelleProduit => self.libelle_produit = Some(value.to_string()),
             IdInfo::LibelleTableProduits(prod_num) => {
                 self.set_info_libelle_table_produits(prod_num, value);
             }
@@ -619,6 +635,8 @@ mod tests {
         check_id_code(&mut context, IdInfo::DateHeure);
         check_id_code(&mut context, IdInfo::TypeCompteur);
         check_id_code(&mut context, IdInfo::NbMesuragesQuantieme);
+        check_id_code(&mut context, IdInfo::LibelleProduit);
+        check_id_code(&mut context, IdInfo::NbFractionnements);
 
         for prod_num in 0..=NB_PRODUITS {
             check_id_code(&mut context, IdInfo::LibelleTableProduits(prod_num));

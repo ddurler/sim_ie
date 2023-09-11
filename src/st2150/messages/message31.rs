@@ -104,7 +104,7 @@ mod tests {
             b'3', // Numéro de message
             b'1',
             protocol::SEPARATOR,
-            b'0', //Nombre de mesurages pour ce quantième
+            b'0', // Nombre de mesurages pour ce quantième
             b'1',
             b'2',
             protocol::SEPARATOR,
