@@ -1,4 +1,4 @@
-//! Message 10 : Information compteur
+//! Message 30 : Information compteur
 
 use crate::context::Context;
 
@@ -11,7 +11,7 @@ use crate::context::IdInfo;
 /// Numéro de ce message
 const MESSAGE_NUM: u8 = 30;
 
-/// Message 10 : Information compteur
+/// Message 30 : Information compteur
 #[derive(Default)]
 pub struct Message30 {}
 

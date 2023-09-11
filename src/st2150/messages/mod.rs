@@ -30,6 +30,8 @@ pub mod message22;
 use message22::Message22;
 pub mod message30;
 use message30::Message30;
+pub mod message31;
+use message31::Message31;
 
 use super::field;
 
@@ -42,6 +44,7 @@ pub fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
         21 => Box::<Message21>::default(),
         22 => Box::<Message22>::default(),
         30 => Box::<Message30>::default(),
+        31 => Box::<Message31>::default(),
 
         _ => panic!("Numéro de message non géré {message_num}"),
     }

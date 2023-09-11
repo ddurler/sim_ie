@@ -93,6 +93,7 @@ pub enum IdInfo {
     VersionLogiciel,
     DateHeure,
     TypeCompteur,
+    NbMesuragesQuantieme,
     LibelleProduit(usize),
 }
 
@@ -175,6 +176,9 @@ pub struct Context {
     /// Type de compteur 0: Vm, 1:Vb, 2:Masse
     type_compteur: Option<u8>,
 
+    /// Nombre de mesurages pour un quantième
+    nb_mesurages_quantieme: Option<u16>,
+
     /* Pour + tard... */
     /// Libellés des max. NB_PRODUITS produits
     libelle_produits: Vec<String>,
@@ -208,6 +212,7 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::VersionLogiciel => "Version du logiciel".to_string(),
         IdInfo::DateHeure => "Date et Heure (AAMMJJHHMMSS)".to_string(),
         IdInfo::TypeCompteur => "Type de compteur (0:Vm, 1:Vb, 2:Masse)".to_string(),
+        IdInfo::NbMesuragesQuantieme => "Nombre de mesurages pour un quantième".to_string(),
         IdInfo::LibelleProduit(prod_num) => format!("Libellé produit #{prod_num}"),
     }
 }
@@ -231,7 +236,8 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::IndexJournalier
         | IdInfo::Quantieme
         | IdInfo::HeureDebut
-        | IdInfo::HeureFin => FormatInfo::FormatU16,
+        | IdInfo::HeureFin
+        | IdInfo::NbMesuragesQuantieme => FormatInfo::FormatU16,
 
         /* U32 */
         IdInfo::Totalisateur
@@ -309,6 +315,7 @@ impl Context {
             IdInfo::Quantieme => self.quantieme,
             IdInfo::HeureDebut => self.heure_debut,
             IdInfo::HeureFin => self.heure_fin,
+            IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme,
 
             _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
         }
@@ -321,8 +328,9 @@ impl Context {
             IdInfo::Quantieme => self.quantieme = Some(value),
             IdInfo::HeureDebut => self.heure_debut = Some(value),
             IdInfo::HeureFin => self.heure_fin = Some(value),
+            IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme = Some(value),
 
-            _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
+            _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
         }
     }
 
@@ -360,7 +368,7 @@ impl Context {
         match id_info {
             IdInfo::DateHeure => self.date_heure = Some(value),
 
-            _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
+            _ => panic!("Cette information n'est pas u64 : {id_info:?}"),
         }
     }
 
@@ -606,6 +614,7 @@ mod tests {
         check_id_code(&mut context, IdInfo::VersionLogiciel);
         check_id_code(&mut context, IdInfo::DateHeure);
         check_id_code(&mut context, IdInfo::TypeCompteur);
+        check_id_code(&mut context, IdInfo::NbMesuragesQuantieme);
 
         for prod_num in 0..=NB_PRODUITS {
             check_id_code(&mut context, IdInfo::LibelleProduit(prod_num));
