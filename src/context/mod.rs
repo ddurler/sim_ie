@@ -14,11 +14,14 @@
 ///
 /// Nota : C'est un peu relou à maintenir mais très pratique pour l'IHM...
 
-/// Nombre max de produit
+/// Nombre max de produits
 const NB_PRODUITS: usize = 16;
 
 /// Nombre de caractères pour un libellé produit
 const LIBELLE_PRODUIT_WIDTH: usize = 10;
+
+/// Nombre max de compartiments
+const NB_COMPARTIMENTS: usize = 9;
 
 // Pour ajouter un nouveau format de données pour le contexte :
 //
@@ -105,6 +108,8 @@ pub enum IdInfo {
     NbJEvents,
     DataJEvent,
     LibelleJEvent,
+    CodeProduitCompartiment(usize),
+    QuantiteCompartiment(usize),
 }
 
 /// Dictionnaire des données pour les requêtes et les réponses
@@ -218,6 +223,12 @@ pub struct Context {
 
     /// Libellé d'un événement
     libelle_jevent: Option<String>,
+
+    /// Code produit dans le compartiment #i
+    code_produit_compartiment: Vec<u8>,
+
+    /// Quantité dans le compartiment #i
+    quantite_compartiment: Vec<u32>,
 }
 
 /// Retourne le libellé d'une information du contexte
@@ -259,6 +270,8 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::NbJEvents => "Nombre d'événements".to_string(),
         IdInfo::DataJEvent => "Données techniques d'un événement".to_string(),
         IdInfo::LibelleJEvent => "Libellé d'un événement".to_string(),
+        IdInfo::CodeProduitCompartiment(compart_num) => format!("Code produit du compartiment #{compart_num}"),
+        IdInfo::QuantiteCompartiment(compart_num)=> format!("Quantité dans le compartiment #{compart_num}"),
     }
 }
 
@@ -277,7 +290,10 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         IdInfo::TypeDistribution => FormatInfo::FormatChar,
 
         /* U8 */
-        IdInfo::CodeDefaut | IdInfo::CodeProduit | IdInfo::TypeCompteur => FormatInfo::FormatU8,
+        IdInfo::CodeDefaut
+        | IdInfo::CodeProduit
+        | IdInfo::TypeCompteur
+        | IdInfo::CodeProduitCompartiment(_) => FormatInfo::FormatU8,
 
         /* U16 */
         IdInfo::IndexSansRaz
@@ -296,7 +312,8 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::QuantiteSecondaire
         | IdInfo::Predetermination
         | IdInfo::Date
-        | IdInfo::Heure => FormatInfo::FormatU32,
+        | IdInfo::Heure
+        | IdInfo::QuantiteCompartiment(_) => FormatInfo::FormatU32,
 
         /* U64 */
         IdInfo::DateHeure => FormatInfo::FormatU64,
@@ -360,14 +377,38 @@ impl Context {
         }
     }
 
+    /// Getter particulier pour le code produit d'un compartiment
+    /// (la table des codes produit par compartiment est construite par morceaux...)
+    fn get_info_code_produit_compartiment(&self, compart_num: usize) -> Option<u8> {
+        assert!(compart_num <= NB_COMPARTIMENTS);
+        if self.code_produit_compartiment.len() <= compart_num {
+            None
+        } else {
+            Some(self.code_produit_compartiment[compart_num])
+        }
+    }
+
     pub fn get_info_u8(&self, id_info: IdInfo) -> Option<u8> {
         match id_info {
             IdInfo::CodeDefaut => self.code_defaut,
             IdInfo::CodeProduit => self.code_produit,
             IdInfo::TypeCompteur => self.type_compteur,
+            IdInfo::CodeProduitCompartiment(compart_num) => {
+                self.get_info_code_produit_compartiment(compart_num)
+            }
 
             _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
         }
+    }
+
+    /// Setter particulier pour le code produit d'un compartiment
+    /// (la table des codes produit par compartiment est construite par morceaux...)
+    fn set_info_code_produit_compartiment(&mut self, compart_num: usize, value: u8) {
+        assert!(compart_num <= NB_COMPARTIMENTS);
+        while self.code_produit_compartiment.len() <= compart_num {
+            self.code_produit_compartiment.push(0);
+        }
+        self.code_produit_compartiment[compart_num] = value;
     }
 
     pub fn set_info_u8(&mut self, id_info: IdInfo, value: u8) {
@@ -375,6 +416,9 @@ impl Context {
             IdInfo::CodeDefaut => self.code_defaut = Some(value),
             IdInfo::CodeProduit => self.code_produit = Some(value),
             IdInfo::TypeCompteur => self.type_compteur = Some(value),
+            IdInfo::CodeProduitCompartiment(compart_num) => {
+                self.set_info_code_produit_compartiment(compart_num, value);
+            }
 
             _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
         }
@@ -412,6 +456,17 @@ impl Context {
         }
     }
 
+    /// Getter particulier pour la quantité d'un compartiment
+    /// (la table des quantités par compartiment est construite par morceaux...)
+    fn get_info_quantite_compartiment(&self, compart_num: usize) -> Option<u32> {
+        assert!(compart_num <= NB_COMPARTIMENTS);
+        if self.quantite_compartiment.len() <= compart_num {
+            None
+        } else {
+            Some(self.quantite_compartiment[compart_num])
+        }
+    }
+
     pub fn get_info_u32(&self, id_info: IdInfo) -> Option<u32> {
         match id_info {
             IdInfo::Totalisateur => self.totalisateur,
@@ -420,9 +475,22 @@ impl Context {
             IdInfo::Predetermination => self.predetermination,
             IdInfo::Date => self.date,
             IdInfo::Heure => self.heure,
+            IdInfo::QuantiteCompartiment(compart_num) => {
+                self.get_info_quantite_compartiment(compart_num)
+            }
 
             _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
         }
+    }
+
+    /// Setter particulier pour la quantité d'un compartiment
+    /// (la table des quantités par compartiment est construite par morceaux...)
+    fn set_info_quantite_compartiment(&mut self, compart_num: usize, value: u32) {
+        assert!(compart_num <= NB_COMPARTIMENTS);
+        while self.quantite_compartiment.len() <= compart_num {
+            self.quantite_compartiment.push(0);
+        }
+        self.quantite_compartiment[compart_num] = value;
     }
 
     pub fn set_info_u32(&mut self, id_info: IdInfo, value: u32) {
@@ -433,6 +501,9 @@ impl Context {
             IdInfo::Predetermination => self.predetermination = Some(value),
             IdInfo::Date => self.date = Some(value),
             IdInfo::Heure => self.heure = Some(value),
+            IdInfo::QuantiteCompartiment(compart_num) => {
+                self.set_info_quantite_compartiment(compart_num, value);
+            }
 
             _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
         }
@@ -629,70 +700,71 @@ mod tests {
     use super::*;
     // use crate::context::CommonContextTrait;
 
-    #[test]
-    fn test_get_set() {
-        // Cette fonction devrait être appelée avec des `IdInfo` de tous les `FormatInfo` possibles
-        fn check_id_code(context: &mut Context, id_info: IdInfo) {
-            match self::get_info_format(id_info) {
-                FormatInfo::FormatBool => {
-                    assert!(context.get_info_bool(id_info).is_none());
-                    for value in [true, false] {
-                        context.set_info_bool(id_info, value);
-                        assert_eq!(context.get_info_bool(id_info), Some(value));
-                    }
+    // Cette fonction devrait être appelée avec des `IdInfo` de tous les `FormatInfo` possibles
+    // Voir `test_get_set` ci-dessous
+    fn check_id_code(context: &mut Context, id_info: IdInfo) {
+        match self::get_info_format(id_info) {
+            FormatInfo::FormatBool => {
+                assert!(context.get_info_bool(id_info).is_none());
+                for value in [true, false] {
+                    context.set_info_bool(id_info, value);
+                    assert_eq!(context.get_info_bool(id_info), Some(value));
                 }
-                FormatInfo::FormatChar => {
-                    assert!(context.get_info_char(id_info).is_none());
-                    for value in ['A', 'B', 'é'] {
-                        context.set_info_char(id_info, value);
-                        assert_eq!(context.get_info_char(id_info), Some(value));
-                    }
+            }
+            FormatInfo::FormatChar => {
+                assert!(context.get_info_char(id_info).is_none());
+                for value in ['A', 'B', 'é'] {
+                    context.set_info_char(id_info, value);
+                    assert_eq!(context.get_info_char(id_info), Some(value));
                 }
-                FormatInfo::FormatU8 => {
-                    assert!(context.get_info_u8(id_info).is_none());
-                    for value in [0_u8, 10_u8, 100_u8] {
-                        context.set_info_u8(id_info, value);
-                        assert_eq!(context.get_info_u8(id_info), Some(value));
-                    }
+            }
+            FormatInfo::FormatU8 => {
+                assert!(context.get_info_u8(id_info).is_none());
+                for value in [0_u8, 10_u8, 100_u8] {
+                    context.set_info_u8(id_info, value);
+                    assert_eq!(context.get_info_u8(id_info), Some(value));
                 }
-                FormatInfo::FormatU16 => {
-                    assert!(context.get_info_u16(id_info).is_none());
-                    for value in [0_u16, 1000_u16, 10_000_u16] {
-                        context.set_info_u16(id_info, value);
-                        assert_eq!(context.get_info_u16(id_info), Some(value));
-                    }
+            }
+            FormatInfo::FormatU16 => {
+                assert!(context.get_info_u16(id_info).is_none());
+                for value in [0_u16, 1000_u16, 10_000_u16] {
+                    context.set_info_u16(id_info, value);
+                    assert_eq!(context.get_info_u16(id_info), Some(value));
                 }
-                FormatInfo::FormatU32 => {
-                    assert!(context.get_info_u32(id_info).is_none());
-                    for value in [0_u32, 1000_u32, 100_000_u32] {
-                        context.set_info_u32(id_info, value);
-                        assert_eq!(context.get_info_u32(id_info), Some(value));
-                    }
+            }
+            FormatInfo::FormatU32 => {
+                assert!(context.get_info_u32(id_info).is_none());
+                for value in [0_u32, 1000_u32, 100_000_u32] {
+                    context.set_info_u32(id_info, value);
+                    assert_eq!(context.get_info_u32(id_info), Some(value));
                 }
-                FormatInfo::FormatU64 => {
-                    assert!(context.get_info_u64(id_info).is_none());
-                    for value in [0_u64, 100_000_u64, 100_000_000_u64, 100_000_000_000_000_u64] {
-                        context.set_info_u64(id_info, value);
-                        assert_eq!(context.get_info_u64(id_info), Some(value));
-                    }
+            }
+            FormatInfo::FormatU64 => {
+                assert!(context.get_info_u64(id_info).is_none());
+                for value in [0_u64, 100_000_u64, 100_000_000_u64, 100_000_000_000_000_u64] {
+                    context.set_info_u64(id_info, value);
+                    assert_eq!(context.get_info_u64(id_info), Some(value));
                 }
-                FormatInfo::FormatF32 => {
-                    assert!(context.get_info_f32(id_info).is_none());
-                    for value in [0.0_f32, 1000.0_f32, -1000.0_f32, 100_000.0_f32] {
-                        context.set_info_f32(id_info, value);
-                        assert_eq!(context.get_info_f32(id_info), Some(value));
-                    }
+            }
+            FormatInfo::FormatF32 => {
+                assert!(context.get_info_f32(id_info).is_none());
+                for value in [0.0_f32, 1000.0_f32, -1000.0_f32, 100_000.0_f32] {
+                    context.set_info_f32(id_info, value);
+                    assert_eq!(context.get_info_f32(id_info), Some(value));
                 }
-                FormatInfo::FormatString(_width) => {
-                    assert!(context.get_info_string(id_info).is_none());
-                    for value in ["", "ABC"] {
-                        context.set_info_string(id_info, value);
-                        assert_eq!(context.get_info_string(id_info), Some(value.to_string()));
-                    }
+            }
+            FormatInfo::FormatString(_width) => {
+                assert!(context.get_info_string(id_info).is_none());
+                for value in ["", "ABC"] {
+                    context.set_info_string(id_info, value);
+                    assert_eq!(context.get_info_string(id_info), Some(value.to_string()));
                 }
             }
         }
+    }
 
+    #[test]
+    fn test_get_set() {
         let mut context = Context::default();
 
         // Idéalement, mettre ici tous les IdInfos... Au moins tester les différents formats :)
@@ -736,6 +808,10 @@ mod tests {
         check_id_code(&mut context, IdInfo::NbJEvents);
         check_id_code(&mut context, IdInfo::DataJEvent);
         check_id_code(&mut context, IdInfo::LibelleJEvent);
+        for compart_num in 0..=NB_COMPARTIMENTS {
+            check_id_code(&mut context, IdInfo::CodeProduitCompartiment(compart_num));
+            check_id_code(&mut context, IdInfo::QuantiteCompartiment(compart_num));
+        }
     }
 
     #[test]
