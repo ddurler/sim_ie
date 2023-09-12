@@ -26,13 +26,13 @@ impl CommonMessageTrait for Message36 {
     }
 
     fn id_infos_request(&self) -> Vec<IdInfo> {
-        vec![IdInfo::Date, IdInfo::IndexJournalier]
+        vec![IdInfo::DateAAMMJJ, IdInfo::IndexJournalier]
     }
 
     fn id_infos_response(&self) -> Vec<IdInfo> {
         vec![
             IdInfo::NbJEvents,
-            IdInfo::Heure,
+            IdInfo::HeureHHMMSS,
             IdInfo::DataJEvent,
             IdInfo::LibelleJEvent,
         ]
@@ -46,7 +46,7 @@ impl CommonMessageTrait for Message36 {
         let mut req = frame::Frame::new(MESSAGE_NUM);
 
         // #0 - Date
-        let data = context.get_info_u32(IdInfo::Date).unwrap();
+        let data = context.get_info_u32(IdInfo::DateAAMMJJ).unwrap();
         req.add_field(Field::encode_number(data, 6)?);
 
         // #1 - Numéro d'ordre dans le jour
@@ -68,7 +68,7 @@ impl CommonMessageTrait for Message36 {
         context.set_info_u16(IdInfo::NbJEvents, frame.fields[0].decode_number::<u16>()?);
 
         // #1 - Heure
-        context.set_info_u32(IdInfo::Heure, frame.fields[1].decode_number::<u32>()?);
+        context.set_info_u32(IdInfo::HeureHHMMSS, frame.fields[1].decode_number::<u32>()?);
 
         // #2 - Data techniques de l'événement
         context.set_info_string(IdInfo::DataJEvent, &frame.fields[2].decode_str()?);
@@ -98,7 +98,7 @@ mod tests {
         // Contexte pour le protocole
         let mut context = Context::default();
 
-        context.set_info_u32(IdInfo::Date, 12_03_04);
+        context.set_info_u32(IdInfo::DateAAMMJJ, 12_03_04);
         context.set_info_u16(IdInfo::IndexJournalier, 1);
 
         // Trame pour message
@@ -163,7 +163,7 @@ mod tests {
 
         // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(context.get_info_u16(IdInfo::NbJEvents), Some(12));
-        assert_eq!(context.get_info_u32(IdInfo::Heure), Some(12_34_56));
+        assert_eq!(context.get_info_u32(IdInfo::HeureHHMMSS), Some(12_34_56));
         assert_eq!(
             context.get_info_string(IdInfo::DataJEvent),
             Some("AABBCCDDEEFF".to_string())

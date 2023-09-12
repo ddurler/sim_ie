@@ -32,7 +32,7 @@ impl CommonMessageTrait for Message30 {
         vec![
             IdInfo::ReferenceEtImmatriculation,
             IdInfo::VersionLogiciel,
-            IdInfo::DateHeure,
+            IdInfo::DateAAMMJJHeureHHMMSS,
             IdInfo::TypeCompteur,
         ]
     }
@@ -64,7 +64,10 @@ impl CommonMessageTrait for Message30 {
         context.set_info_string(IdInfo::VersionLogiciel, &frame.fields[1].decode_str()?);
 
         // #2 : Date & heure
-        context.set_info_u64(IdInfo::DateHeure, frame.fields[2].decode_number::<u64>()?);
+        context.set_info_u64(
+            IdInfo::DateAAMMJJHeureHHMMSS,
+            frame.fields[2].decode_number::<u64>()?,
+        );
 
         // #3 : Type compteur
         context.set_info_u8(IdInfo::TypeCompteur, frame.fields[3].decode_number::<u8>()?);
@@ -173,7 +176,7 @@ mod tests {
             Some("1.00010101".to_string())
         );
         assert_eq!(
-            context.get_info_u64(IdInfo::DateHeure),
+            context.get_info_u64(IdInfo::DateAAMMJJHeureHHMMSS),
             Some(99_12_31_23_59_59_u64)
         );
         assert_eq!(context.get_info_u8(IdInfo::TypeCompteur), Some(0));

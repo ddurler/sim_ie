@@ -35,8 +35,8 @@ impl CommonMessageTrait for Message32 {
             IdInfo::QuantitePrincipale,
             IdInfo::TemperatureMoyen,
             IdInfo::NbFractionnements,
-            IdInfo::HeureDebut,
-            IdInfo::HeureFin,
+            IdInfo::HeureHHMMDebut,
+            IdInfo::HeureHHMMFin,
         ]
     }
 
@@ -89,10 +89,16 @@ impl CommonMessageTrait for Message32 {
         );
 
         // #4 : Heure de début
-        context.set_info_u16(IdInfo::HeureDebut, frame.fields[4].decode_number::<u16>()?);
+        context.set_info_u16(
+            IdInfo::HeureHHMMDebut,
+            frame.fields[4].decode_number::<u16>()?,
+        );
 
         // #5 : Heure de fin
-        context.set_info_u16(IdInfo::HeureFin, frame.fields[5].decode_number::<u16>()?);
+        context.set_info_u16(
+            IdInfo::HeureHHMMFin,
+            frame.fields[5].decode_number::<u16>()?,
+        );
 
         // C'est tout bon
         Ok(())
@@ -199,7 +205,7 @@ mod tests {
         );
         assert_eq!(context.get_info_f32(IdInfo::TemperatureMoyen), Some(12.3));
         assert_eq!(context.get_info_u16(IdInfo::NbFractionnements), Some(1));
-        assert_eq!(context.get_info_u16(IdInfo::HeureDebut), Some(12_34));
-        assert_eq!(context.get_info_u16(IdInfo::HeureFin), Some(12_34));
+        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMDebut), Some(12_34));
+        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMFin), Some(12_34));
     }
 }

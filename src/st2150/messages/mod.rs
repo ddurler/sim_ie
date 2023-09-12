@@ -16,7 +16,7 @@ use super::ST2150;
 // C'est tout...
 
 /// Liste des numéros de messages implémentés
-pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[0, 10, 20, 21, 22, 30, 31, 32, 33, 34, 35, 36, 37];
+pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[0, 10, 20, 21, 22, 30, 31, 32, 33, 34, 35, 36, 37, 40];
 
 pub mod message00;
 use message00::Message00;
@@ -44,6 +44,8 @@ pub mod message36;
 use message36::Message36;
 pub mod message37;
 use message37::Message37;
+pub mod message40;
+use message40::Message40;
 
 use super::field;
 
@@ -63,6 +65,7 @@ pub fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
         35 => Box::<Message35>::default(),
         36 => Box::<Message36>::default(),
         37 => Box::<Message37>::default(),
+        40 => Box::<Message40>::default(),
 
         _ => panic!("Numéro de message non géré {message_num}"),
     }

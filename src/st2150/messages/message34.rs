@@ -37,8 +37,8 @@ impl CommonMessageTrait for Message34 {
         vec![
             IdInfo::QuantitePrincipale,
             IdInfo::TypeDistribution,
-            IdInfo::HeureDebut,
-            IdInfo::HeureFin,
+            IdInfo::HeureHHMMDebut,
+            IdInfo::HeureHHMMFin,
         ]
     }
 
@@ -82,10 +82,16 @@ impl CommonMessageTrait for Message34 {
         context.set_info_char(IdInfo::TypeDistribution, frame.fields[1].decode_char()?);
 
         // #2 : Heure de début
-        context.set_info_u16(IdInfo::HeureDebut, frame.fields[2].decode_number::<u16>()?);
+        context.set_info_u16(
+            IdInfo::HeureHHMMDebut,
+            frame.fields[2].decode_number::<u16>()?,
+        );
 
         // #3 : Heure de fin
-        context.set_info_u16(IdInfo::HeureFin, frame.fields[3].decode_number::<u16>()?);
+        context.set_info_u16(
+            IdInfo::HeureHHMMFin,
+            frame.fields[3].decode_number::<u16>()?,
+        );
 
         // C'est tout bon
         Ok(())
@@ -179,7 +185,7 @@ mod tests {
             Some(12_345)
         );
         assert_eq!(context.get_info_char(IdInfo::TypeDistribution), Some('D'));
-        assert_eq!(context.get_info_u16(IdInfo::HeureDebut), Some(12_34));
-        assert_eq!(context.get_info_u16(IdInfo::HeureFin), Some(12_34));
+        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMDebut), Some(12_34));
+        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMFin), Some(12_34));
     }
 }

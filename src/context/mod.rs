@@ -90,12 +90,12 @@ pub enum IdInfo {
     IndexSansRaz,
     IndexJournalier,
     Quantieme,
-    HeureDebut,
-    HeureFin,
+    HeureHHMMDebut,
+    HeureHHMMFin,
     IdentificationTag,
     ReferenceEtImmatriculation,
     VersionLogiciel,
-    DateHeure,
+    DateAAMMJJHeureHHMMSS,
     TypeCompteur,
     NbMesuragesQuantieme,
     LibelleProduit,
@@ -103,8 +103,9 @@ pub enum IdInfo {
     LibelleTableProduits(usize),
     IndexFractionnement,
     TypeDistribution,
-    Date,
-    Heure,
+    DateAAMMJJ,
+    HeureHHMMSS,
+    HeureHHMM,
     NbJEvents,
     DataJEvent,
     LibelleJEvent,
@@ -171,10 +172,10 @@ pub struct Context {
     quantieme: Option<u16>,
 
     /// Heure de début (de mesurage)
-    heure_debut: Option<u16>,
+    heure_hhmm_debut: Option<u16>,
 
     /// Heure de fin (de mesurage)
-    heure_fin: Option<u16>,
+    heure_hhmm_fin: Option<u16>,
 
     /// Identification par TAG
     identification_tag: Option<String>,
@@ -186,7 +187,7 @@ pub struct Context {
     reference_et_immatriculation: Option<String>,
 
     /// Date et heure AAMMJJHHMMSS
-    date_heure: Option<u64>,
+    date_aammjj_heure_hhmmss: Option<u64>,
 
     /// Type de compteur 0: Vm, 1:Vb, 2:Masse
     type_compteur: Option<u8>,
@@ -210,10 +211,13 @@ pub struct Context {
     type_distribution: Option<char>,
 
     /// Date (AAMMJJ)
-    date: Option<u32>,
+    date_aammjj: Option<u32>,
 
     /// Heure (HHMMSS)
-    heure: Option<u32>,
+    heure_hhmmss: Option<u32>,
+
+    /// Heure (HHMM)
+    heure_hhmm: Option<u16>,
 
     /// Nombre d'événements pour une journée
     nb_jevents: Option<u16>,
@@ -252,12 +256,12 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::IndexSansRaz => "Index sans remise à zéro".to_string(),
         IdInfo::IndexJournalier => "Index journalier".to_string(),
         IdInfo::Quantieme => "Quantième".to_string(),
-        IdInfo::HeureDebut => "Heure de début (HHMM)".to_string(),
-        IdInfo::HeureFin => "Heure de fin (HHMM)".to_string(),
+        IdInfo::HeureHHMMDebut => "Heure de début (HHMM)".to_string(),
+        IdInfo::HeureHHMMFin => "Heure de fin (HHMM)".to_string(),
         IdInfo::IdentificationTag => "Identification TAG".to_string(),
         IdInfo::ReferenceEtImmatriculation => "Référence et immatriculation".to_string(),
         IdInfo::VersionLogiciel => "Version du logiciel".to_string(),
-        IdInfo::DateHeure => "Date et Heure (AAMMJJHHMMSS)".to_string(),
+        IdInfo::DateAAMMJJHeureHHMMSS => "Date et Heure (AAMMJJHHMMSS)".to_string(),
         IdInfo::TypeCompteur => "Type de compteur (0:Vm, 1:Vb, 2:Masse)".to_string(),
         IdInfo::NbMesuragesQuantieme => "Nombre de mesurages pour un quantième".to_string(),
         IdInfo::LibelleProduit => "Libellé produit".to_string(),
@@ -265,8 +269,9 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::LibelleTableProduits(prod_num) => format!("Libellé table produit #{prod_num}"),
         IdInfo::IndexFractionnement => "Index fractionnement".to_string(),
         IdInfo::TypeDistribution => "(A)nticipation purge, li(B)ération, (C)hargement, pré(D)é, (L)ibre, (P)urge, (T)ransfert, (V)idange, ".to_string(),
-        IdInfo::Date=> "Date (AAMMJJ)".to_string(),
-        IdInfo::Heure=> "Heure (HHMMSS)".to_string(),
+        IdInfo::DateAAMMJJ=> "Date (AAMMJJ)".to_string(),
+        IdInfo::HeureHHMMSS=> "Heure (HHMMSS)".to_string(),
+        IdInfo::HeureHHMM=> "Heure (HHMM)".to_string(),
         IdInfo::NbJEvents => "Nombre d'événements".to_string(),
         IdInfo::DataJEvent => "Données techniques d'un événement".to_string(),
         IdInfo::LibelleJEvent => "Libellé d'un événement".to_string(),
@@ -299,8 +304,9 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         IdInfo::IndexSansRaz
         | IdInfo::IndexJournalier
         | IdInfo::Quantieme
-        | IdInfo::HeureDebut
-        | IdInfo::HeureFin
+        | IdInfo::HeureHHMM
+        | IdInfo::HeureHHMMDebut
+        | IdInfo::HeureHHMMFin
         | IdInfo::NbMesuragesQuantieme
         | IdInfo::NbFractionnements
         | IdInfo::IndexFractionnement
@@ -311,12 +317,12 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::QuantitePrincipale
         | IdInfo::QuantiteSecondaire
         | IdInfo::Predetermination
-        | IdInfo::Date
-        | IdInfo::Heure
+        | IdInfo::DateAAMMJJ
+        | IdInfo::HeureHHMMSS
         | IdInfo::QuantiteCompartiment(_) => FormatInfo::FormatU32,
 
         /* U64 */
-        IdInfo::DateHeure => FormatInfo::FormatU64,
+        IdInfo::DateAAMMJJHeureHHMMSS => FormatInfo::FormatU64,
 
         /* F32 */
         IdInfo::DebitInstant | IdInfo::TemperatureInstant | IdInfo::TemperatureMoyen => {
@@ -429,8 +435,9 @@ impl Context {
             IdInfo::IndexSansRaz => self.index_sans_raz,
             IdInfo::IndexJournalier => self.index_journalier,
             IdInfo::Quantieme => self.quantieme,
-            IdInfo::HeureDebut => self.heure_debut,
-            IdInfo::HeureFin => self.heure_fin,
+            IdInfo::HeureHHMMDebut => self.heure_hhmm_debut,
+            IdInfo::HeureHHMMFin => self.heure_hhmm_fin,
+            IdInfo::HeureHHMM => self.heure_hhmm,
             IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme,
             IdInfo::NbFractionnements => self.nb_fractionnements,
             IdInfo::IndexFractionnement => self.index_fractionnement,
@@ -445,8 +452,9 @@ impl Context {
             IdInfo::IndexSansRaz => self.index_sans_raz = Some(value),
             IdInfo::IndexJournalier => self.index_journalier = Some(value),
             IdInfo::Quantieme => self.quantieme = Some(value),
-            IdInfo::HeureDebut => self.heure_debut = Some(value),
-            IdInfo::HeureFin => self.heure_fin = Some(value),
+            IdInfo::HeureHHMMDebut => self.heure_hhmm_debut = Some(value),
+            IdInfo::HeureHHMMFin => self.heure_hhmm_fin = Some(value),
+            IdInfo::HeureHHMM => self.heure_hhmm = Some(value),
             IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme = Some(value),
             IdInfo::NbFractionnements => self.nb_fractionnements = Some(value),
             IdInfo::IndexFractionnement => self.index_fractionnement = Some(value),
@@ -473,8 +481,8 @@ impl Context {
             IdInfo::QuantitePrincipale => self.quantite_principale,
             IdInfo::QuantiteSecondaire => self.quantite_secondaire,
             IdInfo::Predetermination => self.predetermination,
-            IdInfo::Date => self.date,
-            IdInfo::Heure => self.heure,
+            IdInfo::DateAAMMJJ => self.date_aammjj,
+            IdInfo::HeureHHMMSS => self.heure_hhmmss,
             IdInfo::QuantiteCompartiment(compart_num) => {
                 self.get_info_quantite_compartiment(compart_num)
             }
@@ -499,8 +507,8 @@ impl Context {
             IdInfo::QuantitePrincipale => self.quantite_principale = Some(value),
             IdInfo::QuantiteSecondaire => self.quantite_secondaire = Some(value),
             IdInfo::Predetermination => self.predetermination = Some(value),
-            IdInfo::Date => self.date = Some(value),
-            IdInfo::Heure => self.heure = Some(value),
+            IdInfo::DateAAMMJJ => self.date_aammjj = Some(value),
+            IdInfo::HeureHHMMSS => self.heure_hhmmss = Some(value),
             IdInfo::QuantiteCompartiment(compart_num) => {
                 self.set_info_quantite_compartiment(compart_num, value);
             }
@@ -511,7 +519,7 @@ impl Context {
 
     pub fn get_info_u64(&self, id_info: IdInfo) -> Option<u64> {
         match id_info {
-            IdInfo::DateHeure => self.date_heure,
+            IdInfo::DateAAMMJJHeureHHMMSS => self.date_aammjj_heure_hhmmss,
 
             _ => panic!("Cette information n'est pas u64 : {id_info:?}"),
         }
@@ -519,7 +527,7 @@ impl Context {
 
     pub fn set_info_u64(&mut self, id_info: IdInfo, value: u64) {
         match id_info {
-            IdInfo::DateHeure => self.date_heure = Some(value),
+            IdInfo::DateAAMMJJHeureHHMMSS => self.date_aammjj_heure_hhmmss = Some(value),
 
             _ => panic!("Cette information n'est pas u64 : {id_info:?}"),
         }
@@ -788,12 +796,13 @@ mod tests {
         check_id_code(&mut context, IdInfo::IndexSansRaz);
         check_id_code(&mut context, IdInfo::IndexJournalier);
         check_id_code(&mut context, IdInfo::Quantieme);
-        check_id_code(&mut context, IdInfo::HeureDebut);
-        check_id_code(&mut context, IdInfo::HeureFin);
+        check_id_code(&mut context, IdInfo::HeureHHMMDebut);
+        check_id_code(&mut context, IdInfo::HeureHHMMFin);
+        check_id_code(&mut context, IdInfo::HeureHHMM);
         check_id_code(&mut context, IdInfo::IdentificationTag);
         check_id_code(&mut context, IdInfo::ReferenceEtImmatriculation);
         check_id_code(&mut context, IdInfo::VersionLogiciel);
-        check_id_code(&mut context, IdInfo::DateHeure);
+        check_id_code(&mut context, IdInfo::DateAAMMJJHeureHHMMSS);
         check_id_code(&mut context, IdInfo::TypeCompteur);
         check_id_code(&mut context, IdInfo::NbMesuragesQuantieme);
         check_id_code(&mut context, IdInfo::LibelleProduit);
@@ -803,8 +812,8 @@ mod tests {
         }
         check_id_code(&mut context, IdInfo::IndexFractionnement);
         check_id_code(&mut context, IdInfo::TypeDistribution);
-        check_id_code(&mut context, IdInfo::Date);
-        check_id_code(&mut context, IdInfo::Heure);
+        check_id_code(&mut context, IdInfo::DateAAMMJJ);
+        check_id_code(&mut context, IdInfo::HeureHHMMSS);
         check_id_code(&mut context, IdInfo::NbJEvents);
         check_id_code(&mut context, IdInfo::DataJEvent);
         check_id_code(&mut context, IdInfo::LibelleJEvent);

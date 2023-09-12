@@ -41,8 +41,8 @@ impl CommonMessageTrait for Message21 {
             IdInfo::IndexJournalier,
             IdInfo::Quantieme,
             IdInfo::CodeProduit,
-            IdInfo::HeureDebut,
-            IdInfo::HeureFin,
+            IdInfo::HeureHHMMDebut,
+            IdInfo::HeureHHMMFin,
         ]
     }
 
@@ -125,10 +125,16 @@ impl CommonMessageTrait for Message21 {
         context.set_info_u8(IdInfo::CodeProduit, frame.fields[7].decode_number::<u8>()?);
 
         // #8 : Heure de début
-        context.set_info_u16(IdInfo::HeureDebut, frame.fields[8].decode_number::<u16>()?);
+        context.set_info_u16(
+            IdInfo::HeureHHMMDebut,
+            frame.fields[8].decode_number::<u16>()?,
+        );
 
         // #8 : Heure de fin
-        context.set_info_u16(IdInfo::HeureFin, frame.fields[9].decode_number::<u16>()?);
+        context.set_info_u16(
+            IdInfo::HeureHHMMFin,
+            frame.fields[9].decode_number::<u16>()?,
+        );
 
         // C'est tout bon
         Ok(())
@@ -247,8 +253,8 @@ mod tests {
         assert_eq!(context.get_info_u16(IdInfo::IndexJournalier), Some(123));
         assert_eq!(context.get_info_u16(IdInfo::Quantieme), Some(123));
         assert_eq!(context.get_info_u8(IdInfo::CodeProduit), Some(1));
-        assert_eq!(context.get_info_u16(IdInfo::HeureDebut), Some(12_34));
-        assert_eq!(context.get_info_u16(IdInfo::HeureFin), Some(12_34));
+        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMDebut), Some(12_34));
+        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMFin), Some(12_34));
     }
 
     #[test]
