@@ -3,12 +3,14 @@
 //! On utilise ici le [crate iced](https://iced.rs/) pour l'interface graphique
 //!
 
+use std::collections::HashMap;
+
 mod input_infos;
 mod show_infos;
 
 use super::APP_VERSION;
 
-use iced::widget::{column, container, horizontal_rule, row, vertical_rule};
+use iced::widget::{checkbox, column, container, horizontal_rule, row, vertical_rule};
 use iced::widget::{Button, Column, Row, Text};
 use iced::{executor, theme, window};
 use iced::{Application, Command, Element, Settings, Theme};
@@ -17,6 +19,7 @@ use crate::context::IdInfo;
 use crate::st2150::messages::{
     get_dyn_message, message00::Message00, CommonMessageTrait, ST2150_MESSAGE_NUMBERS,
 };
+use crate::st2150::Edition2150;
 use crate::Context;
 use crate::ST2150;
 
@@ -38,6 +41,9 @@ pub struct AppView {
 
     /// Message sélectionné
     dyn_message: Box<dyn CommonMessageTrait>,
+
+    /// Editions de la ST2150 à afficher
+    editions_st2150: HashMap<Edition2150, bool>,
 }
 
 /// Point d'entrée de l'IHM
@@ -65,12 +71,26 @@ pub enum Message {
     SelectionMessageST2150(u8),
     DoMessageVacation(u8),
     InputInfo(String, IdInfo),
+    SelectionEditionST2150(Edition2150, bool),
 }
 
 impl AppView {
     /// Sélection du message courant
     fn set_current_message_num(&mut self, message_num: u8) {
         self.dyn_message = get_dyn_message(message_num);
+    }
+
+    /// Indique si une édition de la ST2150 est visible
+    fn is_edition_st2150_visible(&self, edition: Edition2150) -> bool {
+        match self.editions_st2150.get(&edition) {
+            Some(value) => *value,
+            None => false,
+        }
+    }
+
+    /// Mise à jour de la visibilité d'une édition de la ST2150
+    fn set_edition_st2150_visible(&mut self, edition: Edition2150, value: bool) {
+        self.editions_st2150.insert(edition, value);
     }
 
     /// Zone pour sélection du message courant
@@ -82,17 +102,22 @@ impl AppView {
 
         for message_num in ST2150_MESSAGE_NUMBERS {
             let dyn_message = get_dyn_message(*message_num);
-            let text: Text = Text::new(format!("{:02} {}", message_num, dyn_message.str_message()));
-            let btn = if *message_num == cur_message_num {
-                // C'est le numéro de message actuellement sélectionné
-                Button::new(text).on_press(Message::SelectionMessageST2150(*message_num))
-            } else {
-                // Numéro de message non sélectionné. On l'affiche en noir sur fond gris
-                Button::new(text)
-                    .on_press(Message::SelectionMessageST2150(*message_num))
-                    .style(theme::Button::Secondary)
-            };
-            col = col.push(btn);
+            if self.is_edition_st2150_visible(dyn_message.edition_st2150())
+                || *message_num == cur_message_num
+            {
+                let text: Text =
+                    Text::new(format!("{:02} {}", message_num, dyn_message.str_message()));
+                let btn = if *message_num == cur_message_num {
+                    // C'est le numéro de message actuellement sélectionné
+                    Button::new(text).on_press(Message::SelectionMessageST2150(*message_num))
+                } else {
+                    // Numéro de message non sélectionné. On l'affiche en noir sur fond gris
+                    Button::new(text)
+                        .on_press(Message::SelectionMessageST2150(*message_num))
+                        .style(theme::Button::Secondary)
+                };
+                col = col.push(btn);
+            }
         }
 
         col.into()
@@ -188,6 +213,30 @@ impl AppView {
         row.into()
     }
 
+    /// Zone avec sélection des éditions de la ST2150 à afficher
+    pub fn view_edition_st2150(&self) -> Element<Message> {
+        row![
+            Text::new("Editions ST2150 : "),
+            checkbox(
+                "A",
+                self.is_edition_st2150_visible(Edition2150::A),
+                |value| Message::SelectionEditionST2150(Edition2150::A, value)
+            ),
+            checkbox(
+                "B",
+                self.is_edition_st2150_visible(Edition2150::B),
+                |value| Message::SelectionEditionST2150(Edition2150::B, value)
+            ),
+            checkbox(
+                "C",
+                self.is_edition_st2150_visible(Edition2150::C),
+                |value| Message::SelectionEditionST2150(Edition2150::C, value)
+            ),
+        ]
+        .spacing(25)
+        .into()
+    }
+
     /// Zone avec les traces / erreur de la dernière vacation
     pub fn view_vacation(&self) -> Element<Message> {
         let col = Column::new();
@@ -231,11 +280,19 @@ impl Application for AppView {
 
     /// Constructeur de `AppView` (sur la base de `AppSettings`)
     fn new(flags: AppSettings) -> (AppView, Command<Self::Message>) {
+        // Toutes les révisions visibles par défaut
+        let mut editions_st2150 = HashMap::new();
+        editions_st2150.insert(Edition2150::A, true);
+        editions_st2150.insert(Edition2150::B, true);
+        editions_st2150.insert(Edition2150::C, true);
+
+        // Objet AppView pour l'IHM
         (
             AppView {
                 st2150: flags.st2150,
                 context: Context::default(),
                 dyn_message: Box::<Message00>::default(), // Message00 par défaut
+                editions_st2150,
             },
             Command::none(),
         )
@@ -266,6 +323,10 @@ impl Application for AppView {
                 input_infos::callback_input_info(&mut self.context, &input, id_info);
                 Command::none()
             }
+            Message::SelectionEditionST2150(edition, value) => {
+                self.set_edition_st2150_visible(edition, value);
+                Command::none()
+            }
         }
     }
 
@@ -285,7 +346,7 @@ impl Application for AppView {
             .max_height(650), // TODO : Pifométrie à adapter...
             // Status/Vacation selon action
             horizontal_rule(10),
-            self.view_do_vacation(),
+            row![self.view_do_vacation(), self.view_edition_st2150(),].spacing(10),
             // Trace dernières requête/réponse/erreur
             horizontal_rule(10),
             self.view_vacation(),

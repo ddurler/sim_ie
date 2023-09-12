@@ -5,6 +5,7 @@ use crate::st2150::field::Field;
 
 use super::frame;
 use super::CommonMessageTrait;
+use super::Edition2150;
 use super::ProtocolError;
 use super::ST2150;
 use crate::context::IdInfo;
@@ -19,6 +20,10 @@ pub struct Message37 {}
 impl CommonMessageTrait for Message37 {
     fn message_num(&self) -> u8 {
         MESSAGE_NUM
+    }
+
+    fn edition_st2150(&self) -> Edition2150 {
+        Edition2150::C
     }
 
     fn str_message(&self) -> &'static str {

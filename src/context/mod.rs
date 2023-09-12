@@ -275,8 +275,8 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::NbJEvents => "Nombre d'événements".to_string(),
         IdInfo::DataJEvent => "Données techniques d'un événement".to_string(),
         IdInfo::LibelleJEvent => "Libellé d'un événement".to_string(),
-        IdInfo::CodeProduitCompartiment(compart_num) => format!("Code produit du compartiment #{compart_num}"),
-        IdInfo::QuantiteCompartiment(compart_num)=> format!("Quantité dans le compartiment #{compart_num}"),
+        IdInfo::CodeProduitCompartiment(compart_num) => format!("Code produit cpt #{compart_num}"),
+        IdInfo::QuantiteCompartiment(compart_num)=> format!("Quantité cpt #{compart_num}"),
     }
 }
 

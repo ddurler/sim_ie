@@ -16,6 +16,29 @@ pub mod protocol;
 use field::Field;
 use frame::Frame;
 
+/// Énumération des éditions de la spécification ST 2150
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub enum Edition2150 {
+    /// Révision A de la ST2150 (historique)
+    A,
+
+    /// Révision B de la ST2150 (2021)
+    B,
+
+    /// Révision C de la ST2150 (2023 - Mode étendu)
+    C,
+}
+
+impl Display for Edition2150 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Edition2150::A => write!(f, "A"),
+            Edition2150::B => write!(f, "B"),
+            Edition2150::C => write!(f, "C"),
+        }
+    }
+}
+
 /// Erreur détectée
 #[derive(Debug, PartialEq, Eq)]
 pub enum ProtocolError {

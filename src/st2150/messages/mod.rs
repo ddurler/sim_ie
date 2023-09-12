@@ -48,6 +48,7 @@ pub mod message40;
 use message40::Message40;
 
 use super::field;
+use super::Edition2150;
 
 /// Accès au `CommonMessageTrait` des différents messages gérés
 pub fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
@@ -76,6 +77,9 @@ pub fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
 pub trait CommonMessageTrait {
     /// Numéro de message
     fn message_num(&self) -> u8;
+
+    /// Edition de la ST2150
+    fn edition_st2150(&self) -> Edition2150;
 
     /// Libellé (Quelques mots) décrivant le message
     fn str_message(&self) -> &'static str;
