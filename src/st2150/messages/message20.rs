@@ -29,7 +29,7 @@ impl CommonMessageTrait for Message20 {
     }
 
     fn id_infos_response(&self) -> Vec<IdInfo> {
-        vec![IdInfo::Nack, IdInfo::Ack]
+        vec![IdInfo::Ack, IdInfo::Nack]
     }
 
     fn do_vacation(&self, st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError> {
@@ -51,7 +51,7 @@ impl CommonMessageTrait for Message20 {
 
         // Réception réponse
         let mut buffer = [0; 200];
-        let len_rep = st2150.wait_rep(&mut buffer, &[9])?;
+        let len_rep = st2150.wait_rep(&mut buffer, 9)?;
 
         // Décodage de la réponse reçue
         let frame = st2150.try_from_buffer(&buffer[..len_rep], MESSAGE_NUM, &[1])?;

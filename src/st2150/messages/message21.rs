@@ -56,7 +56,7 @@ impl CommonMessageTrait for Message21 {
 
         // Réception réponse (2 réponses possibles)
         let mut buffer = [0; 200];
-        let len_rep = st2150.wait_rep(&mut buffer, &[9, 57])?;
+        let len_rep = st2150.wait_rep(&mut buffer, 57)?;
 
         // Décodage de la réponse reçue : 2 réponses possibles : NACK ou compte rendu de mesurage
         // On tente d'abord de décoder un NACK (dans une trame correcte)

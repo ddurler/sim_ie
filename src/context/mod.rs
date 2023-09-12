@@ -220,7 +220,7 @@ pub struct Context {
     libelle_jevent: Option<String>,
 }
 
-/// Retourne le libellé d'un information du contexte
+/// Retourne le libellé d'une information du contexte
 pub fn get_info_name(id_info: IdInfo) -> String {
     match id_info {
         IdInfo::Ack => "Acquit message".to_string(),

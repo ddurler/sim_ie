@@ -61,6 +61,9 @@ pub fn waiting_frame(port: &mut SerialCom, buffer: &mut [u8], max_expected_len: 
     let mut total_len_received = 0;
     let mut start_time = SystemTime::now();
 
+    // Prise en compte de la trame d'erreur qui fait 14 caractères
+    let max_expected_len = usize::max(14, max_expected_len);
+
     // Boucle de lecture du port série
     loop {
         let len_received = port.read(&mut buffer[total_len_received..]);

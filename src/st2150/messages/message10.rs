@@ -48,7 +48,7 @@ impl CommonMessageTrait for Message10 {
 
         // Réception réponse
         let mut buffer = [0; 200];
-        let len_rep = st2150.wait_rep(&mut buffer, &[38])?;
+        let len_rep = st2150.wait_rep(&mut buffer, 38)?;
 
         // Décodage de la réponse reçue
         let frame = st2150.try_from_buffer(&buffer[..len_rep], MESSAGE_NUM, &[8, 4, 5, 4, 5])?;

@@ -22,9 +22,6 @@ pub enum ProtocolError {
     /// Pas de réponse du calculateur
     NoReply,
 
-    /// Longueur inattendue de la trame reçue (nb octets lus)
-    BadFrameLen(usize, Vec<usize>),
-
     /// Longueur incorrecte de message (nb octets message, attendus)
     BadMessageLen(usize, usize),
 
@@ -66,10 +63,6 @@ impl Display for ProtocolError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ProtocolError::NoReply => write!(f, "Pas de réponse du calculateur"),
-            ProtocolError::BadFrameLen(nb, expected_lens) => write!(
-                f,
-                "Longueur inattendue de la trame ({nb} / {expected_lens:?} cars)"
-            ),
             ProtocolError::BadMessageLen(nb, nb_expected) => write!(
                 f,
                 "Longueur incorrecte du message ({nb}/{nb_expected} cars)"
@@ -163,17 +156,13 @@ impl ST2150 {
     fn wait_rep(
         &mut self,
         buffer: &mut [u8],
-        expected_lens: &[usize],
+        max_expected_len: usize,
     ) -> Result<usize, ProtocolError> {
         self.last_rep = vec![];
-        let max_expected_len = *expected_lens.iter().max().unwrap_or(&0);
         let len_rep = protocol::waiting_frame(&mut self.port, buffer, max_expected_len);
         self.set_last_rep(buffer, len_rep);
         if len_rep == 0 {
             return Err(ProtocolError::NoReply);
-        }
-        if !expected_lens.contains(&len_rep) {
-            return Err(ProtocolError::BadFrameLen(len_rep, expected_lens.to_vec()));
         }
 
         Ok(len_rep)
@@ -188,7 +177,10 @@ impl ST2150 {
     ) -> Result<Frame, ProtocolError> {
         let ret = Frame::try_from_buffer(buffer, num_message, len_fields);
         match ret {
-            Ok(frame) => Ok(frame),
+            Ok(frame) => {
+                self.last_error = String::new();
+                Ok(frame)
+            }
             Err(e) => {
                 self.last_error = format!("{e}");
                 Err(e)
@@ -211,7 +203,10 @@ impl ST2150 {
         self.last_rep = vec![];
         self.last_error = String::new();
         match messages::get_dyn_message(message_num).do_vacation(self, context) {
-            Ok(_) => Ok(()),
+            Ok(_) => {
+                self.last_error = String::new();
+                Ok(())
+            }
             Err(e) => {
                 self.last_error = format!("{e}");
                 Err(e)
