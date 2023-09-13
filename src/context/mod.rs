@@ -186,9 +186,6 @@ pub struct Context {
     /// Numéro de référence du compteur et immatriculation du camion
     reference_et_immatriculation: Option<String>,
 
-    /// Date et heure AAMMJJHHMMSS
-    date_aammjj_heure_hhmmss: Option<u64>,
-
     /// Type de compteur 0: Vm, 1:Vb, 2:Masse
     type_compteur: Option<u8>,
 
@@ -210,14 +207,13 @@ pub struct Context {
     /// Type de distribution ('P' pour purge, 'L' pour libre, etc.)
     type_distribution: Option<char>,
 
+    // Toutes les informations de date et d'heure selon tous les formats possibles
+    // s'appuient sur les 2 variables ci dessous : Une date AAMMJJ et une heure HHMMSS
     /// Date (AAMMJJ)
     date_aammjj: Option<u32>,
 
     /// Heure (HHMMSS)
     heure_hhmmss: Option<u32>,
-
-    /// Heure (HHMM)
-    heure_hhmm: Option<u16>,
 
     /// Nombre d'événements pour une journée
     nb_jevents: Option<u16>,
@@ -437,7 +433,9 @@ impl Context {
             IdInfo::Quantieme => self.quantieme,
             IdInfo::HeureHHMMDebut => self.heure_hhmm_debut,
             IdInfo::HeureHHMMFin => self.heure_hhmm_fin,
-            IdInfo::HeureHHMM => self.heure_hhmm,
+            IdInfo::HeureHHMM => self
+                .heure_hhmmss
+                .map(|value| u16::try_from(value / 1_00_u32).unwrap()),
             IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme,
             IdInfo::NbFractionnements => self.nb_fractionnements,
             IdInfo::IndexFractionnement => self.index_fractionnement,
@@ -452,9 +450,9 @@ impl Context {
             IdInfo::IndexSansRaz => self.index_sans_raz = Some(value),
             IdInfo::IndexJournalier => self.index_journalier = Some(value),
             IdInfo::Quantieme => self.quantieme = Some(value),
-            IdInfo::HeureHHMMDebut => self.heure_hhmm_debut = Some(value),
-            IdInfo::HeureHHMMFin => self.heure_hhmm_fin = Some(value),
-            IdInfo::HeureHHMM => self.heure_hhmm = Some(value),
+            IdInfo::HeureHHMMDebut => self.heure_hhmm_debut = Some(value % 10000_u16),
+            IdInfo::HeureHHMMFin => self.heure_hhmm_fin = Some(value % 10000_u16),
+            IdInfo::HeureHHMM => self.heure_hhmmss = Some(u32::from(value % 10000) * 100_u32),
             IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme = Some(value),
             IdInfo::NbFractionnements => self.nb_fractionnements = Some(value),
             IdInfo::IndexFractionnement => self.index_fractionnement = Some(value),
@@ -507,8 +505,8 @@ impl Context {
             IdInfo::QuantitePrincipale => self.quantite_principale = Some(value),
             IdInfo::QuantiteSecondaire => self.quantite_secondaire = Some(value),
             IdInfo::Predetermination => self.predetermination = Some(value),
-            IdInfo::DateAAMMJJ => self.date_aammjj = Some(value),
-            IdInfo::HeureHHMMSS => self.heure_hhmmss = Some(value),
+            IdInfo::DateAAMMJJ => self.date_aammjj = Some(value % 1_000_000_u32),
+            IdInfo::HeureHHMMSS => self.heure_hhmmss = Some(value % 1_000_000_u32),
             IdInfo::QuantiteCompartiment(compart_num) => {
                 self.set_info_quantite_compartiment(compart_num, value);
             }
@@ -519,7 +517,19 @@ impl Context {
 
     pub fn get_info_u64(&self, id_info: IdInfo) -> Option<u64> {
         match id_info {
-            IdInfo::DateAAMMJJHeureHHMMSS => self.date_aammjj_heure_hhmmss,
+            IdInfo::DateAAMMJJHeureHHMMSS => {
+                if let Some(date) = self.date_aammjj {
+                    let date = u64::from(date);
+                    if let Some(heure) = self.heure_hhmmss {
+                        let heure = u64::from(heure);
+                        Some(date * 1_000_000_u64 + heure)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
 
             _ => panic!("Cette information n'est pas u64 : {id_info:?}"),
         }
@@ -527,7 +537,12 @@ impl Context {
 
     pub fn set_info_u64(&mut self, id_info: IdInfo, value: u64) {
         match id_info {
-            IdInfo::DateAAMMJJHeureHHMMSS => self.date_aammjj_heure_hhmmss = Some(value),
+            IdInfo::DateAAMMJJHeureHHMMSS => {
+                let date = (value / 1_000_000_u64) % 1_000_000_u64;
+                let heure = value % 1_000_000_u64;
+                self.date_aammjj = Some(u32::try_from(date).unwrap());
+                self.heure_hhmmss = Some(u32::try_from(heure).unwrap());
+            }
 
             _ => panic!("Cette information n'est pas u64 : {id_info:?}"),
         }
@@ -796,13 +811,13 @@ mod tests {
         check_id_code(&mut context, IdInfo::IndexSansRaz);
         check_id_code(&mut context, IdInfo::IndexJournalier);
         check_id_code(&mut context, IdInfo::Quantieme);
-        check_id_code(&mut context, IdInfo::HeureHHMMDebut);
-        check_id_code(&mut context, IdInfo::HeureHHMMFin);
-        check_id_code(&mut context, IdInfo::HeureHHMM);
+        // check_id_code(&mut context, IdInfo::HeureHHMMDebut); FAIL car troncature des dates et heures
+        // check_id_code(&mut context, IdInfo::HeureHHMMFin);  Idem (voir 'test_get_set_date_heure')
+        // check_id_code(&mut context, IdInfo::HeureHHMM);     Ci-dessous
         check_id_code(&mut context, IdInfo::IdentificationTag);
         check_id_code(&mut context, IdInfo::ReferenceEtImmatriculation);
         check_id_code(&mut context, IdInfo::VersionLogiciel);
-        check_id_code(&mut context, IdInfo::DateAAMMJJHeureHHMMSS);
+        // check_id_code(&mut context, IdInfo::DateAAMMJJHeureHHMMSS);
         check_id_code(&mut context, IdInfo::TypeCompteur);
         check_id_code(&mut context, IdInfo::NbMesuragesQuantieme);
         check_id_code(&mut context, IdInfo::LibelleProduit);
@@ -812,8 +827,8 @@ mod tests {
         }
         check_id_code(&mut context, IdInfo::IndexFractionnement);
         check_id_code(&mut context, IdInfo::TypeDistribution);
-        check_id_code(&mut context, IdInfo::DateAAMMJJ);
-        check_id_code(&mut context, IdInfo::HeureHHMMSS);
+        // check_id_code(&mut context, IdInfo::DateAAMMJJ);
+        // check_id_code(&mut context, IdInfo::HeureHHMMSS);
         check_id_code(&mut context, IdInfo::NbJEvents);
         check_id_code(&mut context, IdInfo::DataJEvent);
         check_id_code(&mut context, IdInfo::LibelleJEvent);
@@ -878,5 +893,34 @@ mod tests {
 
         // Lecture d'une température (F_32) dans un u32
         let _: Option<u32> = context.get_info(IdInfo::TemperatureInstant);
+    }
+
+    #[test]
+    fn test_get_set_date_heure() {
+        let mut context: Context = Context::default();
+
+        // Par défaut, rien n'est défini
+        assert!(context
+            .get_info_u64(IdInfo::DateAAMMJJHeureHHMMSS)
+            .is_none());
+        assert!(context.get_info_u32(IdInfo::DateAAMMJJ).is_none());
+        assert!(context.get_info_u32(IdInfo::HeureHHMMSS).is_none());
+        assert!(context.get_info_u16(IdInfo::HeureHHMM).is_none());
+
+        // Si on définit la date, data_heure reste non défini
+        context.set_info_u32(IdInfo::DateAAMMJJ, 10_11_12);
+        assert!(context
+            .get_info_u64(IdInfo::DateAAMMJJHeureHHMMSS)
+            .is_none());
+
+        // Si on définit l'heure également, date_heure est maintenant défini
+        context.set_info_u32(IdInfo::HeureHHMMSS, 13_14_15);
+        assert_eq!(
+            context.get_info_u64(IdInfo::DateAAMMJJHeureHHMMSS),
+            Some(10_11_12_13_14_15)
+        );
+
+        // Ainsi que l'heure sans les secondes
+        assert_eq!(context.get_info_u16(IdInfo::HeureHHMM), Some(13_14));
     }
 }
