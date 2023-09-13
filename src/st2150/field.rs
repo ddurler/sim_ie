@@ -19,6 +19,12 @@ impl Field {
         Self { data }
     }
 
+    /// Décodage sous forme d'un vecteur de u8 (inner)
+    #[allow(dead_code)]
+    pub fn decode_as_vec(&self) -> Vec<u8> {
+        self.data.clone()
+    }
+
     /// Constructeur champ avec une valeur binaire (typiquement ACK ou NACK)
     /// (Ne peut donner qu'un champ d'une longueur de 1 octet)
     #[allow(dead_code)]
@@ -280,6 +286,12 @@ mod tests {
     fn test_new() {
         let f = Field::new(&[1, 2, 3]);
         assert_eq!(f.to_frame(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn test_decode_as_vec() {
+        let f = Field::new(&[1, 2, 3]);
+        assert_eq!(f.decode_as_vec(), vec![1, 2, 3]);
     }
 
     #[test]

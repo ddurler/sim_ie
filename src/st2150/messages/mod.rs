@@ -16,12 +16,15 @@ use super::ST2150;
 // C'est tout...
 
 /// Liste des numéros de messages implémentés
-pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[0, 10, 20, 21, 22, 30, 31, 32, 33, 34, 35, 36, 37, 40];
+pub const ST2150_MESSAGE_NUMBERS: &[u8] =
+    &[0, 10, 11, 20, 21, 22, 30, 31, 32, 33, 34, 35, 36, 37, 40];
 
 pub mod message00;
 use message00::Message00;
 pub mod message10;
 use message10::Message10;
+pub mod message11;
+use message11::Message11;
 pub mod message20;
 use message20::Message20;
 pub mod message21;
@@ -55,6 +58,7 @@ pub fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
     match message_num {
         0 => Box::<Message00>::default(),
         10 => Box::<Message10>::default(),
+        11 => Box::<Message11>::default(),
         20 => Box::<Message20>::default(),
         21 => Box::<Message21>::default(),
         22 => Box::<Message22>::default(),

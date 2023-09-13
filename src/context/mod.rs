@@ -111,6 +111,20 @@ pub enum IdInfo {
     LibelleJEvent,
     CodeProduitCompartiment(usize),
     QuantiteCompartiment(usize),
+    NombreCompartiments,
+    PresenceRemorque,
+    CodeProduitCollecteur,
+    CodeProduitPartieCommune,
+    CodeProduitFlexible1,
+    CodeProduitFlexible2,
+    CodeErreurMouvementProduit,
+    CodeProduitFinal,
+    NumeroCompartiment,
+    NumeroCompartimentFinal,
+    OrdreCompartiments,
+    NumeroFlexible,
+    NumeroFlexibleFinal,
+    FinirFlexibleVide,
 }
 
 /// Dictionnaire des données pour les requêtes et les réponses
@@ -229,6 +243,49 @@ pub struct Context {
 
     /// Quantité dans le compartiment #i
     quantite_compartiment: Vec<u32>,
+
+    /// Nombre de compartiments
+    nombre_compartiments: Option<u8>,
+
+    /// Code produit dans le collecteur
+    code_produit_collecteur: Option<u8>,
+
+    /// Code produit dans la partie commune
+    code_produit_partie_commune: Option<u8>,
+
+    /// Code produit dans le flexible #1
+    code_produit_flexible_1: Option<u8>,
+
+    /// Code produit dans le flexible #2
+    code_produit_flexible_2: Option<u8>,
+
+    /// Présence d'une remorque
+    presence_remorque: Option<bool>,
+
+    /// Code erreur sur commande de mouvement de produit (voir doc ST2150)
+    code_erreur_mouvement_produit: Option<u8>,
+
+    /// Code produit final (mouvement de produit)
+    code_produit_final: Option<u8>,
+
+    /// Numéro de compartiment (mouvement de produit)
+    numero_compartiment: Option<u8>,
+
+    /// Numéro de compartiment final (mouvement de produit)
+    numero_compartiment_final: Option<u8>,
+
+    /// Ordre des compartiments (mouvement de produit)
+    /// '030201000' par ordre compartiment 4, 4 et 2
+    ordre_compartiments: Option<u32>,
+
+    /// Numéro de flexible (mouvement de produit)
+    numero_flexible: Option<u8>,
+
+    /// Numéro de flexible final (mouvement de produit)
+    numero_flexible_final: Option<u8>,
+
+    /// Finir avec flexible vide (mouvement de produit)
+    finir_flexible_vide: Option<bool>,
 }
 
 /// Retourne le libellé d'une information du contexte
@@ -273,6 +330,20 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::LibelleJEvent => "Libellé d'un événement".to_string(),
         IdInfo::CodeProduitCompartiment(compart_num) => format!("Code produit cpt #{compart_num}"),
         IdInfo::QuantiteCompartiment(compart_num)=> format!("Quantité cpt #{compart_num}"),
+        IdInfo::NombreCompartiments => "Nombre de compartiments".to_string(),
+        IdInfo::CodeProduitCollecteur => "Code produit dans le collecteur".to_string(),
+        IdInfo::CodeProduitPartieCommune => "Code produit dans la partie commune".to_string(),
+        IdInfo::CodeProduitFlexible1 => "Code produit dans le flexible #1".to_string(),
+        IdInfo::CodeProduitFlexible2 => "Code produit dans le flexible #2".to_string(),
+        IdInfo::CodeErreurMouvementProduit => "Code erreur (1:Non supporté, 2:En opération)".to_string(),
+        IdInfo::CodeProduitFinal => "Code produit final".to_string(),
+        IdInfo::NumeroCompartiment => "Numéro de compartiment".to_string(),
+        IdInfo::PresenceRemorque => "Présence d'un remorque".to_string(),
+        IdInfo::NumeroCompartimentFinal => "Numéro de compartiment final".to_string(),
+        IdInfo::OrdreCompartiments => "Ordre des compartiments".to_string(),
+        IdInfo::NumeroFlexible => "Numéro de flexible'".to_string(),
+        IdInfo::NumeroFlexibleFinal => "Numéro de flexible final".to_string(),
+        IdInfo::FinirFlexibleVide => "Finir flexible vide".to_string()
     }
 }
 
@@ -285,7 +356,9 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::EnMesurage
         | IdInfo::ArretIntermediaire
         | IdInfo::ForcagePetitDebit
-        | IdInfo::ModeConnecte => FormatInfo::FormatBool,
+        | IdInfo::ModeConnecte
+        | IdInfo::FinirFlexibleVide
+        | IdInfo::PresenceRemorque => FormatInfo::FormatBool,
 
         /* Char */
         IdInfo::TypeDistribution => FormatInfo::FormatChar,
@@ -294,7 +367,18 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         IdInfo::CodeDefaut
         | IdInfo::CodeProduit
         | IdInfo::TypeCompteur
-        | IdInfo::CodeProduitCompartiment(_) => FormatInfo::FormatU8,
+        | IdInfo::CodeProduitCompartiment(_)
+        | IdInfo::NombreCompartiments
+        | IdInfo::CodeProduitCollecteur
+        | IdInfo::CodeProduitPartieCommune
+        | IdInfo::CodeProduitFlexible1
+        | IdInfo::CodeProduitFlexible2
+        | IdInfo::CodeErreurMouvementProduit
+        | IdInfo::CodeProduitFinal
+        | IdInfo::NumeroCompartiment
+        | IdInfo::NumeroCompartimentFinal
+        | IdInfo::NumeroFlexible
+        | IdInfo::NumeroFlexibleFinal => FormatInfo::FormatU8,
 
         /* U16 */
         IdInfo::IndexSansRaz
@@ -315,7 +399,8 @@ pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
         | IdInfo::Predetermination
         | IdInfo::DateAAMMJJ
         | IdInfo::HeureHHMMSS
-        | IdInfo::QuantiteCompartiment(_) => FormatInfo::FormatU32,
+        | IdInfo::QuantiteCompartiment(_)
+        | IdInfo::OrdreCompartiments => FormatInfo::FormatU32,
 
         /* U64 */
         IdInfo::DateAAMMJJHeureHHMMSS => FormatInfo::FormatU64,
@@ -345,6 +430,8 @@ impl Context {
             IdInfo::ArretIntermediaire => self.arret_intermediaire,
             IdInfo::ForcagePetitDebit => self.forcage_petit_debit,
             IdInfo::ModeConnecte => self.mode_connecte,
+            IdInfo::FinirFlexibleVide => self.finir_flexible_vide,
+            IdInfo::PresenceRemorque => self.presence_remorque,
 
             _ => panic!("Cette information n'est pas booléenne : {id_info:?}"),
         }
@@ -358,6 +445,8 @@ impl Context {
             IdInfo::ArretIntermediaire => self.arret_intermediaire = Some(value),
             IdInfo::ForcagePetitDebit => self.forcage_petit_debit = Some(value),
             IdInfo::ModeConnecte => self.mode_connecte = Some(value),
+            IdInfo::FinirFlexibleVide => self.finir_flexible_vide = Some(value),
+            IdInfo::PresenceRemorque => self.presence_remorque = Some(value),
 
             _ => panic!("Cette information n'est pas booléenne : {id_info:?}"),
         }
@@ -398,6 +487,17 @@ impl Context {
             IdInfo::CodeProduitCompartiment(compart_num) => {
                 self.get_info_code_produit_compartiment(compart_num)
             }
+            IdInfo::NombreCompartiments => self.nombre_compartiments,
+            IdInfo::CodeProduitCollecteur => self.code_produit_collecteur,
+            IdInfo::CodeProduitPartieCommune => self.code_produit_partie_commune,
+            IdInfo::CodeProduitFlexible1 => self.code_produit_flexible_1,
+            IdInfo::CodeProduitFlexible2 => self.code_produit_flexible_2,
+            IdInfo::CodeErreurMouvementProduit => self.code_erreur_mouvement_produit,
+            IdInfo::CodeProduitFinal => self.code_produit_final,
+            IdInfo::NumeroCompartiment => self.numero_compartiment,
+            IdInfo::NumeroCompartimentFinal => self.numero_compartiment_final,
+            IdInfo::NumeroFlexible => self.numero_flexible,
+            IdInfo::NumeroFlexibleFinal => self.numero_flexible_final,
 
             _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
         }
@@ -421,6 +521,17 @@ impl Context {
             IdInfo::CodeProduitCompartiment(compart_num) => {
                 self.set_info_code_produit_compartiment(compart_num, value);
             }
+            IdInfo::NombreCompartiments => self.nombre_compartiments = Some(value),
+            IdInfo::CodeProduitCollecteur => self.code_produit_collecteur = Some(value),
+            IdInfo::CodeProduitPartieCommune => self.code_produit_partie_commune = Some(value),
+            IdInfo::CodeProduitFlexible1 => self.code_produit_flexible_1 = Some(value),
+            IdInfo::CodeProduitFlexible2 => self.code_produit_flexible_2 = Some(value),
+            IdInfo::CodeErreurMouvementProduit => self.code_erreur_mouvement_produit = Some(value),
+            IdInfo::CodeProduitFinal => self.code_produit_final = Some(value),
+            IdInfo::NumeroCompartiment => self.numero_compartiment = Some(value),
+            IdInfo::NumeroCompartimentFinal => self.numero_compartiment_final = Some(value),
+            IdInfo::NumeroFlexible => self.numero_flexible = Some(value),
+            IdInfo::NumeroFlexibleFinal => self.numero_flexible_final = Some(value),
 
             _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
         }
@@ -484,6 +595,7 @@ impl Context {
             IdInfo::QuantiteCompartiment(compart_num) => {
                 self.get_info_quantite_compartiment(compart_num)
             }
+            IdInfo::OrdreCompartiments => self.ordre_compartiments,
 
             _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
         }
@@ -510,6 +622,7 @@ impl Context {
             IdInfo::QuantiteCompartiment(compart_num) => {
                 self.set_info_quantite_compartiment(compart_num, value);
             }
+            IdInfo::OrdreCompartiments => self.ordre_compartiments = Some(value),
 
             _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
         }
@@ -836,6 +949,20 @@ mod tests {
             check_id_code(&mut context, IdInfo::CodeProduitCompartiment(compart_num));
             check_id_code(&mut context, IdInfo::QuantiteCompartiment(compart_num));
         }
+        check_id_code(&mut context, IdInfo::NombreCompartiments);
+        check_id_code(&mut context, IdInfo::PresenceRemorque);
+        check_id_code(&mut context, IdInfo::CodeProduitCollecteur);
+        check_id_code(&mut context, IdInfo::CodeProduitPartieCommune);
+        check_id_code(&mut context, IdInfo::CodeProduitFlexible1);
+        check_id_code(&mut context, IdInfo::CodeProduitFlexible2);
+        check_id_code(&mut context, IdInfo::CodeErreurMouvementProduit);
+        check_id_code(&mut context, IdInfo::CodeProduitFinal);
+        check_id_code(&mut context, IdInfo::NumeroCompartiment);
+        check_id_code(&mut context, IdInfo::NumeroCompartimentFinal);
+        check_id_code(&mut context, IdInfo::OrdreCompartiments);
+        check_id_code(&mut context, IdInfo::NumeroFlexible);
+        check_id_code(&mut context, IdInfo::NumeroFlexibleFinal);
+        check_id_code(&mut context, IdInfo::FinirFlexibleVide);
     }
 
     #[test]
