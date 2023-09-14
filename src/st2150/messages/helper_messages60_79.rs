@@ -33,6 +33,16 @@ fn definition_message(message_num: u8) -> MessageDefinition {
                 IdInfo::FinirFlexibleVide,
             ],
         },
+        61 => MessageDefinition {
+            message_str: "Prédétermination pompée multi-compartiments",
+            id_infos_request: vec![
+                IdInfo::Predetermination,
+                IdInfo::CodeProduit,
+                IdInfo::OrdreCompartiments,
+                IdInfo::NumeroFlexible,
+                IdInfo::FinirFlexibleVide,
+            ],
+        },
         _ => panic!("Message de mouvement produit inconnu : {message_num}"),
     }
 }
