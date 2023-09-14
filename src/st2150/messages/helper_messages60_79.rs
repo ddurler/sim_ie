@@ -59,7 +59,17 @@ fn definition_message(message_num: u8) -> MessageDefinition {
                 IdInfo::NumeroFlexible,
             ],
         },
-
+        65 => MessageDefinition {
+            message_str: "Purge",
+            id_infos_request: vec![
+                IdInfo::CodeProduit,
+                IdInfo::NumeroCompartiment,
+                IdInfo::NumeroCompartimentFinal,
+                IdInfo::NumeroFlexible,
+                IdInfo::NumeroFlexibleFinal,
+                IdInfo::FinirFlexibleVide,
+            ],
+        },
         _ => panic!("Message de mouvement produit inconnu : {message_num}"),
     }
 }
