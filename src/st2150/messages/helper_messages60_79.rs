@@ -96,6 +96,15 @@ fn definition_message(message_num: u8) -> MessageDefinition {
                 IdInfo::FinirFlexibleVide,
             ],
         },
+        70 => MessageDefinition {
+            message_str: "Prédétermination gravitaire",
+            id_infos_request: vec![
+                IdInfo::Predetermination,
+                IdInfo::CodeProduit,
+                IdInfo::NumeroCompartiment,
+                IdInfo::FinirFlexibleVide,
+            ],
+        },
 
         _ => panic!("Message de mouvement produit inconnu : {message_num}"),
     }
