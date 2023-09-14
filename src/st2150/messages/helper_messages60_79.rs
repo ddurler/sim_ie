@@ -117,6 +117,10 @@ fn definition_message(message_num: u8) -> MessageDefinition {
             message_str: "Chargement produit vers compartiment",
             id_infos_request: vec![IdInfo::CodeProduit, IdInfo::NumeroCompartimentFinal],
         },
+        77 => MessageDefinition {
+            message_str: "Libération (vidange collecteur)",
+            id_infos_request: vec![IdInfo::CodeProduit, IdInfo::NumeroCompartimentFinal, IdInfo::NumeroFlexible],
+        },
 
         _ => panic!("Message de mouvement produit inconnu : {message_num}"),
     }
