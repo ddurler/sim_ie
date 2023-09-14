@@ -25,7 +25,7 @@ impl CommonMessageTrait for Message11 {
         Edition2150::C
     }
 
-    fn str_message(&self) -> &'static str {
+    fn message_str(&self) -> &'static str {
         "État cargaison"
     }
 
@@ -113,7 +113,7 @@ impl CommonMessageTrait for Message11 {
         // 4 fois un u8 avec #0: Collecteur, #1: partie commune, #2: flexible1 et #3: flexible2
         let code_produits_tuyauterie = frame.fields[index_champ + 1].decode_as_vec();
         if code_produits_tuyauterie.len() != 4 {
-            return Err(ProtocolError::IllegalFieldValue(
+            return Err(ProtocolError::IllegalRepFieldValue(
                 frame.fields[index_champ + 1].clone(),
                 "produits tuyauterie".to_string(),
                 "4 x code produit".to_string(),

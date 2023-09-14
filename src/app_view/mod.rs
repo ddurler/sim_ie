@@ -106,7 +106,7 @@ impl AppView {
                 || *message_num == cur_message_num
             {
                 let text: Text =
-                    Text::new(format!("{:02} {}", message_num, dyn_message.str_message()));
+                    Text::new(format!("{:02} {}", message_num, dyn_message.message_str()));
                 let btn = if *message_num == cur_message_num {
                     // C'est le numéro de message actuellement sélectionné
                     Button::new(text).on_press(Message::SelectionMessageST2150(*message_num))
@@ -189,7 +189,7 @@ impl AppView {
                 let txt_do_it = format!(
                     "Run Message {:02} ({}) sur le port {}",
                     self.dyn_message.message_num(),
-                    self.dyn_message.str_message(),
+                    self.dyn_message.message_str(),
                     self.st2150.port.name,
                 );
                 let txt_do_it: Text = Text::new(txt_do_it);

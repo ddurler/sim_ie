@@ -15,13 +15,16 @@
 /// Nota : C'est un peu relou à maintenir mais très pratique pour l'IHM...
 
 /// Nombre max de produits
-const NB_PRODUITS: usize = 16;
+pub const NB_PRODUITS: usize = 16;
 
 /// Nombre de caractères pour un libellé produit
 const LIBELLE_PRODUIT_WIDTH: usize = 10;
 
 /// Nombre max de compartiments
-const NB_COMPARTIMENTS: usize = 9;
+pub const NB_COMPARTIMENTS: usize = 9;
+
+/// Nombre max de flexibles
+pub const NB_FLEXIBLES: usize = 3;
 
 // Pour ajouter un nouveau format de données pour le contexte :
 //

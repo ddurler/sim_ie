@@ -1,5 +1,6 @@
 //! Message 37 : Mise à jour du plan
 
+use crate::context;
 use crate::context::Context;
 use crate::st2150::field::Field;
 
@@ -26,7 +27,7 @@ impl CommonMessageTrait for Message37 {
         Edition2150::C
     }
 
-    fn str_message(&self) -> &'static str {
+    fn message_str(&self) -> &'static str {
         "Mise à jour du plan"
     }
 
@@ -69,6 +70,11 @@ impl CommonMessageTrait for Message37 {
             let code_produit = context
                 .get_info_u8(IdInfo::CodeProduitCompartiment(compart_num))
                 .unwrap();
+            Field::check_binary_domain(
+                "code produit",
+                code_produit,
+                0_u8..=u8::try_from(context::NB_PRODUITS).unwrap(),
+            )?;
             req.add_field(Field::encode_binary(b'0' + code_produit));
 
             let quantite = context

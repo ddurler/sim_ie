@@ -26,7 +26,7 @@ impl CommonMessageTrait for Message00 {
         Edition2150::A
     }
 
-    fn str_message(&self) -> &'static str {
+    fn message_str(&self) -> &'static str {
         "Signe de vie"
     }
 
@@ -66,7 +66,7 @@ impl CommonMessageTrait for Message00 {
             '0' => context.set_info_bool(IdInfo::EnMesurage, false),
             '1' => context.set_info_bool(IdInfo::EnMesurage, true),
             _ => {
-                return Err(ProtocolError::IllegalFieldValue(
+                return Err(ProtocolError::IllegalRepFieldValue(
                     frame.fields[0].clone(),
                     "en mesurage".to_string(),
                     "'0' ou '1'".to_string(),
@@ -79,7 +79,7 @@ impl CommonMessageTrait for Message00 {
         if (0x20..=0x9F).contains(&code_defaut) {
             context.set_info_u8(IdInfo::CodeDefaut, code_defaut - 0x20);
         } else {
-            return Err(ProtocolError::IllegalFieldValue(
+            return Err(ProtocolError::IllegalRepFieldValue(
                 frame.fields[1].clone(),
                 "code défaut".to_string(),
                 "Valeur entre 0x20 et 0x9F".to_string(),
@@ -91,7 +91,7 @@ impl CommonMessageTrait for Message00 {
             '0' => context.set_info_bool(IdInfo::ArretIntermediaire, false),
             '1' => context.set_info_bool(IdInfo::ArretIntermediaire, true),
             _ => {
-                return Err(ProtocolError::IllegalFieldValue(
+                return Err(ProtocolError::IllegalRepFieldValue(
                     frame.fields[2].clone(),
                     "arrêt intermédiaire".to_string(),
                     "'0' ou '1'".to_string(),
@@ -104,7 +104,7 @@ impl CommonMessageTrait for Message00 {
             '0' => context.set_info_bool(IdInfo::ForcagePetitDebit, false),
             '1' => context.set_info_bool(IdInfo::ForcagePetitDebit, true),
             _ => {
-                return Err(ProtocolError::IllegalFieldValue(
+                return Err(ProtocolError::IllegalRepFieldValue(
                     frame.fields[3].clone(),
                     "forçage petit debit".to_string(),
                     "'0' ou '1'".to_string(),
@@ -117,7 +117,7 @@ impl CommonMessageTrait for Message00 {
             '0' => context.set_info_bool(IdInfo::ModeConnecte, false),
             '1' => context.set_info_bool(IdInfo::ModeConnecte, true),
             _ => {
-                return Err(ProtocolError::IllegalFieldValue(
+                return Err(ProtocolError::IllegalRepFieldValue(
                     frame.fields[4].clone(),
                     "mode connecté".to_string(),
                     "'0' ou '1'".to_string(),

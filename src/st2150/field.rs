@@ -1,5 +1,7 @@
 //! Gestion du contenu d'un champ pour le protocole ALMA IE - ST2150
 
+use std::ops::RangeInclusive;
+
 use super::{protocol, ProtocolError};
 
 /// Champ d'une requête ou d'une réponse
@@ -23,6 +25,28 @@ impl Field {
     #[allow(dead_code)]
     pub fn decode_as_vec(&self) -> Vec<u8> {
         self.data.clone()
+    }
+
+    /// Helper pour vérifier le domaine de valeurs d'un u8 avant de l'encoder
+    /// A utiliser par exemple pour vérifier qu'un code produit est bien entre 0 et 16
+    /// avant d'y ajouter b'0' dans l'encodage (overflow possible si `code_produit + b'0' > 255`)
+    #[allow(dead_code)]
+    pub fn check_binary_domain(
+        field_name: &'static str,
+        value: u8,
+        range: RangeInclusive<u8>,
+    ) -> Result<(), ProtocolError> {
+        if range.contains(&value) {
+            Ok(())
+        } else {
+            Err(ProtocolError::IllegalNumberEncoding(format!(
+                "La valeur '{}' pour '{}' n'est pas dans le domaine des valeurs possibles : '{}..{}'",
+                value,
+                field_name,
+                range.start(),
+                range.end(),
+            )))
+        }
     }
 
     /// Constructeur champ avec une valeur binaire (typiquement ACK ou NACK)

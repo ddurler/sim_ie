@@ -25,7 +25,7 @@ impl CommonMessageTrait for Message35 {
         Edition2150::B
     }
 
-    fn str_message(&self) -> &'static str {
+    fn message_str(&self) -> &'static str {
         "Tables des produits (long)"
     }
 

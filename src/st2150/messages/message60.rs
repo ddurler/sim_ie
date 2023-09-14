@@ -1,9 +1,8 @@
-//! Message 22 : Identification TAG
+//! Message 60 : Mouvement de produit - Prédétermination pompée
 
 use crate::context::Context;
 
-use super::field::Field;
-use super::frame;
+use super::helper_messages60_79 as helper;
 use super::CommonMessageTrait;
 use super::Edition2150;
 use super::ProtocolError;
@@ -11,72 +10,55 @@ use super::ST2150;
 use crate::context::IdInfo;
 
 /// Numéro de ce message
-const MESSAGE_NUM: u8 = 22;
+const MESSAGE_NUM: u8 = 60;
 
-/// Message 22 : Identification TAG
+/// Message 60 : Mouvement de produit - prédétermination pompée
 #[derive(Default)]
-pub struct Message22 {}
+pub struct Message60;
 
-impl CommonMessageTrait for Message22 {
+impl CommonMessageTrait for Message60 {
     fn message_num(&self) -> u8 {
         MESSAGE_NUM
     }
 
     fn edition_st2150(&self) -> Edition2150 {
-        Edition2150::B
+        helper::edition_st2150(MESSAGE_NUM)
     }
 
     fn message_str(&self) -> &'static str {
-        "Identification TAG"
+        helper::message_str(MESSAGE_NUM)
     }
 
     fn id_infos_request(&self) -> Vec<IdInfo> {
-        vec![IdInfo::IdentificationTag]
+        helper::id_infos_request(MESSAGE_NUM)
     }
 
     fn id_infos_response(&self) -> Vec<IdInfo> {
-        vec![IdInfo::Ack, IdInfo::Nack]
+        helper::id_infos_response(MESSAGE_NUM)
     }
 
     fn do_vacation(&self, st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError> {
         // Contexte OK ?
-        Message22::availability(self, context)?;
+        Message60::availability(self, context)?;
 
         // Création et envoi requête
-        let mut req = frame::Frame::new(MESSAGE_NUM);
-
-        let identification_tag = match context.get_info_string(IdInfo::IdentificationTag) {
-            None => String::new(),
-            Some(txt) => txt.trim().to_string(),
-        };
-
-        // #0 : Longueur de l'identification tag sur 3
-        req.add_field(Field::encode_number(identification_tag.len(), 3)?);
-
-        // #1 : Identification tag
-        if identification_tag.is_empty() {
-            req.add_field(Field::new(&[]));
-        } else {
-            req.add_field(Field::encode_str(
-                &identification_tag,
-                identification_tag.len(),
-            ));
-        }
+        let req = helper::create_frame_request(MESSAGE_NUM, context)?;
 
         st2150.send_req(&req);
 
         // Réception réponse
         let mut buffer = [0; 200];
-        let len_rep = st2150.wait_rep(&mut buffer, 9)?;
+        let len_rep = st2150.wait_rep(&mut buffer, helper::max_expected_rep_len(MESSAGE_NUM))?;
 
         // Décodage de la réponse reçue
-        let frame = st2150.try_from_buffer(&buffer[..len_rep], MESSAGE_NUM, &[1])?;
+        let frame = st2150.try_from_buffer(
+            &buffer[..len_rep],
+            MESSAGE_NUM,
+            helper::rep_len_fields(MESSAGE_NUM),
+        )?;
 
-        // Mise à jour du contexte
-
-        // #0 : ACK ou NACK
-        context.set_info_bool(IdInfo::Nack, frame.is_nack());
-        context.set_info_bool(IdInfo::Ack, frame.is_ack());
+        // Mise à jour du contexte selon la réponse
+        helper::update_context_from_rep(MESSAGE_NUM, context, &frame)?;
 
         // C'est tout bon
         Ok(())
@@ -92,46 +74,58 @@ mod tests {
     use crate::SerialCom;
 
     #[test]
-    fn test_message22() {
+    fn test_message60() {
         // On utilise le FAKE serial port pour contrôler ce qui circule...
         let mut fake_port = SerialCom::new("FAKE", 9600);
 
         // Contexte pour le protocole
         let mut context = Context::default();
 
-        context.set_info_string(IdInfo::IdentificationTag, "ABCDE");
+        // Infos pour la requête
+        context.set_info_u32(IdInfo::Predetermination, 1000);
+        context.set_info_u8(IdInfo::CodeProduit, 3);
+        context.set_info_u8(IdInfo::NumeroCompartiment, 2);
+        context.set_info_u8(IdInfo::NumeroFlexible, 1);
+        context.set_info_bool(IdInfo::FinirFlexibleVide, true);
 
         // Trame pour message
         fake_port.should_write(&[
             protocol::STX,
-            b'2', //  Numéro de message
-            b'2',
-            protocol::SEPARATOR,
-            b'0', // Longueur du TAG
+            b'6', //  Numéro de message
             b'0',
-            b'5',
             protocol::SEPARATOR,
-            b'A',
-            b'B',
-            b'C',
-            b'D',
-            b'E',
+            b'0', // Limitation
+            b'1',
+            b'0',
+            b'0',
+            b'0',
             protocol::SEPARATOR,
-            56, // Checksum
-            65,
+            b'3', // Code produit
+            protocol::SEPARATOR,
+            b'2', // Numéro compartiment
+            protocol::SEPARATOR,
+            b'1', // Numéro de flexible
+            protocol::SEPARATOR,
+            b'V', // Finir vide
+            protocol::SEPARATOR,
+            53, // Checksum
+            49,
             protocol::ETX,
         ]);
 
         // Réponse simulée
         fake_port.will_read(&[
             protocol::STX,
-            b'2', // Numéro de message
-            b'2',
+            b'6', // Numéro de message
+            b'0',
             protocol::SEPARATOR,
             protocol::ACK, // ACK
             protocol::SEPARATOR,
-            b'0', // Checksum
-            b'6',
+            b'0', // Code erreur mouvement de produit
+            b'0',
+            protocol::SEPARATOR,
+            b'F', // Checksum
+            b'E',
             protocol::ETX,
         ]);
 
@@ -145,8 +139,11 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(context.get_info_bool(IdInfo::Nack), Some(false));
         assert_eq!(context.get_info_bool(IdInfo::Ack), Some(true));
+        assert_eq!(
+            context.get_info_u8(IdInfo::CodeErreurMouvementProduit),
+            Some(0)
+        );
     }
 }

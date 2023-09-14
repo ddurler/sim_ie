@@ -25,7 +25,7 @@ impl CommonMessageTrait for Message21 {
         Edition2150::A
     }
 
-    fn str_message(&self) -> &'static str {
+    fn message_str(&self) -> &'static str {
         "Dernier mesurage, demande de solde"
     }
 

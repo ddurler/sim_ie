@@ -1,5 +1,6 @@
 //! Message 20 : Présélection
 
+use crate::context;
 use crate::context::{Context, IdInfo};
 
 use super::field::Field;
@@ -25,7 +26,7 @@ impl CommonMessageTrait for Message20 {
         Edition2150::A
     }
 
-    fn str_message(&self) -> &'static str {
+    fn message_str(&self) -> &'static str {
         "Présélection"
     }
 
@@ -50,6 +51,11 @@ impl CommonMessageTrait for Message20 {
 
         // Code produit
         let code_prod = context.get_info_u8(IdInfo::CodeProduit).unwrap();
+        Field::check_binary_domain(
+            "code produit",
+            code_prod,
+            0_u8..=u8::try_from(context::NB_PRODUITS).unwrap(),
+        )?;
         req.add_field(Field::encode_binary(code_prod + b'0'));
 
         st2150.send_req(&req);

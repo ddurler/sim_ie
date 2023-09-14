@@ -26,7 +26,7 @@ impl CommonMessageTrait for Message36 {
         Edition2150::C
     }
 
-    fn str_message(&self) -> &'static str {
+    fn message_str(&self) -> &'static str {
         "Relevé d'un événement"
     }
 

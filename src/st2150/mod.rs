@@ -75,8 +75,8 @@ pub enum ProtocolError {
     /// Échec conversion d'un champ dans un type (type_de_champ, champ),
     ErrFieldConversion(String, Field),
 
-    /// Valeur incorrecte dans un champ (champ, nom, domaine_valeurs)
-    IllegalFieldValue(Field, String, String),
+    /// Valeur incorrecte dans un champ de la réponse (champ, nom, domaine_valeurs)
+    IllegalRepFieldValue(Field, String, String),
 
     /// Information manquante dans le contexte (nom_de_l_info)
     ContextMissing(String),
@@ -117,7 +117,7 @@ impl Display for ProtocolError {
                 f,
                 "Erreur lors de la conversion en {str_decode} du champ {field:?}"
             ),
-            ProtocolError::IllegalFieldValue(field, nom, domaine_valeurs) => write!(
+            ProtocolError::IllegalRepFieldValue(field, nom, domaine_valeurs) => write!(
                 f,
                 "Valeur incorrecte du champ '{nom}'={field:?} : {domaine_valeurs}"
             ),
