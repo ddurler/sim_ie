@@ -11,9 +11,9 @@ use context::{CommonContextTrait, Context, FormatInfo, IdInfo};
 const STR_INPUT_INFO_NONE: &str = "";
 
 /// Largeur harmonisée de tous les libellés en saisie
-const LABEL_WIDTH: f32 = 100.0;
+const LABEL_WIDTH: f32 = 120.0;
 /// Largeur harmonisée de tous les champs de saisie
-const INPUT_WIDTH: f32 = 100.0;
+const INPUT_WIDTH: f32 = 80.0;
 
 /// Edition IHM d'un champ `IdInfo`
 pub fn input_info(context: &Context, id_info: IdInfo) -> Element<Message> {

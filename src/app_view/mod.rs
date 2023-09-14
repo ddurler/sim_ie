@@ -12,7 +12,7 @@ use super::APP_VERSION;
 
 use iced::widget::{checkbox, column, container, horizontal_rule, row, vertical_rule};
 use iced::widget::{Button, Column, Row, Text};
-use iced::{executor, theme, window};
+use iced::{executor, theme, window, Length};
 use iced::{Application, Command, Element, Settings, Theme};
 
 use crate::context::IdInfo;
@@ -93,34 +93,67 @@ impl AppView {
         self.editions_st2150.insert(edition, value);
     }
 
+    /// Liste des numéros de messages visibles selon la sélection de(s) édition(s) sélectionnée(s)
+    /// en incluant les messages de la pré-sélection d'office
+    fn list_visible_message_nums(&self, pre_selection: &[u8]) -> Vec<u8> {
+        let mut visible_message_nums = vec![];
+
+        for message_num in ST2150_MESSAGE_NUMBERS {
+            if pre_selection.contains(message_num)
+                || self.is_edition_st2150_visible(get_dyn_message(*message_num).edition_st2150())
+            {
+                visible_message_nums.push(*message_num);
+            }
+        }
+
+        visible_message_nums
+    }
+
     /// Zone pour sélection du message courant
     pub fn body_message_selection(&self) -> Element<Message> {
         // Numéro de message actuellement sélectionné
         let cur_message_num = self.dyn_message.message_num();
 
-        let mut col = Column::new();
+        // Liste des numéros de messages visibles
+        let visible_message_nums = self.list_visible_message_nums(&[cur_message_num]);
 
-        for message_num in ST2150_MESSAGE_NUMBERS {
-            let dyn_message = get_dyn_message(*message_num);
-            if self.is_edition_st2150_visible(dyn_message.edition_st2150())
-                || *message_num == cur_message_num
+        let mut row = Row::new();
+
+        let mut col1 = Column::new();
+        let mut col2 = Column::new();
+
+        for (n, message_num) in visible_message_nums.iter().enumerate() {
+            let text: Text = Text::new(format!(
+                "{:02} {}",
+                message_num,
+                get_dyn_message(*message_num).message_str()
+            ));
+            let btn = if *message_num == cur_message_num {
+                // C'est le numéro de message actuellement sélectionné
+                Button::new(text).on_press(Message::SelectionMessageST2150(*message_num))
+            } else {
+                // Numéro de message non sélectionné. On l'affiche en noir sur fond gris
+                Button::new(text)
+                    .on_press(Message::SelectionMessageST2150(*message_num))
+                    .style(theme::Button::Secondary)
+            };
+
+            // Si le nombre de messages à afficher est plus grand que la moitié de tous les messages possibles...
+            if visible_message_nums.len() > ST2150_MESSAGE_NUMBERS.len() / 2
+            // ...et qu'on est sur un indice impair d'affichage...
+            && n % 2 == 1
             {
-                let text: Text =
-                    Text::new(format!("{:02} {}", message_num, dyn_message.message_str()));
-                let btn = if *message_num == cur_message_num {
-                    // C'est le numéro de message actuellement sélectionné
-                    Button::new(text).on_press(Message::SelectionMessageST2150(*message_num))
-                } else {
-                    // Numéro de message non sélectionné. On l'affiche en noir sur fond gris
-                    Button::new(text)
-                        .on_press(Message::SelectionMessageST2150(*message_num))
-                        .style(theme::Button::Secondary)
-                };
-                col = col.push(btn);
+                // ...affichage sur 2 colonnes...
+                col2 = col2.push(btn);
+            } else {
+                // ...sinon qu'une seule colonne
+                col1 = col1.push(btn);
             }
         }
 
-        col.into()
+        row = row.push(col1).push(col2).spacing(10);
+
+        row.into()
     }
 
     /// Informations pour la requête courante
@@ -343,7 +376,7 @@ impl Application for AppView {
                 vertical_rule(10),
                 self.view_response(),
             ])
-            .max_height(650), // TODO : Pifométrie à adapter...
+            .height(Length::Fill),
             // Status/Vacation selon action
             horizontal_rule(10),
             row![self.view_do_vacation(), self.view_edition_st2150(),].spacing(10),

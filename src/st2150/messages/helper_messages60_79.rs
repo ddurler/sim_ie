@@ -76,7 +76,7 @@ fn definition_message(message_num: u8) -> MessageDefinition {
             ],
         },
         67 => MessageDefinition {
-            message_str: "Prédétermination avec anticipation de purge multi-compartiments",
+            message_str: "Prédé. avec anticipation de purge multi-comparts",
             id_infos_request: vec![
                 IdInfo::Predetermination,
                 IdInfo::CodeProduit, IdInfo::CodeProduitFinal,
