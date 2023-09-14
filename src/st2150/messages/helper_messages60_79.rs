@@ -21,6 +21,7 @@ struct MessageDefinition {
 }
 
 /// Getter configuration d'un message de mouvement de produit
+#[rustfmt::skip]  // On demande à 'cargo fmt' de ne pas arranger le code parce que sinon ça dépasse 100 lignes :)
 fn definition_message(message_num: u8) -> MessageDefinition {
     match message_num {
         60 => MessageDefinition {
@@ -63,10 +64,8 @@ fn definition_message(message_num: u8) -> MessageDefinition {
             message_str: "Purge",
             id_infos_request: vec![
                 IdInfo::CodeProduit,
-                IdInfo::NumeroCompartiment,
-                IdInfo::NumeroCompartimentFinal,
-                IdInfo::NumeroFlexible,
-                IdInfo::NumeroFlexibleFinal,
+                IdInfo::NumeroCompartiment, IdInfo::NumeroCompartimentFinal,
+                IdInfo::NumeroFlexible, IdInfo::NumeroFlexibleFinal,
                 IdInfo::FinirFlexibleVide,
             ],
         },
@@ -74,12 +73,9 @@ fn definition_message(message_num: u8) -> MessageDefinition {
             message_str: "Prédétermination avec anticipation de purge",
             id_infos_request: vec![
                 IdInfo::Predetermination,
-                IdInfo::CodeProduit,
-                IdInfo::CodeProduitFinal,
-                IdInfo::NumeroCompartiment,
-                IdInfo::NumeroCompartimentFinal,
-                IdInfo::NumeroFlexible,
-                IdInfo::NumeroFlexibleFinal,
+                IdInfo::CodeProduit, IdInfo::CodeProduitFinal,
+                IdInfo::NumeroCompartiment, IdInfo::NumeroCompartimentFinal,
+                IdInfo::NumeroFlexible, IdInfo::NumeroFlexibleFinal,
                 IdInfo::FinirFlexibleVide,
             ],
         },
@@ -87,12 +83,10 @@ fn definition_message(message_num: u8) -> MessageDefinition {
             message_str: "Prédétermination avec anticipation de purge multi-compartiments",
             id_infos_request: vec![
                 IdInfo::Predetermination,
-                IdInfo::CodeProduit,
-                IdInfo::CodeProduitFinal,
+                IdInfo::CodeProduit, IdInfo::CodeProduitFinal,
                 IdInfo::OrdreCompartiments,
                 IdInfo::NumeroCompartimentFinal,
-                IdInfo::NumeroFlexible,
-                IdInfo::NumeroFlexibleFinal,
+                IdInfo::NumeroFlexible, IdInfo::NumeroFlexibleFinal,
                 IdInfo::FinirFlexibleVide,
             ],
         },
@@ -114,11 +108,14 @@ fn definition_message(message_num: u8) -> MessageDefinition {
             id_infos_request: vec![
                 IdInfo::Predetermination,
                 IdInfo::CodeProduit,
-                IdInfo::NumeroCompartiment,
-                IdInfo::NumeroCompartimentFinal,
+                IdInfo::NumeroCompartiment, IdInfo::NumeroCompartimentFinal,
                 IdInfo::NumeroFlexible,
                 IdInfo::FinirFlexibleVide,
             ],
+        },
+        76 => MessageDefinition {
+            message_str: "Chargement produit vers compartiment",
+            id_infos_request: vec![IdInfo::CodeProduit, IdInfo::NumeroCompartimentFinal],
         },
 
         _ => panic!("Message de mouvement produit inconnu : {message_num}"),
