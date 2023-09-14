@@ -11,6 +11,7 @@ use super::ST2150;
 
 // 1 - Mettre à jour la liste des numéros de messages implémentés `ST2150_MESSAGE_NUMBERS`
 // 2 - implémenter un nouveau module messageXX.rs à l'image de ceux déjà existants
+//     Les messages pour les mouvements de produit (60-79) ont une construction factorisée
 // 3 - Ajout pub messageXX et use messageXX::MessageXX ci-dessous
 // 4 - Ajout MessageXX dans la primitive `get_dyn_message` ci-dessous
 // C'est tout...
@@ -66,13 +67,16 @@ pub mod message70;
 use message70::Message70;
 pub mod message71;
 use message71::Message71;
-// Messages72-73-74 réservées
+// Messages72-73-74 réservés
 pub mod message75;
 use message75::Message75;
 pub mod message76;
 use message76::Message76;
 pub mod message77;
 use message77::Message77;
+pub mod message78;
+use message78::Message78;
+// Messages79 réservé
 
 use super::field;
 use super::Edition2150;
@@ -80,7 +84,7 @@ use super::Edition2150;
 /// Liste des numéros de messages implémentés
 pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[
     0, 10, 11, 20, 21, 22, 30, 31, 32, 33, 34, 35, 36, 37, 40, 60, 61, 62, 63, 65, 66, 67, 70, 71,
-    75, 76, 77,
+    75, 76, 77, 78,
 ];
 
 /// Accès au `CommonMessageTrait` des différents messages gérés
@@ -113,6 +117,7 @@ pub fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
         75 => Box::<Message75>::default(),
         76 => Box::<Message76>::default(),
         77 => Box::<Message77>::default(),
+        78 => Box::<Message78>::default(),
 
         _ => panic!("Numéro de message non géré {message_num}"),
     }

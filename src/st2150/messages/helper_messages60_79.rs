@@ -30,8 +30,7 @@ fn definition_message(message_num: u8) -> MessageDefinition {
                 IdInfo::Predetermination,
                 IdInfo::CodeProduit,
                 IdInfo::NumeroCompartiment,
-                IdInfo::NumeroFlexible,
-                IdInfo::FinirFlexibleVide,
+                IdInfo::NumeroFlexible, IdInfo::FinirFlexibleVide,
             ],
         },
         61 => MessageDefinition {
@@ -40,8 +39,7 @@ fn definition_message(message_num: u8) -> MessageDefinition {
                 IdInfo::Predetermination,
                 IdInfo::CodeProduit,
                 IdInfo::OrdreCompartiments,
-                IdInfo::NumeroFlexible,
-                IdInfo::FinirFlexibleVide,
+                IdInfo::NumeroFlexible, IdInfo::FinirFlexibleVide,
             ],
         },
         62 => MessageDefinition {
@@ -65,8 +63,7 @@ fn definition_message(message_num: u8) -> MessageDefinition {
             id_infos_request: vec![
                 IdInfo::CodeProduit,
                 IdInfo::NumeroCompartiment, IdInfo::NumeroCompartimentFinal,
-                IdInfo::NumeroFlexible, IdInfo::NumeroFlexibleFinal,
-                IdInfo::FinirFlexibleVide,
+                IdInfo::NumeroFlexible, IdInfo::NumeroFlexibleFinal, IdInfo::FinirFlexibleVide,
             ],
         },
         66 => MessageDefinition {
@@ -75,8 +72,7 @@ fn definition_message(message_num: u8) -> MessageDefinition {
                 IdInfo::Predetermination,
                 IdInfo::CodeProduit, IdInfo::CodeProduitFinal,
                 IdInfo::NumeroCompartiment, IdInfo::NumeroCompartimentFinal,
-                IdInfo::NumeroFlexible, IdInfo::NumeroFlexibleFinal,
-                IdInfo::FinirFlexibleVide,
+                IdInfo::NumeroFlexible, IdInfo::NumeroFlexibleFinal, IdInfo::FinirFlexibleVide,
             ],
         },
         67 => MessageDefinition {
@@ -86,8 +82,7 @@ fn definition_message(message_num: u8) -> MessageDefinition {
                 IdInfo::CodeProduit, IdInfo::CodeProduitFinal,
                 IdInfo::OrdreCompartiments,
                 IdInfo::NumeroCompartimentFinal,
-                IdInfo::NumeroFlexible, IdInfo::NumeroFlexibleFinal,
-                IdInfo::FinirFlexibleVide,
+                IdInfo::NumeroFlexible, IdInfo::NumeroFlexibleFinal, IdInfo::FinirFlexibleVide,
             ],
         },
         70 => MessageDefinition {
@@ -109,8 +104,7 @@ fn definition_message(message_num: u8) -> MessageDefinition {
                 IdInfo::Predetermination,
                 IdInfo::CodeProduit,
                 IdInfo::NumeroCompartiment, IdInfo::NumeroCompartimentFinal,
-                IdInfo::NumeroFlexible,
-                IdInfo::FinirFlexibleVide,
+                IdInfo::NumeroFlexible, IdInfo::FinirFlexibleVide,
             ],
         },
         76 => MessageDefinition {
@@ -120,6 +114,10 @@ fn definition_message(message_num: u8) -> MessageDefinition {
         77 => MessageDefinition {
             message_str: "Libération (vidange collecteur)",
             id_infos_request: vec![IdInfo::CodeProduit, IdInfo::NumeroCompartimentFinal, IdInfo::NumeroFlexible],
+        },
+        78 => MessageDefinition {
+            message_str: "Vidage gravitaire",
+            id_infos_request: vec![IdInfo::CodeProduit],
         },
 
         _ => panic!("Message de mouvement produit inconnu : {message_num}"),
