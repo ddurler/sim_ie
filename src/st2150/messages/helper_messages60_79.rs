@@ -83,6 +83,19 @@ fn definition_message(message_num: u8) -> MessageDefinition {
                 IdInfo::FinirFlexibleVide,
             ],
         },
+        67 => MessageDefinition {
+            message_str: "Prédétermination avec anticipation de purge multi-compartiments",
+            id_infos_request: vec![
+                IdInfo::Predetermination,
+                IdInfo::CodeProduit,
+                IdInfo::CodeProduitFinal,
+                IdInfo::OrdreCompartiments,
+                IdInfo::NumeroCompartimentFinal,
+                IdInfo::NumeroFlexible,
+                IdInfo::NumeroFlexibleFinal,
+                IdInfo::FinirFlexibleVide,
+            ],
+        },
 
         _ => panic!("Message de mouvement produit inconnu : {message_num}"),
     }
