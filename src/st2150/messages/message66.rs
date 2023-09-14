@@ -1,4 +1,4 @@
-//! Message 63 : Mouvement de produit - Prédétermination pompée libre multi-compartiments
+//! Message 66 : Mouvement de produit - Prédétermination avec anticipation de purge
 
 use crate::context::Context;
 
@@ -10,13 +10,13 @@ use super::ST2150;
 use crate::context::IdInfo;
 
 /// Numéro de ce message
-const MESSAGE_NUM: u8 = 63;
+const MESSAGE_NUM: u8 = 66;
 
-/// Message 63 : Mouvement de produit - prédétermination pompée libre multi-compartiments
+/// Message 66 : Mouvement de produit - Prédétermination avec anticipation de purge
 #[derive(Default)]
-pub struct Message63;
+pub struct Message66;
 
-impl CommonMessageTrait for Message63 {
+impl CommonMessageTrait for Message66 {
     fn message_num(&self) -> u8 {
         MESSAGE_NUM
     }
@@ -74,7 +74,7 @@ mod tests {
     use crate::SerialCom;
 
     #[test]
-    fn test_message63() {
+    fn test_message66() {
         // On utilise le FAKE serial port pour contrôler ce qui circule...
         let mut fake_port = SerialCom::new("FAKE", 9600);
 
@@ -82,32 +82,43 @@ mod tests {
         let mut context = Context::default();
 
         // Infos pour la requête
-        context.set_info_u8(IdInfo::CodeProduit, 3);
-        context.set_info_u32(IdInfo::OrdreCompartiments, 987_654_321);
-        context.set_info_u8(IdInfo::NumeroFlexible, 1);
+        context.set_info_u32(IdInfo::Predetermination, 1000);
+        context.set_info_u8(IdInfo::CodeProduit, 6);
+        context.set_info_u8(IdInfo::CodeProduitFinal, 5);
+        context.set_info_u8(IdInfo::NumeroCompartiment, 4);
+        context.set_info_u8(IdInfo::NumeroCompartimentFinal, 3);
+        context.set_info_u8(IdInfo::NumeroFlexible, 2);
+        context.set_info_u8(IdInfo::NumeroFlexibleFinal, 1);
+        context.set_info_bool(IdInfo::FinirFlexibleVide, true);
 
         // Trame pour message
         fake_port.should_write(&[
             protocol::STX,
             b'6', //  Numéro de message
-            b'3',
-            protocol::SEPARATOR,
-            b'3', // Code produit
-            protocol::SEPARATOR,
-            b'9', // Ordre compartiments
-            b'8',
-            b'7',
             b'6',
-            b'5',
-            b'4',
-            b'3',
-            b'2',
+            protocol::SEPARATOR,
+            b'0', // Limitation
             b'1',
+            b'0',
+            b'0',
+            b'0',
             protocol::SEPARATOR,
-            b'1', // Numéro de flexible
+            b'6', // Code produit
             protocol::SEPARATOR,
-            51, // Checksum
-            54,
+            b'5', // Code produit final
+            protocol::SEPARATOR,
+            b'4', // Numéro compartiment
+            protocol::SEPARATOR,
+            b'3', // Numéro compartiment final
+            protocol::SEPARATOR,
+            b'2', // Numéro de flexible
+            protocol::SEPARATOR,
+            b'1', // Numéro de flexible final
+            protocol::SEPARATOR,
+            b'V', // Finir vide
+            protocol::SEPARATOR,
+            57, // Checksum
+            69,
             protocol::ETX,
         ]);
 
@@ -115,7 +126,7 @@ mod tests {
         fake_port.will_read(&[
             protocol::STX,
             b'6', // Numéro de message
-            b'3',
+            b'6',
             protocol::SEPARATOR,
             protocol::ACK, // ACK
             protocol::SEPARATOR,
@@ -123,7 +134,7 @@ mod tests {
             b'0',
             protocol::SEPARATOR,
             b'F', // Checksum
-            b'D',
+            b'8',
             protocol::ETX,
         ]);
 

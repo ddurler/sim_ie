@@ -57,13 +57,15 @@ use message63::Message63;
 // Message64 réservé
 pub mod message65;
 use message65::Message65;
+pub mod message66;
+use message66::Message66;
 
 use super::field;
 use super::Edition2150;
 
 /// Liste des numéros de messages implémentés
 pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[
-    0, 10, 11, 20, 21, 22, 30, 31, 32, 33, 34, 35, 36, 37, 40, 60, 61, 62, 63, 65,
+    0, 10, 11, 20, 21, 22, 30, 31, 32, 33, 34, 35, 36, 37, 40, 60, 61, 62, 63, 65, 66,
 ];
 
 /// Accès au `CommonMessageTrait` des différents messages gérés
@@ -89,6 +91,7 @@ pub fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
         62 => Box::<Message62>::default(),
         63 => Box::<Message63>::default(),
         65 => Box::<Message65>::default(),
+        66 => Box::<Message66>::default(),
 
         _ => panic!("Numéro de message non géré {message_num}"),
     }

@@ -39,7 +39,7 @@ impl CommonMessageTrait for Message60 {
 
     fn do_vacation(&self, st2150: &mut ST2150, context: &mut Context) -> Result<(), ProtocolError> {
         // Contexte OK ?
-        Message60::availability(self, context)?;
+        Self::availability(self, context)?;
 
         // Création et envoi requête
         let req = helper::create_frame_request(MESSAGE_NUM, context)?;
