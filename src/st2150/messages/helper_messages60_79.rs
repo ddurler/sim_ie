@@ -3,7 +3,7 @@
 //! Ce helper simplifie la gestion des messages de mouvement de produit et prend à sa charge
 //! les traitements communs ou très similaires pour les messages de mouvement de produit.
 //!
-//! De fait, toute la définition de ses messages est factorisée dans ce module.
+//! De fait, toute la définition de ces messages est factorisée dans ce module.
 
 use super::field::Field;
 use super::frame::Frame;
