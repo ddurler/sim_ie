@@ -56,6 +56,7 @@ pub fn run(st2150: ST2150) {
     let _ = AppView::run(Settings {
         antialiasing: true,
         window: window::Settings {
+            min_size: Some((240, 50)),
             position: window::Position::Centered,
             ..window::Settings::default()
         },
