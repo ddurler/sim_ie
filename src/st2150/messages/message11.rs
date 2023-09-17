@@ -230,25 +230,25 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(context.get_info_u8(IdInfo::NombreCompartiments), Some(9));
+        assert_eq!(context.get_option_info_u8(IdInfo::NombreCompartiments), Some(9));
         for compart_num in 1..=9 {
             assert_eq!(
-                context.get_info_u8(IdInfo::CodeProduitCompartiment(compart_num)),
+                context.get_option_info_u8(IdInfo::CodeProduitCompartiment(compart_num)),
                 Some(u8::try_from(compart_num).unwrap())
             );
             assert_eq!(
-                context.get_info_u32(IdInfo::QuantiteCompartiment(compart_num)),
+                context.get_option_info_u32(IdInfo::QuantiteCompartiment(compart_num)),
                 Some(u32::try_from(compart_num).unwrap() * 1000_u32)
             );
         }
-        assert_eq!(context.get_info_bool(IdInfo::PresenceRemorque), Some(true));
+        assert_eq!(context.get_option_info_bool(IdInfo::PresenceRemorque), Some(true));
 
-        assert_eq!(context.get_info_u8(IdInfo::CodeProduitCollecteur), Some(1));
+        assert_eq!(context.get_option_info_u8(IdInfo::CodeProduitCollecteur), Some(1));
         assert_eq!(
-            context.get_info_u8(IdInfo::CodeProduitPartieCommune),
+            context.get_option_info_u8(IdInfo::CodeProduitPartieCommune),
             Some(2)
         );
-        assert_eq!(context.get_info_u8(IdInfo::CodeProduitFlexible1), Some(3));
-        assert_eq!(context.get_info_u8(IdInfo::CodeProduitFlexible2), Some(4));
+        assert_eq!(context.get_option_info_u8(IdInfo::CodeProduitFlexible1), Some(3));
+        assert_eq!(context.get_option_info_u8(IdInfo::CodeProduitFlexible2), Some(4));
     }
 }

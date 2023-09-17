@@ -181,7 +181,7 @@ impl AppView {
         // Si la réponse contient NACK à true, on n'affiche que cette info
         fn is_nack(context: &Context, id_infos: &[IdInfo]) -> bool {
             if id_infos.contains(&IdInfo::Nack) {
-                if let Some(value) = context.get_info_bool(IdInfo::Nack) {
+                if let Some(value) = context.get_option_info_bool(IdInfo::Nack) {
                     return value;
                 }
             }

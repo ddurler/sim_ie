@@ -145,17 +145,17 @@ pub trait CommonMessageTrait {
     /// (note: pas de `self` dans cette fonction)
     fn availability(&self, context: &Context) -> Result<(), ProtocolError> {
         for id_info in self.id_infos_request() {
-            let info_name = context::get_info_name(id_info);
-            if match context::get_info_format(id_info) {
-                context::FormatInfo::FormatBool => context.get_info_bool(id_info).is_none(),
-                context::FormatInfo::FormatChar => context.get_info_char(id_info).is_none(),
-                context::FormatInfo::FormatU8 => context.get_info_u8(id_info).is_none(),
-                context::FormatInfo::FormatU16 => context.get_info_u16(id_info).is_none(),
-                context::FormatInfo::FormatU32 => context.get_info_u32(id_info).is_none(),
-                context::FormatInfo::FormatU64 => context.get_info_u64(id_info).is_none(),
-                context::FormatInfo::FormatF32 => context.get_info_f32(id_info).is_none(),
-                context::FormatInfo::FormatString(_width) => {
-                    context.get_info_string(id_info).is_none()
+            let info_name = context.get_info_label(id_info);
+            if match context.get_info_format(id_info) {
+                context::FormatInfo::Bool => context.get_option_info_bool(id_info).is_none(),
+                context::FormatInfo::Char => context.get_option_info_char(id_info).is_none(),
+                context::FormatInfo::U8 => context.get_option_info_u8(id_info).is_none(),
+                context::FormatInfo::U16 => context.get_option_info_u16(id_info).is_none(),
+                context::FormatInfo::U32 => context.get_option_info_u32(id_info).is_none(),
+                context::FormatInfo::U64 => context.get_option_info_u64(id_info).is_none(),
+                context::FormatInfo::F32 => context.get_option_info_f32(id_info).is_none(),
+                context::FormatInfo::String(_width) => {
+                    context.get_option_info_string(id_info).is_none()
                 }
             } {
                 return Err(ProtocolError::ContextMissing(info_name.to_string()));

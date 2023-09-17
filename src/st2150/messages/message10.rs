@@ -177,13 +177,25 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(context.get_info_u32(IdInfo::Totalisateur), Some(12_345_678));
-        assert_eq!(context.get_info_f32(IdInfo::DebitInstant), Some(123.4));
         assert_eq!(
-            context.get_info_u32(IdInfo::QuantitePrincipale),
+            context.get_option_info_u32(IdInfo::Totalisateur),
+            Some(12_345_678)
+        );
+        assert_eq!(
+            context.get_option_info_f32(IdInfo::DebitInstant),
+            Some(123.4)
+        );
+        assert_eq!(
+            context.get_option_info_u32(IdInfo::QuantitePrincipale),
             Some(12345)
         );
-        assert_eq!(context.get_info_f32(IdInfo::TemperatureInstant), Some(12.3));
-        assert_eq!(context.get_info_u32(IdInfo::Predetermination), Some(12345));
+        assert_eq!(
+            context.get_option_info_f32(IdInfo::TemperatureInstant),
+            Some(12.3)
+        );
+        assert_eq!(
+            context.get_option_info_u32(IdInfo::Predetermination),
+            Some(12345)
+        );
     }
 }

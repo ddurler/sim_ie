@@ -68,7 +68,7 @@ impl CommonMessageTrait for Message37 {
         // 9 x code produit et quantité des compartiments
         for compart_num in 1..=9 {
             let code_produit = context
-                .get_info_u8(IdInfo::CodeProduitCompartiment(compart_num))
+                .get_option_info_u8(IdInfo::CodeProduitCompartiment(compart_num))
                 .unwrap();
             Field::check_binary_domain(
                 "code produit",
@@ -78,7 +78,7 @@ impl CommonMessageTrait for Message37 {
             req.add_field(Field::encode_binary(b'0' + code_produit));
 
             let quantite = context
-                .get_info_u32(IdInfo::QuantiteCompartiment(compart_num))
+                .get_option_info_u32(IdInfo::QuantiteCompartiment(compart_num))
                 .unwrap();
             req.add_field(Field::encode_number(quantite, 5)?);
         }
@@ -202,7 +202,7 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(context.get_info_bool(IdInfo::Nack), Some(false));
-        assert_eq!(context.get_info_bool(IdInfo::Ack), Some(true));
+        assert_eq!(context.get_option_info_bool(IdInfo::Nack), Some(false));
+        assert_eq!(context.get_option_info_bool(IdInfo::Ack), Some(true));
     }
 }

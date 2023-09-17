@@ -45,7 +45,7 @@ impl CommonMessageTrait for Message22 {
         // Création et envoi requête
         let mut req = frame::Frame::new(MESSAGE_NUM);
 
-        let identification_tag = match context.get_info_string(IdInfo::IdentificationTag) {
+        let identification_tag = match context.get_option_info_string(IdInfo::IdentificationTag) {
             None => String::new(),
             Some(txt) => txt.trim().to_string(),
         };
@@ -146,7 +146,7 @@ mod tests {
 
         // Vérification de ce qui a été mis à jour dans le contexte
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(context.get_info_bool(IdInfo::Nack), Some(false));
-        assert_eq!(context.get_info_bool(IdInfo::Ack), Some(true));
+        assert_eq!(context.get_option_info_bool(IdInfo::Nack), Some(false));
+        assert_eq!(context.get_option_info_bool(IdInfo::Ack), Some(true));
     }
 }

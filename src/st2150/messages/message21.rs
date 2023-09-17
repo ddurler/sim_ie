@@ -155,6 +155,7 @@ mod tests {
     use crate::SerialCom;
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn test_message21_ok() {
         // On utilise le FAKE serial port pour contrôler ce qui circule...
         let mut fake_port = SerialCom::new("FAKE", 9600);
@@ -245,21 +246,36 @@ mod tests {
 
         // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(
-            context.get_info_u32(IdInfo::QuantitePrincipale),
+            context.get_option_info_u32(IdInfo::QuantitePrincipale),
             Some(12_345)
         );
-        assert_eq!(context.get_info_f32(IdInfo::TemperatureMoyen), Some(12.3));
         assert_eq!(
-            context.get_info_u32(IdInfo::QuantiteSecondaire),
+            context.get_option_info_f32(IdInfo::TemperatureMoyen),
+            Some(12.3)
+        );
+        assert_eq!(
+            context.get_option_info_u32(IdInfo::QuantiteSecondaire),
             Some(12_345)
         );
-        assert_eq!(context.get_info_u32(IdInfo::Totalisateur), Some(12_345_678));
-        assert_eq!(context.get_info_u16(IdInfo::IndexSansRaz), Some(123));
-        assert_eq!(context.get_info_u16(IdInfo::IndexJournalier), Some(123));
-        assert_eq!(context.get_info_u16(IdInfo::Quantieme), Some(123));
-        assert_eq!(context.get_info_u8(IdInfo::CodeProduit), Some(1));
-        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMDebut), Some(12_34));
-        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMFin), Some(12_34));
+        assert_eq!(
+            context.get_option_info_u32(IdInfo::Totalisateur),
+            Some(12_345_678)
+        );
+        assert_eq!(context.get_option_info_u16(IdInfo::IndexSansRaz), Some(123));
+        assert_eq!(
+            context.get_option_info_u16(IdInfo::IndexJournalier),
+            Some(123)
+        );
+        assert_eq!(context.get_option_info_u16(IdInfo::Quantieme), Some(123));
+        assert_eq!(context.get_option_info_u8(IdInfo::CodeProduit), Some(1));
+        assert_eq!(
+            context.get_option_info_u16(IdInfo::HeureHHMMDebut),
+            Some(12_34)
+        );
+        assert_eq!(
+            context.get_option_info_u16(IdInfo::HeureHHMMFin),
+            Some(12_34)
+        );
     }
 
     #[test]
@@ -304,6 +320,6 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(context.get_info_bool(IdInfo::Nack), Some(true));
+        assert_eq!(context.get_option_info_bool(IdInfo::Nack), Some(true));
     }
 }

@@ -188,16 +188,22 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(context.get_info_bool(IdInfo::EnMesurage), Some(false));
-        assert_eq!(context.get_info_u8(IdInfo::CodeDefaut), Some(0));
         assert_eq!(
-            context.get_info_bool(IdInfo::ArretIntermediaire),
+            context.get_option_info_bool(IdInfo::EnMesurage),
+            Some(false)
+        );
+        assert_eq!(context.get_option_info_u8(IdInfo::CodeDefaut), Some(0));
+        assert_eq!(
+            context.get_option_info_bool(IdInfo::ArretIntermediaire),
             Some(false)
         );
         assert_eq!(
-            context.get_info_bool(IdInfo::ForcagePetitDebit),
+            context.get_option_info_bool(IdInfo::ForcagePetitDebit),
             Some(false)
         );
-        assert_eq!(context.get_info_bool(IdInfo::ModeConnecte), Some(false));
+        assert_eq!(
+            context.get_option_info_bool(IdInfo::ModeConnecte),
+            Some(false)
+        );
     }
 }

@@ -51,11 +51,13 @@ impl CommonMessageTrait for Message36 {
         let mut req = frame::Frame::new(MESSAGE_NUM);
 
         // #0 - Date
-        let data = context.get_info_u32(IdInfo::DateAAMMJJ).unwrap();
+        let data = context.get_option_info_u32(IdInfo::DateAAMMJJ).unwrap();
         req.add_field(Field::encode_number(data, 6)?);
 
         // #1 - Numéro d'ordre dans le jour
-        let index_journalier = context.get_info_u16(IdInfo::IndexJournalier).unwrap();
+        let index_journalier = context
+            .get_option_info_u16(IdInfo::IndexJournalier)
+            .unwrap();
         req.add_field(Field::encode_number(index_journalier, 3)?);
 
         st2150.send_req(&req);
@@ -167,14 +169,14 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(context.get_info_u16(IdInfo::NbJEvents), Some(12));
-        assert_eq!(context.get_info_u32(IdInfo::HeureHHMMSS), Some(12_34_56));
+        assert_eq!(context.get_option_info_u16(IdInfo::NbJEvents), Some(12));
+        assert_eq!(context.get_option_info_u32(IdInfo::HeureHHMMSS), Some(12_34_56));
         assert_eq!(
-            context.get_info_string(IdInfo::DataJEvent),
+            context.get_option_info_string(IdInfo::DataJEvent),
             Some("AABBCCDDEEFF".to_string())
         );
         assert_eq!(
-            context.get_info_string(IdInfo::LibelleJEvent),
+            context.get_option_info_string(IdInfo::LibelleJEvent),
             Some("0123456789012345678901234567890123456789".to_string())
         );
     }

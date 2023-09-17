@@ -45,7 +45,7 @@ impl CommonMessageTrait for Message31 {
         // Création et envoi requête
         let mut req = frame::Frame::new(MESSAGE_NUM);
 
-        let quantieme = context.get_info_u16(IdInfo::Quantieme).unwrap();
+        let quantieme = context.get_option_info_u16(IdInfo::Quantieme).unwrap();
         req.add_field(Field::encode_number(quantieme, 3)?);
 
         st2150.send_req(&req);
@@ -128,6 +128,9 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(context.get_info_u16(IdInfo::NbMesuragesQuantieme), Some(12));
+        assert_eq!(
+            context.get_option_info_u16(IdInfo::NbMesuragesQuantieme),
+            Some(12)
+        );
     }
 }

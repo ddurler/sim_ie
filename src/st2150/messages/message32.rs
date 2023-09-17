@@ -53,11 +53,13 @@ impl CommonMessageTrait for Message32 {
         let mut req = frame::Frame::new(MESSAGE_NUM);
 
         // #0 : Quantième
-        let quantieme = context.get_info_u16(IdInfo::Quantieme).unwrap();
+        let quantieme = context.get_option_info_u16(IdInfo::Quantieme).unwrap();
         req.add_field(Field::encode_number(quantieme, 3)?);
 
         // #1 : Numéro d'ordre dans la journée
-        let index_journalier = context.get_info_u16(IdInfo::IndexJournalier).unwrap();
+        let index_journalier = context
+            .get_option_info_u16(IdInfo::IndexJournalier)
+            .unwrap();
         req.add_field(Field::encode_number(index_journalier, 3)?);
 
         st2150.send_req(&req);
@@ -201,16 +203,28 @@ mod tests {
 
         // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(
-            context.get_info_string(IdInfo::LibelleProduit),
+            context.get_option_info_string(IdInfo::LibelleProduit),
             Some("ABCDE".to_string())
         );
         assert_eq!(
-            context.get_info_u32(IdInfo::QuantitePrincipale),
+            context.get_option_info_u32(IdInfo::QuantitePrincipale),
             Some(12_345)
         );
-        assert_eq!(context.get_info_f32(IdInfo::TemperatureMoyen), Some(12.3));
-        assert_eq!(context.get_info_u16(IdInfo::NbFractionnements), Some(1));
-        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMDebut), Some(12_34));
-        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMFin), Some(12_34));
+        assert_eq!(
+            context.get_option_info_f32(IdInfo::TemperatureMoyen),
+            Some(12.3)
+        );
+        assert_eq!(
+            context.get_option_info_u16(IdInfo::NbFractionnements),
+            Some(1)
+        );
+        assert_eq!(
+            context.get_option_info_u16(IdInfo::HeureHHMMDebut),
+            Some(12_34)
+        );
+        assert_eq!(
+            context.get_option_info_u16(IdInfo::HeureHHMMFin),
+            Some(12_34)
+        );
     }
 }

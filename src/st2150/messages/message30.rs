@@ -173,17 +173,17 @@ mod tests {
 
         // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(
-            context.get_info_string(IdInfo::ReferenceEtImmatriculation),
+            context.get_option_info_string(IdInfo::ReferenceEtImmatriculation),
             Some("12345ABC1234XYZ".to_string())
         );
         assert_eq!(
-            context.get_info_string(IdInfo::VersionLogiciel),
+            context.get_option_info_string(IdInfo::VersionLogiciel),
             Some("1.00010101".to_string())
         );
         assert_eq!(
-            context.get_info_u64(IdInfo::DateAAMMJJHeureHHMMSS),
+            context.get_option_info_u64(IdInfo::DateAAMMJJHeureHHMMSS),
             Some(99_12_31_23_59_59_u64)
         );
-        assert_eq!(context.get_info_u8(IdInfo::TypeCompteur), Some(0));
+        assert_eq!(context.get_option_info_u8(IdInfo::TypeCompteur), Some(0));
     }
 }

@@ -46,7 +46,7 @@ impl CommonMessageTrait for Message40 {
         let mut req = frame::Frame::new(MESSAGE_NUM);
 
         // #0 - Heure (HHMM)
-        let heure = context.get_info_u16(IdInfo::HeureHHMM).unwrap();
+        let heure = context.get_option_info_u16(IdInfo::HeureHHMM).unwrap();
         req.add_field(Field::encode_number(heure, 4)?);
 
         st2150.send_req(&req);
@@ -127,7 +127,7 @@ mod tests {
         assert_eq!(st.do_message_vacation(&mut context, MESSAGE_NUM), Ok(()));
 
         // Vérification de ce qui a été mis à jour dans le contexte
-        assert_eq!(context.get_info_bool(IdInfo::Nack), Some(false));
-        assert_eq!(context.get_info_bool(IdInfo::Ack), Some(true));
+        assert_eq!(context.get_option_info_bool(IdInfo::Nack), Some(false));
+        assert_eq!(context.get_option_info_bool(IdInfo::Ack), Some(true));
     }
 }

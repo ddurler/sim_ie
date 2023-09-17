@@ -155,11 +155,13 @@ pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame,
     for id_info in id_infos_request(message_num) {
         match id_info {
             IdInfo::Predetermination => {
-                let prede = context.get_info_u32(IdInfo::Predetermination).unwrap();
+                let prede = context
+                    .get_option_info_u32(IdInfo::Predetermination)
+                    .unwrap();
                 req.add_field(Field::encode_number(prede, 5)?);
             }
             IdInfo::CodeProduit => {
-                let code_prod = context.get_info_u8(IdInfo::CodeProduit).unwrap();
+                let code_prod = context.get_option_info_u8(IdInfo::CodeProduit).unwrap();
                 Field::check_binary_domain(
                     "code produit",
                     code_prod,
@@ -168,7 +170,9 @@ pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame,
                 req.add_field(Field::encode_binary(code_prod + b'0'));
             }
             IdInfo::CodeProduitFinal => {
-                let code_prod = context.get_info_u8(IdInfo::CodeProduitFinal).unwrap();
+                let code_prod = context
+                    .get_option_info_u8(IdInfo::CodeProduitFinal)
+                    .unwrap();
                 Field::check_binary_domain(
                     "code produit",
                     code_prod,
@@ -177,7 +181,9 @@ pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame,
                 req.add_field(Field::encode_binary(code_prod + b'0'));
             }
             IdInfo::NumeroCompartiment => {
-                let compart_num = context.get_info_u8(IdInfo::NumeroCompartiment).unwrap();
+                let compart_num = context
+                    .get_option_info_u8(IdInfo::NumeroCompartiment)
+                    .unwrap();
                 Field::check_binary_domain(
                     "numéro compartiment",
                     compart_num,
@@ -187,7 +193,7 @@ pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame,
             }
             IdInfo::NumeroCompartimentFinal => {
                 let compart_num = context
-                    .get_info_u8(IdInfo::NumeroCompartimentFinal)
+                    .get_option_info_u8(IdInfo::NumeroCompartimentFinal)
                     .unwrap();
                 Field::check_binary_domain(
                     "numéro compartiment",
@@ -197,11 +203,13 @@ pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame,
                 req.add_field(Field::encode_binary(compart_num + b'0'));
             }
             IdInfo::OrdreCompartiments => {
-                let compart_order = context.get_info_u32(IdInfo::OrdreCompartiments).unwrap();
+                let compart_order = context
+                    .get_option_info_u32(IdInfo::OrdreCompartiments)
+                    .unwrap();
                 req.add_field(Field::encode_number(compart_order, 9)?);
             }
             IdInfo::NumeroFlexible => {
-                let flexible_num = context.get_info_u8(IdInfo::NumeroFlexible).unwrap();
+                let flexible_num = context.get_option_info_u8(IdInfo::NumeroFlexible).unwrap();
                 Field::check_binary_domain(
                     "numéro flexible",
                     flexible_num,
@@ -210,7 +218,9 @@ pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame,
                 req.add_field(Field::encode_binary(flexible_num + b'0'));
             }
             IdInfo::NumeroFlexibleFinal => {
-                let flexible_num = context.get_info_u8(IdInfo::NumeroFlexibleFinal).unwrap();
+                let flexible_num = context
+                    .get_option_info_u8(IdInfo::NumeroFlexibleFinal)
+                    .unwrap();
                 Field::check_binary_domain(
                     "numéro flexible",
                     flexible_num,
@@ -219,7 +229,9 @@ pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame,
                 req.add_field(Field::encode_binary(flexible_num + b'0'));
             }
             IdInfo::FinirFlexibleVide => {
-                let finir_vide = context.get_info_bool(IdInfo::FinirFlexibleVide).unwrap();
+                let finir_vide = context
+                    .get_option_info_bool(IdInfo::FinirFlexibleVide)
+                    .unwrap();
                 let finir_vide = if finir_vide { 'V' } else { '0' };
                 req.add_field(Field::encode_char(finir_vide)?);
             }

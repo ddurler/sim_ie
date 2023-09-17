@@ -175,7 +175,7 @@ mod tests {
         // Vérification de ce qui a été mis à jour dans le contexte
         for indice_produit in 1_usize..=8 {
             assert_eq!(
-                context.get_info_string(IdInfo::LibelleTableProduits(indice_produit)),
+                context.get_option_info_string(IdInfo::LibelleTableProduits(indice_produit)),
                 Some(format!("PROD{indice_produit}"))
             );
         }

@@ -56,15 +56,19 @@ impl CommonMessageTrait for Message34 {
         let mut req = frame::Frame::new(MESSAGE_NUM);
 
         // #0 : Quantième
-        let quantieme = context.get_info_u16(IdInfo::Quantieme).unwrap();
+        let quantieme = context.get_option_info_u16(IdInfo::Quantieme).unwrap();
         req.add_field(Field::encode_number(quantieme, 3)?);
 
         // #1 : Numéro d'ordre dans la journée
-        let index_journalier = context.get_info_u16(IdInfo::IndexJournalier).unwrap();
+        let index_journalier = context
+            .get_option_info_u16(IdInfo::IndexJournalier)
+            .unwrap();
         req.add_field(Field::encode_number(index_journalier, 3)?);
 
         // #2 : Numéro du fractionnement
-        let index_fractionnement = context.get_info_u16(IdInfo::IndexFractionnement).unwrap();
+        let index_fractionnement = context
+            .get_option_info_u16(IdInfo::IndexFractionnement)
+            .unwrap();
         req.add_field(Field::encode_number(index_fractionnement, 3)?);
 
         st2150.send_req(&req);
@@ -187,11 +191,20 @@ mod tests {
 
         // Vérification de ce qui a été mis à jour dans le contexte
         assert_eq!(
-            context.get_info_u32(IdInfo::QuantitePrincipale),
+            context.get_option_info_u32(IdInfo::QuantitePrincipale),
             Some(12_345)
         );
-        assert_eq!(context.get_info_char(IdInfo::TypeDistribution), Some('D'));
-        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMDebut), Some(12_34));
-        assert_eq!(context.get_info_u16(IdInfo::HeureHHMMFin), Some(12_34));
+        assert_eq!(
+            context.get_option_info_char(IdInfo::TypeDistribution),
+            Some('D')
+        );
+        assert_eq!(
+            context.get_option_info_u16(IdInfo::HeureHHMMDebut),
+            Some(12_34)
+        );
+        assert_eq!(
+            context.get_option_info_u16(IdInfo::HeureHHMMFin),
+            Some(12_34)
+        );
     }
 }

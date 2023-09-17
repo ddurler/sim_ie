@@ -1,18 +1,6 @@
 //! Informations 'atomiques' échangées par le protocole ALMA IE - ST2150
 
-/// Structure pour toutes les informations 'atomiques'
-///
-/// En privé, la structure `Context`, toutes les informations sont du type `Option<T>` avec une valeur
-/// à `None` tant qu'aucune valeur n'a été explicitement assignée à l'information qui devient alors
-/// `Some(quelque_chose)`.
-///
-/// Pour l'utilisateur (accès public), le dictionnaire des données du contexte sont énumérées `IdInfo` et le type
-/// du format de la donnée est également énumérée `InfoFormat`.
-///
-/// Des primitives sont disponibles pour accéder aux informations du contexte via ces énumérations.
-
-///
-/// Nota : C'est un peu relou à maintenir mais très pratique pour l'IHM...
+use std::collections::{HashMap, HashSet};
 
 /// Nombre max de produits
 pub const NB_PRODUITS: usize = 16;
@@ -26,54 +14,22 @@ pub const NB_COMPARTIMENTS: usize = 9;
 /// Nombre max de flexibles
 pub const NB_FLEXIBLES: usize = 3;
 
-// Pour ajouter un nouveau format de données pour le contexte :
-//
-// Dans ce module (`context`) :
-//  1 - Ajouter ce format dans la liste des enum de `FormatInfo`
-//  2 - Créer au moins une information dans le contexte avec ce format pour pouvoir tester
-//      (Voir ci-dessous les instructions pour créer une nouvelle information dans le contexte)
-//  3 - Ajouter la fonction `get_info_mon_nouveau_format` dans l'implémentation de `Context`
-//  4 - Ajouter la fonction `set_info_mon_nouveau_format` dans l'implémentation de `Context`
-//  5 - Implémenter `CommonContextTrait` pour ce nouveau format
-//      `impl CommonContextTrait<NouveauFormat> for Context { ...`
-//  6 - Completer les tests pour ce nouveau format : `test_get_set` et `test_get_set_generic`
-// Dans le module st2150::messages :
-//  1 - Ajouter ce format dans la fonction `availability` pour `CommonMessageTrait`
-// Dans le module `app_view::show_infos` :
-//  1 - Ajouter une fonction `str_info_mon_nouveau_format`
-//  2 - Ajouter ce format dans la fonction `str_info`
-// Dans le module `app_view::input_infos` :
-//  1 - Ajouter ce format dans la fonction `callback_input_info` de `app_view::input_infos`
-// C'est tout :)
-//
-// Ou si on est courageux, une macro! qui fait tout ça...
-
 /// Format possible d'une information du contexte
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FormatInfo {
-    FormatBool,
-    FormatChar,
-    FormatU8,
-    FormatU16,
-    FormatU32,
-    FormatU64,
-    FormatF32,
-    FormatString(usize),
+    Bool,
+    Char,
+    U8,
+    U16,
+    U32,
+    U64,
+    F32,
+    String(usize),
 }
 
-// Pour ajouter une nouvelle information 'Xxx' d'un format `mon_format` dans le contexte :
-// 1 - Ajouter `Xxx` dans l'énumération de `IdInfo`
-// 2 - Ajouter 'xxx: `Option<mon_format>`` dans la structure `Context`
-//      (d'autres implémentations sont également possibles. Adapter alors la suite des modifications)
-// 3 - Ajouter le libellé de cette information Xxx dans `get_info_name`
-// 4 - Ajouter le type de format de cette information Xxx dans `get_info_format`
-// 5 - Ajouter le cas IdInfo::Xxx dans la fonction `get_info_format` dans l'implémentation de `Context`
-// 6 - Ajouter le cas IdInfo::Xxx dans la fonction `set_info_format` dans l'implémentation de `Context`
-// 7 - Pour les tests, ajouter `check_id_code(&mut context, IdInfo::Xxx);` dans la fonction `test_get_set`
-// Et c'est tout :)
-
 /// Énumération des informations du contexte
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Cette énumération permet aux modules externes de désigner une information du contexte
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum IdInfo {
     Ack,
     Nack,
@@ -130,707 +86,964 @@ pub enum IdInfo {
     FinirFlexibleVide,
 }
 
-/// Dictionnaire des données pour les requêtes et les réponses
-#[derive(Debug, Default)]
+/// Container des différents types de valeurs possibles pour une information du contexte
+#[derive(Clone, Debug)]
+pub enum TValue {
+    Bool(bool),
+    Char(char),
+    U8(u8),
+    U16(u16),
+    U32(u32),
+    U64(u64),
+    F32(f32),
+    String(String),
+}
+
+/// Propriétés associées à chaque information de contexte
+#[derive(Clone, Debug)]
+struct Info {
+    /// Libellé présenté pour l'information
+    label: String,
+
+    /// Format choisi pour l'information.
+    /// Ce format doit être cohérent avec l'item utilisé pour la propriété `t_info`
+    format_info: FormatInfo,
+
+    /// Propriété à `false` tant qu'aucune valeur n'est attribuée à l'information
+    is_none: bool,
+
+    /// Valeur de l'information dans le format choisi
+    /// En cohérence avec la propriété `format_info`
+    t_value: TValue,
+}
+
 pub struct Context {
-    /// ACK du dernier message
-    ack: Option<bool>,
+    /// Table des informations du contexte `IdInfo` -> `Info`
+    hash_id_infos: HashMap<IdInfo, Info>,
 
-    /// NACK du dernier message
-    nack: Option<bool>,
-
-    /// En mesurage
-    en_mesurage: Option<bool>,
-
-    /// Code défaut en cours (Codage 'court' selon ST3274)
-    /// 0 pour pas de défaut
-    code_defaut: Option<u8>,
-
-    /// En arrêt intermédiaire
-    arret_intermediaire: Option<bool>,
-
-    /// Forçage en petit débit
-    forcage_petit_debit: Option<bool>,
-
-    /// En mode connecté
-    mode_connecte: Option<bool>,
-
-    /// Totalisateur (en échelon = Litre ou kg)
-    totalisateur: Option<u32>,
-
-    /// Débit instantané en m3/h (ou tonne/h)
-    debit_instant: Option<f32>,
-
-    /// Quantité (volume mesuré, volume de base ou masse)  principale
-    quantite_principale: Option<u32>,
-
-    /// Quantité secondaire (alternative à la quantité principale)
-    quantite_secondaire: Option<u32>,
-
-    /// Température instantanée
-    temperature_instant: Option<f32>,
-
-    /// Température moyenne (d'un mesurage)
-    temperature_moyen: Option<f32>,
-
-    /// Prédétermination (en échelon = Litre ou kg)
-    predetermination: Option<u32>,
-
-    /// Code produit
-    code_produit: Option<u8>,
-
-    /// Index sans remise à 0
-    index_sans_raz: Option<u16>,
-
-    /// Index journalier
-    index_journalier: Option<u16>,
-
-    /// Quantième
-    quantieme: Option<u16>,
-
-    /// Heure de début (de mesurage)
-    heure_hhmm_debut: Option<u16>,
-
-    /// Heure de fin (de mesurage)
-    heure_hhmm_fin: Option<u16>,
-
-    /// Identification par TAG
-    identification_tag: Option<String>,
-
-    /// Version du logiciel
-    version_logiciel: Option<String>,
-
-    /// Numéro de référence du compteur et immatriculation du camion
-    reference_et_immatriculation: Option<String>,
-
-    /// Type de compteur 0: Vm, 1:Vb, 2:Masse
-    type_compteur: Option<u8>,
-
-    /// Nombre de mesurages pour un quantième
-    nb_mesurages_quantieme: Option<u16>,
-
-    /// Libellé du produit
-    libelle_produit: Option<String>,
-
-    /// Nombre de fractionnements
-    nb_fractionnements: Option<u16>,
-
-    /// Libellés de la table des max. NB_PRODUITS produits
-    libelle_table_produits: Vec<String>,
-
-    /// Numéro de fractionnement pour un mesurage
-    index_fractionnement: Option<u16>,
-
-    /// Type de distribution ('P' pour purge, 'L' pour libre, etc.)
-    type_distribution: Option<char>,
-
-    // Toutes les informations de date et d'heure selon tous les formats possibles
-    // s'appuient sur les 2 variables ci dessous : Une date AAMMJJ et une heure HHMMSS
-    /// Date (AAMMJJ)
-    date_aammjj: Option<u32>,
-
-    /// Heure (HHMMSS)
-    heure_hhmmss: Option<u32>,
-
-    /// Nombre d'événements pour une journée
-    nb_jevents: Option<u16>,
-
-    /// Données techniques d'un événement (voir doc ST2150)
-    data_jevent: Option<String>,
-
-    /// Libellé d'un événement
-    libelle_jevent: Option<String>,
-
-    /// Code produit dans le compartiment #i
-    code_produit_compartiment: Vec<u8>,
-
-    /// Quantité dans le compartiment #i
-    quantite_compartiment: Vec<u32>,
-
-    /// Nombre de compartiments
-    nombre_compartiments: Option<u8>,
-
-    /// Code produit dans le collecteur
-    code_produit_collecteur: Option<u8>,
-
-    /// Code produit dans la partie commune
-    code_produit_partie_commune: Option<u8>,
-
-    /// Code produit dans le flexible #1
-    code_produit_flexible_1: Option<u8>,
-
-    /// Code produit dans le flexible #2
-    code_produit_flexible_2: Option<u8>,
-
-    /// Présence d'une remorque
-    presence_remorque: Option<bool>,
-
-    /// Code erreur sur commande de mouvement de produit (voir doc ST2150)
-    code_erreur_mouvement_produit: Option<u8>,
-
-    /// Code produit final (mouvement de produit)
-    code_produit_final: Option<u8>,
-
-    /// Numéro de compartiment (mouvement de produit)
-    numero_compartiment: Option<u8>,
-
-    /// Numéro de compartiment final (mouvement de produit)
-    numero_compartiment_final: Option<u8>,
-
-    /// Ordre des compartiments (mouvement de produit)
-    /// '030201000' par ordre compartiment 4, 4 et 2
-    ordre_compartiments: Option<u32>,
-
-    /// Numéro de flexible (mouvement de produit)
-    numero_flexible: Option<u8>,
-
-    /// Numéro de flexible final (mouvement de produit)
-    numero_flexible_final: Option<u8>,
-
-    /// Finir avec flexible vide (mouvement de produit)
-    finir_flexible_vide: Option<bool>,
+    /// Liste des `IdInfo` en cours de traitement par la fonction de `callback` invoquée
+    /// après une mise à jour de la valeur d'une information.
+    /// Cette liste permet d'éviter une mise à jour par une récursion sans fin quand 2 (ou +)
+    /// informations sont traitées par ce `callback`.
+    /// Typiquement `HeureHHM` -> `HeureHHMMSS` -> `HeureHHM` -> `HeureHHMMSS`...
+    set_id_infos_on_change: HashSet<IdInfo>,
 }
 
-/// Retourne le libellé d'une information du contexte
-pub fn get_info_name(id_info: IdInfo) -> String {
-    match id_info {
-        IdInfo::Ack => "Acquit message".to_string(),
-        IdInfo::Nack => "Refus message".to_string(),
-        IdInfo::EnMesurage => "En mesurage".to_string(),
-        IdInfo::CodeDefaut => "Code défaut".to_string(),
-        IdInfo::ArretIntermediaire => "Arrêt intermédiaire".to_string(),
-        IdInfo::ForcagePetitDebit => "Forçage petit débit".to_string(),
-        IdInfo::ModeConnecte => "Mode connecté".to_string(),
-        IdInfo::Totalisateur => "Totalisateur".to_string(),
-        IdInfo::DebitInstant => "Débit instantané".to_string(),
-        IdInfo::QuantitePrincipale => "Quantité".to_string(),
-        IdInfo::QuantiteSecondaire => "Quantité secondaire".to_string(),
-        IdInfo::TemperatureInstant => "Température instantanée".to_string(),
-        IdInfo::TemperatureMoyen => "Température moyenne".to_string(),
-        IdInfo::Predetermination => "Prédétermination".to_string(),
-        IdInfo::CodeProduit => "Code produit".to_string(),
-        IdInfo::IndexSansRaz => "Index sans remise à zéro".to_string(),
-        IdInfo::IndexJournalier => "Index journalier".to_string(),
-        IdInfo::Quantieme => "Quantième".to_string(),
-        IdInfo::HeureHHMMDebut => "Heure de début (HHMM)".to_string(),
-        IdInfo::HeureHHMMFin => "Heure de fin (HHMM)".to_string(),
-        IdInfo::IdentificationTag => "Identification TAG".to_string(),
-        IdInfo::ReferenceEtImmatriculation => "Référence et immatriculation".to_string(),
-        IdInfo::VersionLogiciel => "Version du logiciel".to_string(),
-        IdInfo::DateAAMMJJHeureHHMMSS => "Date et Heure (AAMMJJHHMMSS)".to_string(),
-        IdInfo::TypeCompteur => "Type de compteur (0:Vm, 1:Vb, 2:Masse)".to_string(),
-        IdInfo::NbMesuragesQuantieme => "Nombre de mesurages pour un quantième".to_string(),
-        IdInfo::LibelleProduit => "Libellé produit".to_string(),
-        IdInfo::NbFractionnements => "Nombre de fractionnements".to_lowercase(),
-        IdInfo::LibelleTableProduits(prod_num) => format!("Libellé table produit #{prod_num}"),
-        IdInfo::IndexFractionnement => "Index fractionnement".to_string(),
-        IdInfo::TypeDistribution => "(A)nticipation purge, li(B)ération, (C)hargement, pré(D)é, (L)ibre, (P)urge, (T)ransfert, (V)idange".to_string(),
-        IdInfo::DateAAMMJJ=> "Date (AAMMJJ)".to_string(),
-        IdInfo::HeureHHMMSS=> "Heure (HHMMSS)".to_string(),
-        IdInfo::HeureHHMM=> "Heure (HHMM)".to_string(),
-        IdInfo::NbJEvents => "Nombre d'événements".to_string(),
-        IdInfo::DataJEvent => "Données techniques événement".to_string(),
-        IdInfo::LibelleJEvent => "Libellé événement".to_string(),
-        IdInfo::CodeProduitCompartiment(compart_num) => format!("Code produit cpt #{compart_num}"),
-        IdInfo::QuantiteCompartiment(compart_num)=> format!("Quantité cpt #{compart_num}"),
-        IdInfo::NombreCompartiments => "Nombre de compartiments".to_string(),
-        IdInfo::CodeProduitCollecteur => "Code produit dans le collecteur".to_string(),
-        IdInfo::CodeProduitPartieCommune => "Code produit dans la partie commune".to_string(),
-        IdInfo::CodeProduitFlexible1 => "Code produit dans le flexible #1".to_string(),
-        IdInfo::CodeProduitFlexible2 => "Code produit dans le flexible #2".to_string(),
-        IdInfo::CodeErreurMouvementProduit => "Code erreur (1:Non supporté, 2:En opération)".to_string(),
-        IdInfo::CodeProduitFinal => "Code produit final".to_string(),
-        IdInfo::NumeroCompartiment => "Numéro de compartiment".to_string(),
-        IdInfo::PresenceRemorque => "Présence d'un remorque".to_string(),
-        IdInfo::NumeroCompartimentFinal => "Numéro de compartiment final".to_string(),
-        IdInfo::OrdreCompartiments => "Ordre des compartiments".to_string(),
-        IdInfo::NumeroFlexible => "Numéro de flexible".to_string(),
-        IdInfo::NumeroFlexibleFinal => "Numéro de flexible final".to_string(),
-        IdInfo::FinirFlexibleVide => "Finir flexible vide".to_string()
-    }
-}
+impl Default for Context {
+    #[allow(clippy::too_many_lines)]
+    fn default() -> Self {
+        let mut hash_id_infos: HashMap<_, _> = HashMap::new();
 
-/// Retourne le type de format pour une information du contexte
-pub fn get_info_format(id_info: IdInfo) -> FormatInfo {
-    match id_info {
-        /* Booléen */
-        IdInfo::Ack
-        | IdInfo::Nack
-        | IdInfo::EnMesurage
-        | IdInfo::ArretIntermediaire
-        | IdInfo::ForcagePetitDebit
-        | IdInfo::ModeConnecte
-        | IdInfo::FinirFlexibleVide
-        | IdInfo::PresenceRemorque => FormatInfo::FormatBool,
-
-        /* Char */
-        IdInfo::TypeDistribution => FormatInfo::FormatChar,
-
-        /* U8 */
-        IdInfo::CodeDefaut
-        | IdInfo::CodeProduit
-        | IdInfo::TypeCompteur
-        | IdInfo::CodeProduitCompartiment(_)
-        | IdInfo::NombreCompartiments
-        | IdInfo::CodeProduitCollecteur
-        | IdInfo::CodeProduitPartieCommune
-        | IdInfo::CodeProduitFlexible1
-        | IdInfo::CodeProduitFlexible2
-        | IdInfo::CodeErreurMouvementProduit
-        | IdInfo::CodeProduitFinal
-        | IdInfo::NumeroCompartiment
-        | IdInfo::NumeroCompartimentFinal
-        | IdInfo::NumeroFlexible
-        | IdInfo::NumeroFlexibleFinal => FormatInfo::FormatU8,
-
-        /* U16 */
-        IdInfo::IndexSansRaz
-        | IdInfo::IndexJournalier
-        | IdInfo::Quantieme
-        | IdInfo::HeureHHMM
-        | IdInfo::HeureHHMMDebut
-        | IdInfo::HeureHHMMFin
-        | IdInfo::NbMesuragesQuantieme
-        | IdInfo::NbFractionnements
-        | IdInfo::IndexFractionnement
-        | IdInfo::NbJEvents => FormatInfo::FormatU16,
-
-        /* U32 */
-        IdInfo::Totalisateur
-        | IdInfo::QuantitePrincipale
-        | IdInfo::QuantiteSecondaire
-        | IdInfo::Predetermination
-        | IdInfo::DateAAMMJJ
-        | IdInfo::HeureHHMMSS
-        | IdInfo::QuantiteCompartiment(_)
-        | IdInfo::OrdreCompartiments => FormatInfo::FormatU32,
-
-        /* U64 */
-        IdInfo::DateAAMMJJHeureHHMMSS => FormatInfo::FormatU64,
-
-        /* F32 */
-        IdInfo::DebitInstant | IdInfo::TemperatureInstant | IdInfo::TemperatureMoyen => {
-            FormatInfo::FormatF32
+        // Construction du contexte par défaut
+        hash_id_infos.insert(
+            IdInfo::Ack,
+            Info {
+                label: "Acquit message".to_string(),
+                format_info: FormatInfo::Bool,
+                is_none: true,
+                t_value: TValue::Bool(bool::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::Nack,
+            Info {
+                label: "Refus message".to_string(),
+                format_info: FormatInfo::Bool,
+                is_none: true,
+                t_value: TValue::Bool(bool::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::EnMesurage,
+            Info {
+                label: "En mesurage".to_string(),
+                format_info: FormatInfo::Bool,
+                is_none: true,
+                t_value: TValue::Bool(bool::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::CodeDefaut,
+            Info {
+                label: "En Code défaut".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::ArretIntermediaire,
+            Info {
+                label: "Arrêt intermédiaire".to_string(),
+                format_info: FormatInfo::Bool,
+                is_none: true,
+                t_value: TValue::Bool(bool::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::ForcagePetitDebit,
+            Info {
+                label: "Forçage petit débit".to_string(),
+                format_info: FormatInfo::Bool,
+                is_none: true,
+                t_value: TValue::Bool(bool::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::ModeConnecte,
+            Info {
+                label: "Mode connecté".to_string(),
+                format_info: FormatInfo::Bool,
+                is_none: true,
+                t_value: TValue::Bool(bool::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::Totalisateur,
+            Info {
+                label: "Totalisateur".to_string(),
+                format_info: FormatInfo::U32,
+                is_none: true,
+                t_value: TValue::U32(u32::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::DebitInstant,
+            Info {
+                label: "Débit instantané".to_string(),
+                format_info: FormatInfo::F32,
+                is_none: true,
+                t_value: TValue::F32(f32::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::QuantitePrincipale,
+            Info {
+                label: "Quantité".to_string(),
+                format_info: FormatInfo::U32,
+                is_none: true,
+                t_value: TValue::U32(u32::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::QuantiteSecondaire,
+            Info {
+                label: "Quantité secondaire".to_string(),
+                format_info: FormatInfo::U32,
+                is_none: true,
+                t_value: TValue::U32(u32::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::TemperatureInstant,
+            Info {
+                label: "Quantité Température instantanée".to_string(),
+                format_info: FormatInfo::F32,
+                is_none: true,
+                t_value: TValue::F32(f32::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::TemperatureMoyen,
+            Info {
+                label: "Température moyenne".to_string(),
+                format_info: FormatInfo::F32,
+                is_none: true,
+                t_value: TValue::F32(f32::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::Predetermination,
+            Info {
+                label: "Prédétermination".to_string(),
+                format_info: FormatInfo::U32,
+                is_none: true,
+                t_value: TValue::U32(u32::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::CodeProduit,
+            Info {
+                label: "Code produit".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::IndexSansRaz,
+            Info {
+                label: "Index sans remise à zéro".to_string(),
+                format_info: FormatInfo::U16,
+                is_none: true,
+                t_value: TValue::U16(u16::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::IndexJournalier,
+            Info {
+                label: "Index journalier".to_string(),
+                format_info: FormatInfo::U16,
+                is_none: true,
+                t_value: TValue::U16(u16::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::Quantieme,
+            Info {
+                label: "Quantième".to_string(),
+                format_info: FormatInfo::U16,
+                is_none: true,
+                t_value: TValue::U16(u16::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::HeureHHMMDebut,
+            Info {
+                label: "Heure de début (HHMM)".to_string(),
+                format_info: FormatInfo::U16,
+                is_none: true,
+                t_value: TValue::U16(u16::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::HeureHHMMFin,
+            Info {
+                label: "Heure de fin (HHMM)".to_string(),
+                format_info: FormatInfo::U16,
+                is_none: true,
+                t_value: TValue::U16(u16::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::IdentificationTag,
+            Info {
+                label: "Identification TAG".to_string(),
+                format_info: FormatInfo::String(100),
+                is_none: true,
+                t_value: TValue::String(String::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::ReferenceEtImmatriculation,
+            Info {
+                label: "Référence et immatriculation".to_string(),
+                format_info: FormatInfo::String(15),
+                is_none: true,
+                t_value: TValue::String(String::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::VersionLogiciel,
+            Info {
+                label: "Version du logiciel".to_string(),
+                format_info: FormatInfo::String(10),
+                is_none: true,
+                t_value: TValue::String(String::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::DateAAMMJJHeureHHMMSS,
+            Info {
+                label: "Date et Heure (AAMMJJHHMMSS)".to_string(),
+                format_info: FormatInfo::U64,
+                is_none: true,
+                t_value: TValue::U64(u64::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::TypeCompteur,
+            Info {
+                label: "Type de compteur (0:Vm, 1:Vb, 2:Masse)".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::NbMesuragesQuantieme,
+            Info {
+                label: "Nombre de mesurages pour un quantième".to_string(),
+                format_info: FormatInfo::U16,
+                is_none: true,
+                t_value: TValue::U16(u16::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::LibelleProduit,
+            Info {
+                label: "Libellé produit".to_string(),
+                format_info: FormatInfo::String(LIBELLE_PRODUIT_WIDTH),
+                is_none: true,
+                t_value: TValue::String(String::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::NbFractionnements,
+            Info {
+                label: "Nombre de fractionnements".to_string(),
+                format_info: FormatInfo::U16,
+                is_none: true,
+                t_value: TValue::U16(u16::default()),
+            },
+        );
+        for prod_num in 0..=NB_PRODUITS {
+            hash_id_infos.insert(
+                IdInfo::LibelleTableProduits(prod_num),
+                Info {
+                    label: format!("Libellé table produit #{prod_num}"),
+                    format_info: FormatInfo::String(LIBELLE_PRODUIT_WIDTH),
+                    is_none: true,
+                    t_value: TValue::String(String::default()),
+                },
+            );
         }
+        hash_id_infos.insert(
+            IdInfo::IndexFractionnement,
+            Info {
+                label: "Index fractionnement".to_string(),
+                format_info: FormatInfo::U16,
+                is_none: true,
+                t_value: TValue::U16(u16::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::TypeDistribution,
+            Info {
+                label: "(A)nticipation purge, li(B)ération, (C)hargement, pré(D)é, (L)ibre, (P)urge, (T)ransfert, (V)idange".to_string(),
+                format_info: FormatInfo::Char,
+                is_none: true,
+                t_value: TValue::Char(' '),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::DateAAMMJJ,
+            Info {
+                label: "Date (AAMMJJ)".to_string(),
+                format_info: FormatInfo::U32,
+                is_none: true,
+                t_value: TValue::U32(u32::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::HeureHHMMSS,
+            Info {
+                label: "Heure (HHMMSS)".to_string(),
+                format_info: FormatInfo::U32,
+                is_none: true,
+                t_value: TValue::U32(u32::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::HeureHHMM,
+            Info {
+                label: "Heure (HHMM)".to_string(),
+                format_info: FormatInfo::U16,
+                is_none: true,
+                t_value: TValue::U16(u16::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::NbJEvents,
+            Info {
+                label: "Nombre d'événements".to_string(),
+                format_info: FormatInfo::U16,
+                is_none: true,
+                t_value: TValue::U16(u16::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::DataJEvent,
+            Info {
+                label: "Données techniques événement".to_string(),
+                format_info: FormatInfo::String(12),
+                is_none: true,
+                t_value: TValue::String(String::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::LibelleJEvent,
+            Info {
+                label: "Libellé événement".to_string(),
+                format_info: FormatInfo::String(40),
+                is_none: true,
+                t_value: TValue::String(String::default()),
+            },
+        );
+        for compart_num in 0..=NB_COMPARTIMENTS {
+            hash_id_infos.insert(
+                IdInfo::CodeProduitCompartiment(compart_num),
+                Info {
+                    label: format!("Code produit cpt #{compart_num}"),
+                    format_info: FormatInfo::U8,
+                    is_none: true,
+                    t_value: TValue::U8(u8::default()),
+                },
+            );
+            hash_id_infos.insert(
+                IdInfo::QuantiteCompartiment(compart_num),
+                Info {
+                    label: format!("Quantité cpt #{compart_num}"),
+                    format_info: FormatInfo::U32,
+                    is_none: true,
+                    t_value: TValue::U32(u32::default()),
+                },
+            );
+        }
+        hash_id_infos.insert(
+            IdInfo::NombreCompartiments,
+            Info {
+                label: "Nombre de compartiments".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::CodeProduitCollecteur,
+            Info {
+                label: "Code produit dans le collecteur".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::CodeProduitPartieCommune,
+            Info {
+                label: "Code produit dans la partie commune".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::CodeProduitFlexible1,
+            Info {
+                label: "Code produit dans le flexible #1".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::CodeProduitFlexible2,
+            Info {
+                label: "Code produit dans le flexible #2".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::CodeErreurMouvementProduit,
+            Info {
+                label: "Code erreur (1:Non supporté, 2:En opération)".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::CodeProduitFinal,
+            Info {
+                label: "Code produit final".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::NumeroCompartiment,
+            Info {
+                label: "Numéro de compartiment".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::PresenceRemorque,
+            Info {
+                label: "Présence d'un remorque".to_string(),
+                format_info: FormatInfo::Bool,
+                is_none: true,
+                t_value: TValue::Bool(bool::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::NumeroCompartimentFinal,
+            Info {
+                label: "Numéro de compartiment final".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::OrdreCompartiments,
+            Info {
+                label: "Ordre des compartiments".to_string(),
+                format_info: FormatInfo::U32,
+                is_none: true,
+                t_value: TValue::U32(u32::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::NumeroFlexible,
+            Info {
+                label: "Numéro de flexible".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::NumeroFlexibleFinal,
+            Info {
+                label: "Numéro de flexible final".to_string(),
+                format_info: FormatInfo::U8,
+                is_none: true,
+                t_value: TValue::U8(u8::default()),
+            },
+        );
+        hash_id_infos.insert(
+            IdInfo::FinirFlexibleVide,
+            Info {
+                label: "Finir flexible vide".to_string(),
+                format_info: FormatInfo::Bool,
+                is_none: true,
+                t_value: TValue::Bool(bool::default()),
+            },
+        );
 
-        /* String */
-        IdInfo::IdentificationTag => FormatInfo::FormatString(100),
-        IdInfo::ReferenceEtImmatriculation => FormatInfo::FormatString(15),
-        IdInfo::VersionLogiciel => FormatInfo::FormatString(10),
-        IdInfo::LibelleProduit => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
-        IdInfo::LibelleTableProduits(_prod_num) => FormatInfo::FormatString(LIBELLE_PRODUIT_WIDTH),
-        IdInfo::DataJEvent => FormatInfo::FormatString(12),
-        IdInfo::LibelleJEvent => FormatInfo::FormatString(40),
+        Self {
+            hash_id_infos,
+            set_id_infos_on_change: HashSet::new(),
+        }
     }
 }
 
 impl Context {
-    pub fn get_info_bool(&self, id_info: IdInfo) -> Option<bool> {
-        match id_info {
-            IdInfo::Ack => self.ack,
-            IdInfo::Nack => self.nack,
-            IdInfo::EnMesurage => self.en_mesurage,
-            IdInfo::ArretIntermediaire => self.arret_intermediaire,
-            IdInfo::ForcagePetitDebit => self.forcage_petit_debit,
-            IdInfo::ModeConnecte => self.mode_connecte,
-            IdInfo::FinirFlexibleVide => self.finir_flexible_vide,
-            IdInfo::PresenceRemorque => self.presence_remorque,
+    /* ----------- */
+    /** GÉNÉRIQUE **/
+    /* ----------- */
 
-            _ => panic!("Cette information n'est pas booléenne : {id_info:?}"),
+    /// Getter générique (non mutable) d'une information du contexte (tout format)
+    /// # panics
+    /// panic! si l'`IdInfo` n'est pas reconnu
+    fn get_inner_info(&self, id_info: IdInfo) -> &Info {
+        match self.hash_id_infos.get(&id_info) {
+            Some(inner_info) => inner_info,
+            None => panic!("IdInfo {id_info:?} inconnue"),
         }
     }
 
-    pub fn set_info_bool(&mut self, id_info: IdInfo, value: bool) {
-        match id_info {
-            IdInfo::Ack => self.ack = Some(value),
-            IdInfo::Nack => self.nack = Some(value),
-            IdInfo::EnMesurage => self.en_mesurage = Some(value),
-            IdInfo::ArretIntermediaire => self.arret_intermediaire = Some(value),
-            IdInfo::ForcagePetitDebit => self.forcage_petit_debit = Some(value),
-            IdInfo::ModeConnecte => self.mode_connecte = Some(value),
-            IdInfo::FinirFlexibleVide => self.finir_flexible_vide = Some(value),
-            IdInfo::PresenceRemorque => self.presence_remorque = Some(value),
-
-            _ => panic!("Cette information n'est pas booléenne : {id_info:?}"),
+    /// Getter générique (mutable) d'une information du contexte (tout format)
+    /// # panics
+    /// panic! si l'`IdInfo` n'est pas reconnu
+    fn get_mut_inner_info(&mut self, id_info: IdInfo) -> &mut Info {
+        match self.hash_id_infos.get_mut(&id_info) {
+            Some(inner_info) => inner_info,
+            None => panic!("IdInfo {id_info:?} inconnue"),
         }
     }
 
-    pub fn get_info_char(&self, id_info: IdInfo) -> Option<char> {
-        match id_info {
-            IdInfo::TypeDistribution => self.type_distribution,
-
-            _ => panic!("Cette information n'est pas char : {id_info:?}"),
-        }
-    }
-
-    pub fn set_info_char(&mut self, id_info: IdInfo, value: char) {
-        match id_info {
-            IdInfo::TypeDistribution => self.type_distribution = Some(value),
-
-            _ => panic!("Cette information n'est pas char : {id_info:?}"),
-        }
-    }
-
-    /// Getter particulier pour le code produit d'un compartiment
-    /// (la table des codes produit par compartiment est construite par morceaux...)
-    fn get_info_code_produit_compartiment(&self, compart_num: usize) -> Option<u8> {
-        assert!(compart_num <= NB_COMPARTIMENTS);
-        if self.code_produit_compartiment.len() <= compart_num {
-            None
-        } else {
-            Some(self.code_produit_compartiment[compart_num])
-        }
-    }
-
-    pub fn get_info_u8(&self, id_info: IdInfo) -> Option<u8> {
-        match id_info {
-            IdInfo::CodeDefaut => self.code_defaut,
-            IdInfo::CodeProduit => self.code_produit,
-            IdInfo::TypeCompteur => self.type_compteur,
-            IdInfo::CodeProduitCompartiment(compart_num) => {
-                self.get_info_code_produit_compartiment(compart_num)
-            }
-            IdInfo::NombreCompartiments => self.nombre_compartiments,
-            IdInfo::CodeProduitCollecteur => self.code_produit_collecteur,
-            IdInfo::CodeProduitPartieCommune => self.code_produit_partie_commune,
-            IdInfo::CodeProduitFlexible1 => self.code_produit_flexible_1,
-            IdInfo::CodeProduitFlexible2 => self.code_produit_flexible_2,
-            IdInfo::CodeErreurMouvementProduit => self.code_erreur_mouvement_produit,
-            IdInfo::CodeProduitFinal => self.code_produit_final,
-            IdInfo::NumeroCompartiment => self.numero_compartiment,
-            IdInfo::NumeroCompartimentFinal => self.numero_compartiment_final,
-            IdInfo::NumeroFlexible => self.numero_flexible,
-            IdInfo::NumeroFlexibleFinal => self.numero_flexible_final,
-
-            _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
-        }
-    }
-
-    /// Setter particulier pour le code produit d'un compartiment
-    /// (la table des codes produit par compartiment est construite par morceaux...)
-    fn set_info_code_produit_compartiment(&mut self, compart_num: usize, value: u8) {
-        assert!(compart_num <= NB_COMPARTIMENTS);
-        while self.code_produit_compartiment.len() <= compart_num {
-            self.code_produit_compartiment.push(0);
-        }
-        self.code_produit_compartiment[compart_num] = value;
-    }
-
-    pub fn set_info_u8(&mut self, id_info: IdInfo, value: u8) {
-        match id_info {
-            IdInfo::CodeDefaut => self.code_defaut = Some(value),
-            IdInfo::CodeProduit => self.code_produit = Some(value),
-            IdInfo::TypeCompteur => self.type_compteur = Some(value),
-            IdInfo::CodeProduitCompartiment(compart_num) => {
-                self.set_info_code_produit_compartiment(compart_num, value);
-            }
-            IdInfo::NombreCompartiments => self.nombre_compartiments = Some(value),
-            IdInfo::CodeProduitCollecteur => self.code_produit_collecteur = Some(value),
-            IdInfo::CodeProduitPartieCommune => self.code_produit_partie_commune = Some(value),
-            IdInfo::CodeProduitFlexible1 => self.code_produit_flexible_1 = Some(value),
-            IdInfo::CodeProduitFlexible2 => self.code_produit_flexible_2 = Some(value),
-            IdInfo::CodeErreurMouvementProduit => self.code_erreur_mouvement_produit = Some(value),
-            IdInfo::CodeProduitFinal => self.code_produit_final = Some(value),
-            IdInfo::NumeroCompartiment => self.numero_compartiment = Some(value),
-            IdInfo::NumeroCompartimentFinal => self.numero_compartiment_final = Some(value),
-            IdInfo::NumeroFlexible => self.numero_flexible = Some(value),
-            IdInfo::NumeroFlexibleFinal => self.numero_flexible_final = Some(value),
-
-            _ => panic!("Cette information n'est pas u8 : {id_info:?}"),
-        }
-    }
-
-    pub fn get_info_u16(&self, id_info: IdInfo) -> Option<u16> {
-        match id_info {
-            IdInfo::IndexSansRaz => self.index_sans_raz,
-            IdInfo::IndexJournalier => self.index_journalier,
-            IdInfo::Quantieme => self.quantieme,
-            IdInfo::HeureHHMMDebut => self.heure_hhmm_debut,
-            IdInfo::HeureHHMMFin => self.heure_hhmm_fin,
-            IdInfo::HeureHHMM => self
-                .heure_hhmmss
-                .map(|value| u16::try_from(value / 1_00_u32).unwrap()),
-            IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme,
-            IdInfo::NbFractionnements => self.nb_fractionnements,
-            IdInfo::IndexFractionnement => self.index_fractionnement,
-            IdInfo::NbJEvents => self.nb_jevents,
-
-            _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
-        }
-    }
-
-    pub fn set_info_u16(&mut self, id_info: IdInfo, value: u16) {
-        match id_info {
-            IdInfo::IndexSansRaz => self.index_sans_raz = Some(value),
-            IdInfo::IndexJournalier => self.index_journalier = Some(value),
-            IdInfo::Quantieme => self.quantieme = Some(value),
-            IdInfo::HeureHHMMDebut => self.heure_hhmm_debut = Some(value % 10000_u16),
-            IdInfo::HeureHHMMFin => self.heure_hhmm_fin = Some(value % 10000_u16),
-            IdInfo::HeureHHMM => self.heure_hhmmss = Some(u32::from(value % 10000) * 100_u32),
-            IdInfo::NbMesuragesQuantieme => self.nb_mesurages_quantieme = Some(value),
-            IdInfo::NbFractionnements => self.nb_fractionnements = Some(value),
-            IdInfo::IndexFractionnement => self.index_fractionnement = Some(value),
-            IdInfo::NbJEvents => self.nb_jevents = Some(value),
-
-            _ => panic!("Cette information n'est pas u16 : {id_info:?}"),
-        }
-    }
-
-    /// Getter particulier pour la quantité d'un compartiment
-    /// (la table des quantités par compartiment est construite par morceaux...)
-    fn get_info_quantite_compartiment(&self, compart_num: usize) -> Option<u32> {
-        assert!(compart_num <= NB_COMPARTIMENTS);
-        if self.quantite_compartiment.len() <= compart_num {
-            None
-        } else {
-            Some(self.quantite_compartiment[compart_num])
-        }
-    }
-
-    pub fn get_info_u32(&self, id_info: IdInfo) -> Option<u32> {
-        match id_info {
-            IdInfo::Totalisateur => self.totalisateur,
-            IdInfo::QuantitePrincipale => self.quantite_principale,
-            IdInfo::QuantiteSecondaire => self.quantite_secondaire,
-            IdInfo::Predetermination => self.predetermination,
-            IdInfo::DateAAMMJJ => self.date_aammjj,
-            IdInfo::HeureHHMMSS => self.heure_hhmmss,
-            IdInfo::QuantiteCompartiment(compart_num) => {
-                self.get_info_quantite_compartiment(compart_num)
-            }
-            IdInfo::OrdreCompartiments => self.ordre_compartiments,
-
-            _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
-        }
-    }
-
-    /// Setter particulier pour la quantité d'un compartiment
-    /// (la table des quantités par compartiment est construite par morceaux...)
-    fn set_info_quantite_compartiment(&mut self, compart_num: usize, value: u32) {
-        assert!(compart_num <= NB_COMPARTIMENTS);
-        while self.quantite_compartiment.len() <= compart_num {
-            self.quantite_compartiment.push(0);
-        }
-        self.quantite_compartiment[compart_num] = value;
-    }
-
-    pub fn set_info_u32(&mut self, id_info: IdInfo, value: u32) {
-        match id_info {
-            IdInfo::Totalisateur => self.totalisateur = Some(value),
-            IdInfo::QuantitePrincipale => self.quantite_principale = Some(value),
-            IdInfo::QuantiteSecondaire => self.quantite_secondaire = Some(value),
-            IdInfo::Predetermination => self.predetermination = Some(value),
-            IdInfo::DateAAMMJJ => self.date_aammjj = Some(value % 1_000_000_u32),
-            IdInfo::HeureHHMMSS => self.heure_hhmmss = Some(value % 1_000_000_u32),
-            IdInfo::QuantiteCompartiment(compart_num) => {
-                self.set_info_quantite_compartiment(compart_num, value);
-            }
-            IdInfo::OrdreCompartiments => self.ordre_compartiments = Some(value),
-
-            _ => panic!("Cette information n'est pas u32 : {id_info:?}"),
-        }
-    }
-
-    pub fn get_info_u64(&self, id_info: IdInfo) -> Option<u64> {
-        match id_info {
-            IdInfo::DateAAMMJJHeureHHMMSS => {
-                if let Some(date) = self.date_aammjj {
-                    let date = u64::from(date);
-                    if let Some(heure) = self.heure_hhmmss {
-                        let heure = u64::from(heure);
-                        Some(date * 1_000_000_u64 + heure)
-                    } else {
-                        None
-                    }
+    /// Getter générique (non mutable) d'une information du contexte d'un format spécifique
+    /// # panics
+    /// panic! si l'`IdInfo` n'est pas reconnu
+    /// panic! si l'`IdInfo` n'est pas du format attendu
+    fn get_inner_info_with_format(&self, id_info: IdInfo, format_info: FormatInfo) -> &Info {
+        match self.hash_id_infos.get(&id_info) {
+            Some(inner_info) => {
+                if inner_info.format_info == format_info {
+                    inner_info
                 } else {
-                    None
+                    panic!("IdInfo {id_info:?} n'est pas {format_info:?}")
+                }
+            }
+            None => panic!("IdInfo {id_info:?} inconnue"),
+        }
+    }
+
+    /// Getter générique (mutable) d'une information du contexte d'un format spécifique
+    /// # panics
+    /// panic! si l'`IdInfo` n'est pas reconnu
+    /// panic! si l'`IdInfo` n'est pas du format attendu
+    fn get_mut_inner_info_with_format(
+        &mut self,
+        id_info: IdInfo,
+        format_info: FormatInfo,
+    ) -> &mut Info {
+        match self.hash_id_infos.get_mut(&id_info) {
+            Some(inner_info) => {
+                if inner_info.format_info == format_info {
+                    inner_info
+                } else {
+                    panic!("IdInfo {id_info:?} n'est pas {format_info:?}")
+                }
+            }
+            None => panic!("IdInfo {id_info:?} inconnue"),
+        }
+    }
+
+    /// Libellé d'une information du contexte
+    /// # panics
+    /// panic! si l'`IdInfo` n'est pas reconnu
+    pub fn get_info_label(&self, id_info: IdInfo) -> String {
+        let inner_info = self.get_inner_info(id_info);
+        inner_info.label.clone()
+    }
+
+    /// Format d'une information du contexte
+    /// # panics
+    /// panic! si l'`IdInfo` n'est pas reconnu
+    pub fn get_info_format(&self, id_info: IdInfo) -> FormatInfo {
+        let inner_info = self.get_inner_info(id_info);
+        inner_info.format_info
+    }
+
+    /// Action en callback pour une information du contexte
+    /// L'accès à cette fonction est protégé contre une ré-entrance récursive
+    fn do_callback_info_on_change(&mut self, id_info: IdInfo, t_value: &TValue) {
+        match id_info {
+            // HeureHHMMSS => HeureHHMM
+            IdInfo::HeureHHMMSS => {
+                if let TValue::U32(heure_minute_seconde) = t_value {
+                    let heure_minute = u16::try_from(*heure_minute_seconde / 100).unwrap();
+                    self.set_info_u16(IdInfo::HeureHHMM, heure_minute);
+                }
+            }
+            // DateAAMMJJHeureHHMMSS -> DateAAMMJJ, HeureHHMMSS -> HeureHHMM
+            IdInfo::DateAAMMJJHeureHHMMSS => {
+                if let TValue::U64(an_mois_jour_heure_minute_seconde) = t_value {
+                    let an_mois_jour = an_mois_jour_heure_minute_seconde / 1_00_00_00;
+                    let heure_minute_seconde = an_mois_jour_heure_minute_seconde % 1_00_00_00;
+                    let an_mois_jour = u32::try_from(an_mois_jour).unwrap();
+                    let heure_minute_seconde = u32::try_from(heure_minute_seconde).unwrap();
+                    self.set_info_u32(IdInfo::DateAAMMJJ, an_mois_jour);
+                    self.set_info_u32(IdInfo::HeureHHMMSS, heure_minute_seconde);
                 }
             }
 
-            _ => panic!("Cette information n'est pas u64 : {id_info:?}"),
+            // Pas d'action en callback pour toutes les autres informations
+            _ => (),
         }
     }
 
-    pub fn set_info_u64(&mut self, id_info: IdInfo, value: u64) {
-        match id_info {
-            IdInfo::DateAAMMJJHeureHHMMSS => {
-                let date = (value / 1_000_000_u64) % 1_000_000_u64;
-                let heure = value % 1_000_000_u64;
-                self.date_aammjj = Some(u32::try_from(date).unwrap());
-                self.heure_hhmmss = Some(u32::try_from(heure).unwrap());
+    /// Callback lors d'une mise à jour d'une information du contexte
+    fn callback_info_on_change(&mut self, id_info: IdInfo, t_value: &TValue) {
+        // Protection contre ré-entrance par récursion
+        if self.set_id_infos_on_change.contains(&id_info) {
+            return;
+        }
+        self.set_id_infos_on_change.insert(id_info);
+        self.do_callback_info_on_change(id_info, t_value);
+        self.set_id_infos_on_change.remove(&id_info);
+    }
+
+    /* --------------------- */
+    /** STRING INPUT/OUTPUT **/
+    /* --------------------- */
+
+    /// Getter de la représentation 'textuelle' d'une information du contexte
+    pub fn get_info_to_string(&self, id_info: IdInfo, output_none: &str) -> String {
+        let inner_info = self.get_inner_info(id_info);
+        if inner_info.is_none {
+            output_none.to_string()
+        } else {
+            match &inner_info.t_value {
+                TValue::Bool(value) => {
+                    if *value {
+                        "Oui".to_string()
+                    } else {
+                        "Non".to_string()
+                    }
+                }
+                TValue::Char(value) => format!("{value}"),
+                TValue::U8(value) => format!("{value}"),
+                TValue::U16(value) => format!("{value}"),
+                TValue::U32(value) => format!("{value}"),
+                TValue::U64(value) => format!("{value}"),
+                TValue::F32(value) => format!("{value:.1}"),
+                TValue::String(value) => value.trim_end().to_string(),
             }
-
-            _ => panic!("Cette information n'est pas u64 : {id_info:?}"),
         }
     }
 
-    pub fn get_info_f32(&self, id_info: IdInfo) -> Option<f32> {
-        match id_info {
-            IdInfo::DebitInstant => self.debit_instant,
-            IdInfo::TemperatureInstant => self.temperature_instant,
-            IdInfo::TemperatureMoyen => self.temperature_moyen,
-
-            _ => panic!("Cette information n'est pas f32 : {id_info:?}"),
-        }
+    /// Setter d'une information du contexte depuis une représentation 'textuelle'
+    pub fn set_info_from_string(&mut self, id_info: IdInfo, input: &str) {
+        let inner_info = self.get_mut_inner_info(id_info);
+        let t_value = match inner_info.format_info {
+            FormatInfo::Bool => TValue::Bool(
+                !input.is_empty() && ['o', 'O', '1'].contains(&input.chars().next().unwrap()),
+            ),
+            FormatInfo::Char => {
+                if input.is_empty() {
+                    TValue::Char(' ')
+                } else {
+                    let value = input.chars().next().unwrap();
+                    TValue::Char(value)
+                }
+            }
+            FormatInfo::U8 => {
+                if let Ok(value) = input.parse::<u8>() {
+                    TValue::U8(value)
+                } else {
+                    return;
+                }
+            }
+            FormatInfo::U16 => {
+                if let Ok(value) = input.parse::<u16>() {
+                    TValue::U16(value)
+                } else {
+                    return;
+                }
+            }
+            FormatInfo::U32 => {
+                if let Ok(value) = input.parse::<u32>() {
+                    TValue::U32(value)
+                } else {
+                    return;
+                }
+            }
+            FormatInfo::U64 => {
+                if let Ok(value) = input.parse::<u64>() {
+                    TValue::U64(value)
+                } else {
+                    return;
+                }
+            }
+            FormatInfo::F32 => {
+                if let Ok(value) = input.parse::<f32>() {
+                    TValue::F32(value)
+                } else {
+                    return;
+                }
+            }
+            FormatInfo::String(width) => {
+                let input = input.trim_end();
+                let value = if input.len() > width {
+                    // Tronque si trop long
+                    // /!\ format! ne le fait pas...
+                    input[..width].to_string()
+                } else {
+                    input.to_string()
+                };
+                TValue::String(value)
+            }
+        };
+        inner_info.is_none = false;
+        inner_info.t_value = t_value.clone();
+        self.callback_info_on_change(id_info, &t_value);
     }
 
-    pub fn set_info_f32(&mut self, id_info: IdInfo, value: f32) {
-        match id_info {
-            IdInfo::DebitInstant => self.debit_instant = Some(value),
-            IdInfo::TemperatureInstant => self.temperature_instant = Some(value),
-            IdInfo::TemperatureMoyen => self.temperature_moyen = Some(value),
+    /* ------ */
+    /** BOOL **/
+    /* ------ */
 
-            _ => panic!("Cette information n'est pas f32 : {id_info:?}"),
-        }
-    }
-
-    /// Getter particulier pour la tables des produits
-    /// (la table des produits est construite par morceaux...)
-    fn get_info_libelle_table_produits(&self, prod_num: usize) -> Option<String> {
-        assert!(prod_num <= NB_PRODUITS);
-        if self.libelle_table_produits.len() <= prod_num {
+    /// Getter d'une information de type `bool`
+    pub fn get_option_info_bool(&self, id_info: IdInfo) -> Option<bool> {
+        let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::Bool);
+        if inner_info.is_none {
             None
         } else {
-            Some(self.libelle_table_produits[prod_num].clone())
-        }
-    }
-
-    pub fn get_info_string(&self, id_info: IdInfo) -> Option<String> {
-        match id_info {
-            IdInfo::IdentificationTag => self.identification_tag.clone(),
-            IdInfo::ReferenceEtImmatriculation => self.reference_et_immatriculation.clone(),
-            IdInfo::VersionLogiciel => self.version_logiciel.clone(),
-            IdInfo::LibelleProduit => self.libelle_produit.clone(),
-            IdInfo::LibelleTableProduits(prod_num) => {
-                self.get_info_libelle_table_produits(prod_num)
+            match inner_info.t_value {
+                TValue::Bool(value) => Some(value),
+                _ => panic!("{id_info:?} n'est pas un bool"),
             }
-            IdInfo::DataJEvent => self.data_jevent.clone(),
-            IdInfo::LibelleJEvent => self.libelle_jevent.clone(),
-
-            _ => panic!("Cette information n'est pas string : {id_info:?}"),
         }
     }
 
-    /// Setter particulier pour table des produits
-    /// (la table des produits est construite par morceaux...)
-    fn set_info_libelle_table_produits(&mut self, prod_num: usize, value: &str) {
-        assert!(prod_num <= NB_PRODUITS);
-        while self.libelle_table_produits.len() <= prod_num {
-            self.libelle_table_produits.push("???".to_string());
-        }
-        let txt = if value.len() > LIBELLE_PRODUIT_WIDTH {
-            // Tronque si libellé trop long
-            // /!\ format! ne le fait pas...
-            value[..LIBELLE_PRODUIT_WIDTH].to_string()
+    /// Setter d'une information de type `bool`
+    pub fn set_info_bool(&mut self, id_info: IdInfo, value: bool) {
+        let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::Bool);
+        inner_info.is_none = false;
+        inner_info.t_value = TValue::Bool(value);
+        let t_value = inner_info.t_value.clone();
+        self.callback_info_on_change(id_info, &t_value);
+    }
+
+    /* -------*/
+    /** CHAR **/
+    /* -------*/
+
+    /// Getter d'une information de type `char`
+    pub fn get_option_info_char(&self, id_info: IdInfo) -> Option<char> {
+        let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::Char);
+        if inner_info.is_none {
+            None
         } else {
-            value.to_string()
-        };
-        self.libelle_table_produits[prod_num] = txt;
+            match inner_info.t_value {
+                TValue::Char(value) => Some(value),
+                _ => panic!("{id_info:?} n'est pas un char"),
+            }
+        }
     }
 
+    /// Setter d'une information de type `char`
+    pub fn set_info_char(&mut self, id_info: IdInfo, value: char) {
+        let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::Char);
+        inner_info.is_none = false;
+        inner_info.t_value = TValue::Char(value);
+        let t_value = inner_info.t_value.clone();
+        self.callback_info_on_change(id_info, &t_value);
+    }
+
+    /* -----*/
+    /** U8 **/
+    /* -----*/
+
+    /// Getter d'une information de type `u8`
+    pub fn get_option_info_u8(&self, id_info: IdInfo) -> Option<u8> {
+        let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::U8);
+        if inner_info.is_none {
+            None
+        } else {
+            match inner_info.t_value {
+                TValue::U8(value) => Some(value),
+                _ => panic!("{id_info:?} n'est pas un u8"),
+            }
+        }
+    }
+
+    /// Setter d'une information de type `u8`
+    pub fn set_info_u8(&mut self, id_info: IdInfo, value: u8) {
+        let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::U8);
+        inner_info.is_none = false;
+        inner_info.t_value = TValue::U8(value);
+        let t_value = inner_info.t_value.clone();
+        self.callback_info_on_change(id_info, &t_value);
+    }
+
+    /* ------*/
+    /** U16 **/
+    /* ------*/
+
+    /// Getter d'une information de type `u16`
+    pub fn get_option_info_u16(&self, id_info: IdInfo) -> Option<u16> {
+        let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::U16);
+        if inner_info.is_none {
+            None
+        } else {
+            match inner_info.t_value {
+                TValue::U16(value) => Some(value),
+                _ => panic!("{id_info:?} n'est pas un u16"),
+            }
+        }
+    }
+
+    /// Setter d'une information de type `u16`
+    pub fn set_info_u16(&mut self, id_info: IdInfo, value: u16) {
+        let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::U16);
+        inner_info.is_none = false;
+        inner_info.t_value = TValue::U16(value);
+        let t_value = inner_info.t_value.clone();
+        self.callback_info_on_change(id_info, &t_value);
+    }
+
+    /* ------*/
+    /** U32 **/
+    /* ------*/
+
+    /// Getter d'une information de type `u32`
+    pub fn get_option_info_u32(&self, id_info: IdInfo) -> Option<u32> {
+        let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::U32);
+        if inner_info.is_none {
+            None
+        } else {
+            match inner_info.t_value {
+                TValue::U32(value) => Some(value),
+                _ => panic!("{id_info:?} n'est pas un u32"),
+            }
+        }
+    }
+
+    /// Setter d'une information de type `u32`
+    pub fn set_info_u32(&mut self, id_info: IdInfo, value: u32) {
+        let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::U32);
+        inner_info.is_none = false;
+        inner_info.t_value = TValue::U32(value);
+        let t_value = inner_info.t_value.clone();
+        self.callback_info_on_change(id_info, &t_value);
+    }
+
+    /* ------*/
+    /** U64 **/
+    /* ------*/
+
+    /// Getter d'une information de type `u64`
+    pub fn get_option_info_u64(&self, id_info: IdInfo) -> Option<u64> {
+        let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::U64);
+        if inner_info.is_none {
+            None
+        } else {
+            match inner_info.t_value {
+                TValue::U64(value) => Some(value),
+                _ => panic!("{id_info:?} n'est pas un u64"),
+            }
+        }
+    }
+
+    /// Setter d'une information de type `u64`
+    pub fn set_info_u64(&mut self, id_info: IdInfo, value: u64) {
+        let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::U64);
+        inner_info.is_none = false;
+        inner_info.t_value = TValue::U64(value);
+        let t_value = inner_info.t_value.clone();
+        self.callback_info_on_change(id_info, &t_value);
+    }
+
+    /* ------*/
+    /** F32 **/
+    /* ------*/
+
+    /// Getter d'une information de type `f32`
+    pub fn get_option_info_f32(&self, id_info: IdInfo) -> Option<f32> {
+        let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::F32);
+        if inner_info.is_none {
+            None
+        } else {
+            match inner_info.t_value {
+                TValue::F32(value) => Some(value),
+                _ => panic!("{id_info:?} n'est pas un f32"),
+            }
+        }
+    }
+
+    /// Setter d'une information de type `f32`
+    pub fn set_info_f32(&mut self, id_info: IdInfo, value: f32) {
+        let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::F32);
+        inner_info.is_none = false;
+        inner_info.t_value = TValue::F32(value);
+        let t_value = inner_info.t_value.clone();
+        self.callback_info_on_change(id_info, &t_value);
+    }
+
+    /* ---------*/
+    /** String **/
+    /* ---------*/
+
+    /// Getter d'une information de type `string`
+    pub fn get_option_info_string(&self, id_info: IdInfo) -> Option<String> {
+        let inner_info = self.get_inner_info(id_info);
+        if inner_info.is_none {
+            None
+        } else {
+            match &inner_info.t_value {
+                TValue::String(value) => Some(value.clone()),
+                _ => panic!("{id_info:?} n'est pas un string"),
+            }
+        }
+    }
+
+    /// Setter d'une information de type `string`
     pub fn set_info_string(&mut self, id_info: IdInfo, value: &str) {
-        match id_info {
-            IdInfo::IdentificationTag => self.identification_tag = Some(value.to_string()),
-            IdInfo::ReferenceEtImmatriculation => {
-                self.reference_et_immatriculation = Some(value.to_string());
-            }
-            IdInfo::VersionLogiciel => self.version_logiciel = Some(value.to_string()),
-            IdInfo::LibelleProduit => self.libelle_produit = Some(value.to_string()),
-            IdInfo::LibelleTableProduits(prod_num) => {
-                self.set_info_libelle_table_produits(prod_num, value);
-            }
-            IdInfo::DataJEvent => self.data_jevent = Some(value.to_string()),
-            IdInfo::LibelleJEvent => self.libelle_jevent = Some(value.to_string()),
-
-            _ => panic!("Cette information n'est pas string : {id_info:?}"),
-        };
-    }
-}
-
-/// Implémentation générique des getters/setters
-pub trait CommonContextTrait<T> {
-    fn get_info(&self, id_info: IdInfo) -> Option<T>;
-
-    fn set_info(&mut self, id_info: IdInfo, value: T);
-}
-
-impl CommonContextTrait<bool> for Context {
-    fn get_info(&self, id_info: IdInfo) -> Option<bool> {
-        self.get_info_bool(id_info)
-    }
-
-    fn set_info(&mut self, id_info: IdInfo, value: bool) {
-        self.set_info_bool(id_info, value);
-    }
-}
-
-impl CommonContextTrait<char> for Context {
-    fn get_info(&self, id_info: IdInfo) -> Option<char> {
-        self.get_info_char(id_info)
-    }
-
-    fn set_info(&mut self, id_info: IdInfo, value: char) {
-        self.set_info_char(id_info, value);
-    }
-}
-
-impl CommonContextTrait<u8> for Context {
-    fn get_info(&self, id_info: IdInfo) -> Option<u8> {
-        self.get_info_u8(id_info)
-    }
-
-    fn set_info(&mut self, id_info: IdInfo, value: u8) {
-        self.set_info_u8(id_info, value);
-    }
-}
-
-impl CommonContextTrait<u16> for Context {
-    fn get_info(&self, id_info: IdInfo) -> Option<u16> {
-        self.get_info_u16(id_info)
-    }
-
-    fn set_info(&mut self, id_info: IdInfo, value: u16) {
-        self.set_info_u16(id_info, value);
-    }
-}
-
-impl CommonContextTrait<u32> for Context {
-    fn get_info(&self, id_info: IdInfo) -> Option<u32> {
-        self.get_info_u32(id_info)
-    }
-
-    fn set_info(&mut self, id_info: IdInfo, value: u32) {
-        self.set_info_u32(id_info, value);
-    }
-}
-
-impl CommonContextTrait<u64> for Context {
-    fn get_info(&self, id_info: IdInfo) -> Option<u64> {
-        self.get_info_u64(id_info)
-    }
-
-    fn set_info(&mut self, id_info: IdInfo, value: u64) {
-        self.set_info_u64(id_info, value);
-    }
-}
-
-impl CommonContextTrait<f32> for Context {
-    fn get_info(&self, id_info: IdInfo) -> Option<f32> {
-        self.get_info_f32(id_info)
-    }
-
-    fn set_info(&mut self, id_info: IdInfo, value: f32) {
-        self.set_info_f32(id_info, value);
-    }
-}
-
-impl CommonContextTrait<String> for Context {
-    fn get_info(&self, id_info: IdInfo) -> Option<String> {
-        self.get_info_string(id_info)
-    }
-
-    fn set_info(&mut self, id_info: IdInfo, value: String) {
-        self.set_info_string(id_info, &value);
+        let inner_info = self.get_mut_inner_info(id_info);
+        inner_info.is_none = false;
+        inner_info.t_value = TValue::String(value.to_string());
+        let t_value = inner_info.t_value.clone();
+        self.callback_info_on_change(id_info, &t_value);
     }
 }
 
@@ -842,61 +1055,64 @@ mod tests {
     // Cette fonction devrait être appelée avec des `IdInfo` de tous les `FormatInfo` possibles
     // Voir `test_get_set` ci-dessous
     fn check_id_code(context: &mut Context, id_info: IdInfo) {
-        match self::get_info_format(id_info) {
-            FormatInfo::FormatBool => {
-                assert!(context.get_info_bool(id_info).is_none());
+        match context.get_info_format(id_info) {
+            FormatInfo::Bool => {
+                assert!(context.get_option_info_bool(id_info).is_none());
                 for value in [true, false] {
                     context.set_info_bool(id_info, value);
-                    assert_eq!(context.get_info_bool(id_info), Some(value));
+                    assert_eq!(context.get_option_info_bool(id_info), Some(value));
                 }
             }
-            FormatInfo::FormatChar => {
-                assert!(context.get_info_char(id_info).is_none());
+            FormatInfo::Char => {
+                assert!(context.get_option_info_char(id_info).is_none());
                 for value in ['A', 'B', 'é'] {
                     context.set_info_char(id_info, value);
-                    assert_eq!(context.get_info_char(id_info), Some(value));
+                    assert_eq!(context.get_option_info_char(id_info), Some(value));
                 }
             }
-            FormatInfo::FormatU8 => {
-                assert!(context.get_info_u8(id_info).is_none());
+            FormatInfo::U8 => {
+                assert!(context.get_option_info_u8(id_info).is_none());
                 for value in [0_u8, 10_u8, 100_u8] {
                     context.set_info_u8(id_info, value);
-                    assert_eq!(context.get_info_u8(id_info), Some(value));
+                    assert_eq!(context.get_option_info_u8(id_info), Some(value));
                 }
             }
-            FormatInfo::FormatU16 => {
-                assert!(context.get_info_u16(id_info).is_none());
+            FormatInfo::U16 => {
+                assert!(context.get_option_info_u16(id_info).is_none());
                 for value in [0_u16, 1000_u16, 10_000_u16] {
                     context.set_info_u16(id_info, value);
-                    assert_eq!(context.get_info_u16(id_info), Some(value));
+                    assert_eq!(context.get_option_info_u16(id_info), Some(value));
                 }
             }
-            FormatInfo::FormatU32 => {
-                assert!(context.get_info_u32(id_info).is_none());
+            FormatInfo::U32 => {
+                assert!(context.get_option_info_u32(id_info).is_none());
                 for value in [0_u32, 1000_u32, 100_000_u32] {
                     context.set_info_u32(id_info, value);
-                    assert_eq!(context.get_info_u32(id_info), Some(value));
+                    assert_eq!(context.get_option_info_u32(id_info), Some(value));
                 }
             }
-            FormatInfo::FormatU64 => {
-                assert!(context.get_info_u64(id_info).is_none());
+            FormatInfo::U64 => {
+                assert!(context.get_option_info_u64(id_info).is_none());
                 for value in [0_u64, 100_000_u64, 100_000_000_u64, 100_000_000_000_000_u64] {
                     context.set_info_u64(id_info, value);
-                    assert_eq!(context.get_info_u64(id_info), Some(value));
+                    assert_eq!(context.get_option_info_u64(id_info), Some(value));
                 }
             }
-            FormatInfo::FormatF32 => {
-                assert!(context.get_info_f32(id_info).is_none());
+            FormatInfo::F32 => {
+                assert!(context.get_option_info_f32(id_info).is_none());
                 for value in [0.0_f32, 1000.0_f32, -1000.0_f32, 100_000.0_f32] {
                     context.set_info_f32(id_info, value);
-                    assert_eq!(context.get_info_f32(id_info), Some(value));
+                    assert_eq!(context.get_option_info_f32(id_info), Some(value));
                 }
             }
-            FormatInfo::FormatString(_width) => {
-                assert!(context.get_info_string(id_info).is_none());
+            FormatInfo::String(_width) => {
+                assert!(context.get_option_info_string(id_info).is_none());
                 for value in ["", "ABC"] {
                     context.set_info_string(id_info, value);
-                    assert_eq!(context.get_info_string(id_info), Some(value.to_string()));
+                    assert_eq!(
+                        context.get_option_info_string(id_info),
+                        Some(value.to_string())
+                    );
                 }
             }
         }
@@ -927,13 +1143,17 @@ mod tests {
         check_id_code(&mut context, IdInfo::IndexSansRaz);
         check_id_code(&mut context, IdInfo::IndexJournalier);
         check_id_code(&mut context, IdInfo::Quantieme);
-        // check_id_code(&mut context, IdInfo::HeureHHMMDebut); FAIL car troncature des dates et heures
-        // check_id_code(&mut context, IdInfo::HeureHHMMFin);  Idem (voir 'test_get_set_date_heure')
-        // check_id_code(&mut context, IdInfo::HeureHHMM);     Ci-dessous
+        check_id_code(&mut context, IdInfo::HeureHHMMDebut);
+        check_id_code(&mut context, IdInfo::HeureHHMMFin);
+        // Attention, la mise à jour date/heure peut se faire en callback
+        // (il faut tester les date/heure du moins précis au plus précis)
+        check_id_code(&mut context, IdInfo::HeureHHMM);
+        check_id_code(&mut context, IdInfo::HeureHHMMSS);
+        check_id_code(&mut context, IdInfo::DateAAMMJJ);
+        check_id_code(&mut context, IdInfo::DateAAMMJJHeureHHMMSS);
         check_id_code(&mut context, IdInfo::IdentificationTag);
         check_id_code(&mut context, IdInfo::ReferenceEtImmatriculation);
         check_id_code(&mut context, IdInfo::VersionLogiciel);
-        // check_id_code(&mut context, IdInfo::DateAAMMJJHeureHHMMSS);
         check_id_code(&mut context, IdInfo::TypeCompteur);
         check_id_code(&mut context, IdInfo::NbMesuragesQuantieme);
         check_id_code(&mut context, IdInfo::LibelleProduit);
@@ -943,8 +1163,6 @@ mod tests {
         }
         check_id_code(&mut context, IdInfo::IndexFractionnement);
         check_id_code(&mut context, IdInfo::TypeDistribution);
-        // check_id_code(&mut context, IdInfo::DateAAMMJJ);
-        // check_id_code(&mut context, IdInfo::HeureHHMMSS);
         check_id_code(&mut context, IdInfo::NbJEvents);
         check_id_code(&mut context, IdInfo::DataJEvent);
         check_id_code(&mut context, IdInfo::LibelleJEvent);
@@ -977,52 +1195,171 @@ mod tests {
         let context: Context = Context::default();
 
         // Lecture d'une température (F_32) dans un bool
-        let _ = context.get_info_bool(IdInfo::TemperatureInstant);
+        let _ = context.get_option_info_bool(IdInfo::TemperatureInstant);
     }
 
     #[test]
-    fn test_get_set_generic() {
-        let mut context: Context = Context::default();
+    fn test_context_string_bool() {
+        let mut context = Context::default();
 
-        // On utilise ici les getters et les setters génériques (via `CommonContextTrait`)
-        // Il faut bien préciser les types des informations à gérer et ne pas se tromper
-        // sinon panic!
+        assert!(context.get_option_info_bool(IdInfo::Ack).is_none());
+        assert_eq!(context.get_info_to_string(IdInfo::Ack, "None"), "None");
 
-        context.set_info(IdInfo::EnMesurage, true);
-        let my_value: Option<bool> = context.get_info(IdInfo::EnMesurage);
-        assert_eq!(my_value, Some(true));
+        context.set_info_bool(IdInfo::Ack, true);
+        assert_eq!(context.get_option_info_bool(IdInfo::Ack), Some(true));
+        assert_eq!(context.get_info_to_string(IdInfo::Ack, "None"), "Oui");
 
-        context.set_info(IdInfo::TypeDistribution, 'C');
-        let my_value: Option<char> = context.get_info(IdInfo::TypeDistribution);
-        assert_eq!(my_value, Some('C'));
-
-        context.set_info(IdInfo::CodeDefaut, 10_u8);
-        let my_value: Option<u8> = context.get_info(IdInfo::CodeDefaut);
-        assert_eq!(my_value, Some(10_u8));
-
-        context.set_info(IdInfo::Predetermination, 1000_u32);
-        let my_value: Option<u32> = context.get_info(IdInfo::Predetermination);
-        assert_eq!(my_value, Some(1000_u32));
-
-        context.set_info(IdInfo::TemperatureInstant, -12.3);
-        let my_value: Option<f32> = context.get_info(IdInfo::TemperatureInstant);
-        assert_eq!(my_value, Some(-12.3));
-
-        context.set_info(IdInfo::LibelleTableProduits(5), "TEST".to_string());
-        let my_value: Option<String> = context.get_info(IdInfo::LibelleTableProduits(5));
-        assert_eq!(my_value, Some("TEST".to_string()));
+        context.set_info_from_string(IdInfo::Ack, "Non");
+        assert_eq!(context.get_option_info_bool(IdInfo::Ack), Some(false));
+        assert_eq!(context.get_info_to_string(IdInfo::Ack, "None"), "Non");
     }
 
     #[test]
-    #[should_panic]
-    fn test_get_set_generic_panic() {
-        // Le getter générique va panic! si on demande une information avec un format différent
-        // du format de cette info
+    fn test_context_string_char() {
+        let mut context = Context::default();
 
-        let context: Context = Context::default();
+        assert!(context
+            .get_option_info_char(IdInfo::TypeDistribution)
+            .is_none());
+        assert_eq!(
+            context.get_info_to_string(IdInfo::TypeDistribution, "None"),
+            "None"
+        );
 
-        // Lecture d'une température (F_32) dans un u32
-        let _: Option<u32> = context.get_info(IdInfo::TemperatureInstant);
+        context.set_info_from_string(IdInfo::TypeDistribution, "X");
+        assert_eq!(
+            context.get_option_info_char(IdInfo::TypeDistribution),
+            Some('X')
+        );
+        assert_eq!(
+            context.get_info_to_string(IdInfo::TypeDistribution, "None"),
+            "X"
+        );
+    }
+
+    #[test]
+    fn test_context_string_u8() {
+        let mut context = Context::default();
+
+        assert!(context.get_option_info_u8(IdInfo::CodeProduit).is_none());
+        assert_eq!(
+            context.get_info_to_string(IdInfo::CodeProduit, "None"),
+            "None"
+        );
+
+        context.set_info_from_string(IdInfo::CodeProduit, "3");
+        assert_eq!(context.get_option_info_u8(IdInfo::CodeProduit), Some(3));
+        assert_eq!(context.get_info_to_string(IdInfo::CodeProduit, "None"), "3");
+    }
+
+    #[test]
+    fn test_context_string_u16() {
+        let mut context = Context::default();
+
+        assert!(context.get_option_info_u16(IdInfo::HeureHHMM).is_none());
+        assert_eq!(
+            context.get_info_to_string(IdInfo::HeureHHMM, "None"),
+            "None"
+        );
+
+        context.set_info_from_string(IdInfo::HeureHHMM, "1234");
+        assert_eq!(context.get_option_info_u16(IdInfo::HeureHHMM), Some(1234));
+        assert_eq!(
+            context.get_info_to_string(IdInfo::HeureHHMM, "None"),
+            "1234"
+        );
+    }
+
+    #[test]
+    fn test_context_string_u32() {
+        let mut context = Context::default();
+
+        assert!(context
+            .get_option_info_u32(IdInfo::QuantitePrincipale)
+            .is_none());
+        assert_eq!(
+            context.get_info_to_string(IdInfo::QuantitePrincipale, "None"),
+            "None"
+        );
+
+        context.set_info_from_string(IdInfo::QuantitePrincipale, "12345");
+        assert_eq!(
+            context.get_option_info_u32(IdInfo::QuantitePrincipale),
+            Some(12345)
+        );
+        assert_eq!(
+            context.get_info_to_string(IdInfo::QuantitePrincipale, "None"),
+            "12345"
+        );
+    }
+
+    #[test]
+    fn test_context_string_u64() {
+        let mut context = Context::default();
+
+        assert!(context
+            .get_option_info_u64(IdInfo::DateAAMMJJHeureHHMMSS)
+            .is_none());
+        assert_eq!(
+            context.get_info_to_string(IdInfo::DateAAMMJJHeureHHMMSS, "None"),
+            "None"
+        );
+
+        context.set_info_from_string(IdInfo::DateAAMMJJHeureHHMMSS, "991231235959");
+        assert_eq!(
+            context.get_option_info_u64(IdInfo::DateAAMMJJHeureHHMMSS),
+            Some(99_12_31_23_59_59)
+        );
+        assert_eq!(
+            context.get_info_to_string(IdInfo::DateAAMMJJHeureHHMMSS, "None"),
+            "991231235959"
+        );
+    }
+
+    #[test]
+    fn test_context_string_f32() {
+        let mut context = Context::default();
+
+        assert!(context
+            .get_option_info_f32(IdInfo::TemperatureInstant)
+            .is_none());
+        assert_eq!(
+            context.get_info_to_string(IdInfo::TemperatureInstant, "None"),
+            "None"
+        );
+
+        context.set_info_from_string(IdInfo::TemperatureInstant, "-12.3");
+        assert_eq!(
+            context.get_option_info_f32(IdInfo::TemperatureInstant),
+            Some(-12.3)
+        );
+        assert_eq!(
+            context.get_info_to_string(IdInfo::TemperatureInstant, "None"),
+            "-12.3"
+        );
+    }
+
+    #[test]
+    fn test_context_string_string() {
+        let mut context = Context::default();
+
+        assert!(context
+            .get_option_info_string(IdInfo::LibelleProduit)
+            .is_none());
+        assert_eq!(
+            context.get_info_to_string(IdInfo::LibelleProduit, "None"),
+            "None"
+        );
+
+        context.set_info_from_string(IdInfo::LibelleProduit, "ABCDE");
+        assert_eq!(
+            context.get_option_info_string(IdInfo::LibelleProduit),
+            Some("ABCDE".to_string())
+        );
+        assert_eq!(
+            context.get_info_to_string(IdInfo::LibelleProduit, "None"),
+            "ABCDE"
+        );
     }
 
     #[test]
@@ -1031,26 +1368,28 @@ mod tests {
 
         // Par défaut, rien n'est défini
         assert!(context
-            .get_info_u64(IdInfo::DateAAMMJJHeureHHMMSS)
+            .get_option_info_u64(IdInfo::DateAAMMJJHeureHHMMSS)
             .is_none());
-        assert!(context.get_info_u32(IdInfo::DateAAMMJJ).is_none());
-        assert!(context.get_info_u32(IdInfo::HeureHHMMSS).is_none());
-        assert!(context.get_info_u16(IdInfo::HeureHHMM).is_none());
+        assert!(context.get_option_info_u32(IdInfo::DateAAMMJJ).is_none());
+        assert!(context.get_option_info_u32(IdInfo::HeureHHMMSS).is_none());
+        assert!(context.get_option_info_u16(IdInfo::HeureHHMM).is_none());
 
-        // Si on définit la date, data_heure reste non défini
-        context.set_info_u32(IdInfo::DateAAMMJJ, 10_11_12);
-        assert!(context
-            .get_info_u64(IdInfo::DateAAMMJJHeureHHMMSS)
-            .is_none());
-
-        // Si on définit l'heure également, date_heure est maintenant défini
+        // Si on définit l'heure_minute_seconde, heure_minute est maintenant défini
         context.set_info_u32(IdInfo::HeureHHMMSS, 13_14_15);
-        assert_eq!(
-            context.get_info_u64(IdInfo::DateAAMMJJHeureHHMMSS),
-            Some(10_11_12_13_14_15)
-        );
+        assert_eq!(context.get_option_info_u16(IdInfo::HeureHHMM), Some(13_14));
 
-        // Ainsi que l'heure sans les secondes
-        assert_eq!(context.get_info_u16(IdInfo::HeureHHMM), Some(13_14));
+        // Si on définit an_mois_jour_heure_minute_seconde, an_mois_jour est défini...
+        context.set_info_u64(IdInfo::DateAAMMJJHeureHHMMSS, 1_02_03_10_11_12);
+        assert_eq!(
+            context.get_option_info_u32(IdInfo::DateAAMMJJ),
+            Some(1_02_03)
+        );
+        // ... ainsi que heure_minute_seconde...
+        assert_eq!(
+            context.get_option_info_u32(IdInfo::HeureHHMMSS),
+            Some(10_11_12)
+        );
+        // ... ainsi que l'heure sans les secondes
+        assert_eq!(context.get_option_info_u16(IdInfo::HeureHHMM), Some(10_11));
     }
 }
