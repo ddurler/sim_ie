@@ -324,7 +324,7 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::NbFractionnements => "Nombre de fractionnements".to_lowercase(),
         IdInfo::LibelleTableProduits(prod_num) => format!("Libellé table produit #{prod_num}"),
         IdInfo::IndexFractionnement => "Index fractionnement".to_string(),
-        IdInfo::TypeDistribution => "(A)nticipation purge, li(B)ération, (C)hargement, pré(D)é, (L)ibre, (P)urge, (T)ransfert, (V)idange, ".to_string(),
+        IdInfo::TypeDistribution => "(A)nticipation purge, li(B)ération, (C)hargement, pré(D)é, (L)ibre, (P)urge, (T)ransfert, (V)idange".to_string(),
         IdInfo::DateAAMMJJ=> "Date (AAMMJJ)".to_string(),
         IdInfo::HeureHHMMSS=> "Heure (HHMMSS)".to_string(),
         IdInfo::HeureHHMM=> "Heure (HHMM)".to_string(),
@@ -344,7 +344,7 @@ pub fn get_info_name(id_info: IdInfo) -> String {
         IdInfo::PresenceRemorque => "Présence d'un remorque".to_string(),
         IdInfo::NumeroCompartimentFinal => "Numéro de compartiment final".to_string(),
         IdInfo::OrdreCompartiments => "Ordre des compartiments".to_string(),
-        IdInfo::NumeroFlexible => "Numéro de flexible'".to_string(),
+        IdInfo::NumeroFlexible => "Numéro de flexible".to_string(),
         IdInfo::NumeroFlexibleFinal => "Numéro de flexible final".to_string(),
         IdInfo::FinirFlexibleVide => "Finir flexible vide".to_string()
     }
