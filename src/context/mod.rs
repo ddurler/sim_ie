@@ -115,8 +115,26 @@ struct Info {
     /// Valeur de l'information dans le format choisi
     /// En cohérence avec la propriété `format_info`
     t_value: TValue,
+
+    /// Valeur max optionnelle
+    option_max_t_value: Option<TValue>,
 }
 
+impl Default for Info {
+    fn default() -> Self {
+        Self {
+            label: "Non défini".to_string(), // Par défaut, à définir précisément
+            format_info: FormatInfo::Bool,   // Par défaut, à définir précisément
+            is_none: true,                   // Pour tous, au début...
+            t_value: TValue::Bool(false),    // Don't care: Sera redéfini dès le 1er set_info_xx
+            option_max_t_value: None,
+        }
+    }
+}
+
+/// Container pour toutes les informations du contexte
+/// C'est l'implémentation de `Default` qui créé toutes les informations
+/// atomiques du contexte
 pub struct Context {
     /// Table des informations du contexte `IdInfo` -> `Info`
     hash_id_infos: HashMap<IdInfo, Info>,
@@ -140,8 +158,7 @@ impl Default for Context {
             Info {
                 label: "Acquit message".to_string(),
                 format_info: FormatInfo::Bool,
-                is_none: true,
-                t_value: TValue::Bool(bool::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -149,8 +166,7 @@ impl Default for Context {
             Info {
                 label: "Refus message".to_string(),
                 format_info: FormatInfo::Bool,
-                is_none: true,
-                t_value: TValue::Bool(bool::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -158,8 +174,7 @@ impl Default for Context {
             Info {
                 label: "En mesurage".to_string(),
                 format_info: FormatInfo::Bool,
-                is_none: true,
-                t_value: TValue::Bool(bool::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -167,8 +182,7 @@ impl Default for Context {
             Info {
                 label: "En Code défaut".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -176,8 +190,7 @@ impl Default for Context {
             Info {
                 label: "Arrêt intermédiaire".to_string(),
                 format_info: FormatInfo::Bool,
-                is_none: true,
-                t_value: TValue::Bool(bool::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -185,8 +198,7 @@ impl Default for Context {
             Info {
                 label: "Forçage petit débit".to_string(),
                 format_info: FormatInfo::Bool,
-                is_none: true,
-                t_value: TValue::Bool(bool::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -194,8 +206,7 @@ impl Default for Context {
             Info {
                 label: "Mode connecté".to_string(),
                 format_info: FormatInfo::Bool,
-                is_none: true,
-                t_value: TValue::Bool(bool::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -203,8 +214,7 @@ impl Default for Context {
             Info {
                 label: "Totalisateur".to_string(),
                 format_info: FormatInfo::U32,
-                is_none: true,
-                t_value: TValue::U32(u32::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -212,8 +222,7 @@ impl Default for Context {
             Info {
                 label: "Débit instantané".to_string(),
                 format_info: FormatInfo::F32,
-                is_none: true,
-                t_value: TValue::F32(f32::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -221,8 +230,7 @@ impl Default for Context {
             Info {
                 label: "Quantité".to_string(),
                 format_info: FormatInfo::U32,
-                is_none: true,
-                t_value: TValue::U32(u32::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -230,8 +238,7 @@ impl Default for Context {
             Info {
                 label: "Quantité secondaire".to_string(),
                 format_info: FormatInfo::U32,
-                is_none: true,
-                t_value: TValue::U32(u32::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -239,8 +246,7 @@ impl Default for Context {
             Info {
                 label: "Quantité Température instantanée".to_string(),
                 format_info: FormatInfo::F32,
-                is_none: true,
-                t_value: TValue::F32(f32::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -248,8 +254,7 @@ impl Default for Context {
             Info {
                 label: "Température moyenne".to_string(),
                 format_info: FormatInfo::F32,
-                is_none: true,
-                t_value: TValue::F32(f32::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -257,8 +262,8 @@ impl Default for Context {
             Info {
                 label: "Prédétermination".to_string(),
                 format_info: FormatInfo::U32,
-                is_none: true,
-                t_value: TValue::U32(u32::default()),
+                option_max_t_value: Some(TValue::U32(99999)),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -266,8 +271,8 @@ impl Default for Context {
             Info {
                 label: "Code produit".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                option_max_t_value: Some(TValue::U8(u8::try_from(NB_PRODUITS).unwrap())),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -275,8 +280,7 @@ impl Default for Context {
             Info {
                 label: "Index sans remise à zéro".to_string(),
                 format_info: FormatInfo::U16,
-                is_none: true,
-                t_value: TValue::U16(u16::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -284,8 +288,8 @@ impl Default for Context {
             Info {
                 label: "Index journalier".to_string(),
                 format_info: FormatInfo::U16,
-                is_none: true,
-                t_value: TValue::U16(u16::default()),
+                option_max_t_value: Some(TValue::U16(999)),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -293,8 +297,8 @@ impl Default for Context {
             Info {
                 label: "Quantième".to_string(),
                 format_info: FormatInfo::U16,
-                is_none: true,
-                t_value: TValue::U16(u16::default()),
+                option_max_t_value: Some(TValue::U16(366)),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -302,8 +306,7 @@ impl Default for Context {
             Info {
                 label: "Heure de début (HHMM)".to_string(),
                 format_info: FormatInfo::U16,
-                is_none: true,
-                t_value: TValue::U16(u16::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -311,8 +314,7 @@ impl Default for Context {
             Info {
                 label: "Heure de fin (HHMM)".to_string(),
                 format_info: FormatInfo::U16,
-                is_none: true,
-                t_value: TValue::U16(u16::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -320,8 +322,7 @@ impl Default for Context {
             Info {
                 label: "Identification TAG".to_string(),
                 format_info: FormatInfo::String(100),
-                is_none: true,
-                t_value: TValue::String(String::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -329,8 +330,7 @@ impl Default for Context {
             Info {
                 label: "Référence et immatriculation".to_string(),
                 format_info: FormatInfo::String(15),
-                is_none: true,
-                t_value: TValue::String(String::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -338,8 +338,7 @@ impl Default for Context {
             Info {
                 label: "Version du logiciel".to_string(),
                 format_info: FormatInfo::String(10),
-                is_none: true,
-                t_value: TValue::String(String::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -347,8 +346,7 @@ impl Default for Context {
             Info {
                 label: "Date et Heure (AAMMJJHHMMSS)".to_string(),
                 format_info: FormatInfo::U64,
-                is_none: true,
-                t_value: TValue::U64(u64::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -356,8 +354,7 @@ impl Default for Context {
             Info {
                 label: "Type de compteur (0:Vm, 1:Vb, 2:Masse)".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -365,8 +362,7 @@ impl Default for Context {
             Info {
                 label: "Nombre de mesurages pour un quantième".to_string(),
                 format_info: FormatInfo::U16,
-                is_none: true,
-                t_value: TValue::U16(u16::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -374,8 +370,7 @@ impl Default for Context {
             Info {
                 label: "Libellé produit".to_string(),
                 format_info: FormatInfo::String(LIBELLE_PRODUIT_WIDTH),
-                is_none: true,
-                t_value: TValue::String(String::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -383,8 +378,7 @@ impl Default for Context {
             Info {
                 label: "Nombre de fractionnements".to_string(),
                 format_info: FormatInfo::U16,
-                is_none: true,
-                t_value: TValue::U16(u16::default()),
+                ..Default::default()
             },
         );
         for prod_num in 0..=NB_PRODUITS {
@@ -393,8 +387,7 @@ impl Default for Context {
                 Info {
                     label: format!("Libellé table produit #{prod_num}"),
                     format_info: FormatInfo::String(LIBELLE_PRODUIT_WIDTH),
-                    is_none: true,
-                    t_value: TValue::String(String::default()),
+                    ..Default::default()
                 },
             );
         }
@@ -403,8 +396,8 @@ impl Default for Context {
             Info {
                 label: "Index fractionnement".to_string(),
                 format_info: FormatInfo::U16,
-                is_none: true,
-                t_value: TValue::U16(u16::default()),
+                option_max_t_value: Some(TValue::U16(999)),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -412,8 +405,8 @@ impl Default for Context {
             Info {
                 label: "(A)nticipation purge, li(B)ération, (C)hargement, pré(D)é, (L)ibre, (P)urge, (T)ransfert, (V)idange".to_string(),
                 format_info: FormatInfo::Char,
-                is_none: true,
-                t_value: TValue::Char(' '),
+                ..Default::default()
+
             },
         );
         hash_id_infos.insert(
@@ -421,8 +414,8 @@ impl Default for Context {
             Info {
                 label: "Date (AAMMJJ)".to_string(),
                 format_info: FormatInfo::U32,
-                is_none: true,
-                t_value: TValue::U32(u32::default()),
+                option_max_t_value: Some(TValue::U32(99_12_31)),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -430,8 +423,7 @@ impl Default for Context {
             Info {
                 label: "Heure (HHMMSS)".to_string(),
                 format_info: FormatInfo::U32,
-                is_none: true,
-                t_value: TValue::U32(u32::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -439,8 +431,8 @@ impl Default for Context {
             Info {
                 label: "Heure (HHMM)".to_string(),
                 format_info: FormatInfo::U16,
-                is_none: true,
-                t_value: TValue::U16(u16::default()),
+                option_max_t_value: Some(TValue::U16(2359)),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -448,8 +440,7 @@ impl Default for Context {
             Info {
                 label: "Nombre d'événements".to_string(),
                 format_info: FormatInfo::U16,
-                is_none: true,
-                t_value: TValue::U16(u16::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -457,8 +448,7 @@ impl Default for Context {
             Info {
                 label: "Données techniques événement".to_string(),
                 format_info: FormatInfo::String(12),
-                is_none: true,
-                t_value: TValue::String(String::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -466,8 +456,7 @@ impl Default for Context {
             Info {
                 label: "Libellé événement".to_string(),
                 format_info: FormatInfo::String(40),
-                is_none: true,
-                t_value: TValue::String(String::default()),
+                ..Default::default()
             },
         );
         for compart_num in 0..=NB_COMPARTIMENTS {
@@ -476,8 +465,8 @@ impl Default for Context {
                 Info {
                     label: format!("Code produit cpt #{compart_num}"),
                     format_info: FormatInfo::U8,
-                    is_none: true,
-                    t_value: TValue::U8(u8::default()),
+                    option_max_t_value: Some(TValue::U8(u8::try_from(NB_PRODUITS).unwrap())),
+                    ..Default::default()
                 },
             );
             hash_id_infos.insert(
@@ -485,8 +474,8 @@ impl Default for Context {
                 Info {
                     label: format!("Quantité cpt #{compart_num}"),
                     format_info: FormatInfo::U32,
-                    is_none: true,
-                    t_value: TValue::U32(u32::default()),
+                    option_max_t_value: Some(TValue::U32(99999)),
+                    ..Default::default()
                 },
             );
         }
@@ -495,8 +484,7 @@ impl Default for Context {
             Info {
                 label: "Nombre de compartiments".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -504,8 +492,7 @@ impl Default for Context {
             Info {
                 label: "Code produit dans le collecteur".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -513,8 +500,7 @@ impl Default for Context {
             Info {
                 label: "Code produit dans la partie commune".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -522,8 +508,7 @@ impl Default for Context {
             Info {
                 label: "Code produit dans le flexible #1".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -531,8 +516,7 @@ impl Default for Context {
             Info {
                 label: "Code produit dans le flexible #2".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -540,8 +524,7 @@ impl Default for Context {
             Info {
                 label: "Code erreur (1:Non supporté, 2:En opération)".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -549,8 +532,8 @@ impl Default for Context {
             Info {
                 label: "Code produit final".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                option_max_t_value: Some(TValue::U8(u8::try_from(NB_PRODUITS).unwrap())),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -558,8 +541,8 @@ impl Default for Context {
             Info {
                 label: "Numéro de compartiment".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                option_max_t_value: Some(TValue::U8(u8::try_from(NB_COMPARTIMENTS).unwrap())),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -567,8 +550,7 @@ impl Default for Context {
             Info {
                 label: "Présence d'un remorque".to_string(),
                 format_info: FormatInfo::Bool,
-                is_none: true,
-                t_value: TValue::Bool(bool::default()),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -576,8 +558,8 @@ impl Default for Context {
             Info {
                 label: "Numéro de compartiment final".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                option_max_t_value: Some(TValue::U8(u8::try_from(NB_COMPARTIMENTS).unwrap())),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -585,8 +567,8 @@ impl Default for Context {
             Info {
                 label: "Ordre des compartiments".to_string(),
                 format_info: FormatInfo::U32,
-                is_none: true,
-                t_value: TValue::U32(u32::default()),
+                option_max_t_value: Some(TValue::U32(987_654_321)),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -594,8 +576,8 @@ impl Default for Context {
             Info {
                 label: "Numéro de flexible".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                option_max_t_value: Some(TValue::U8(u8::try_from(NB_FLEXIBLES).unwrap())),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -603,8 +585,8 @@ impl Default for Context {
             Info {
                 label: "Numéro de flexible final".to_string(),
                 format_info: FormatInfo::U8,
-                is_none: true,
-                t_value: TValue::U8(u8::default()),
+                option_max_t_value: Some(TValue::U8(u8::try_from(NB_FLEXIBLES).unwrap())),
+                ..Default::default()
             },
         );
         hash_id_infos.insert(
@@ -612,8 +594,7 @@ impl Default for Context {
             Info {
                 label: "Finir flexible vide".to_string(),
                 format_info: FormatInfo::Bool,
-                is_none: true,
-                t_value: TValue::Bool(bool::default()),
+                ..Default::default()
             },
         );
 
@@ -774,51 +755,43 @@ impl Context {
     /// Setter d'une information du contexte depuis une représentation 'textuelle'
     pub fn set_info_from_string(&mut self, id_info: IdInfo, input: &str) {
         let inner_info = self.get_mut_inner_info(id_info);
-        let t_value = match inner_info.format_info {
-            FormatInfo::Bool => TValue::Bool(
-                !input.is_empty() && ['o', 'O', '1'].contains(&input.chars().next().unwrap()),
-            ),
+        match inner_info.format_info {
+            FormatInfo::Bool => {
+                let value =
+                    !input.is_empty() && ['o', 'O', '1'].contains(&input.chars().next().unwrap());
+                self.set_info_bool(id_info, value);
+            }
             FormatInfo::Char => {
                 if input.is_empty() {
-                    TValue::Char(' ')
+                    self.set_info_char(id_info, ' ');
                 } else {
                     let value = input.chars().next().unwrap();
-                    TValue::Char(value)
+                    self.set_info_char(id_info, value);
                 }
             }
             FormatInfo::U8 => {
                 if let Ok(value) = input.parse::<u8>() {
-                    TValue::U8(value)
-                } else {
-                    return;
+                    self.set_info_u8(id_info, value);
                 }
             }
             FormatInfo::U16 => {
                 if let Ok(value) = input.parse::<u16>() {
-                    TValue::U16(value)
-                } else {
-                    return;
+                    self.set_info_u16(id_info, value);
                 }
             }
             FormatInfo::U32 => {
                 if let Ok(value) = input.parse::<u32>() {
-                    TValue::U32(value)
-                } else {
-                    return;
+                    self.set_info_u32(id_info, value);
                 }
             }
             FormatInfo::U64 => {
                 if let Ok(value) = input.parse::<u64>() {
-                    TValue::U64(value)
-                } else {
-                    return;
+                    self.set_info_u64(id_info, value);
                 }
             }
             FormatInfo::F32 => {
                 if let Ok(value) = input.parse::<f32>() {
-                    TValue::F32(value)
-                } else {
-                    return;
+                    self.set_info_f32(id_info, value);
                 }
             }
             FormatInfo::String(width) => {
@@ -830,12 +803,9 @@ impl Context {
                 } else {
                     input.to_string()
                 };
-                TValue::String(value)
+                self.set_info_string(id_info, &value);
             }
-        };
-        inner_info.is_none = false;
-        inner_info.t_value = t_value.clone();
-        self.callback_info_on_change(id_info, &t_value);
+        }
     }
 
     /* ------ */
@@ -884,6 +854,11 @@ impl Context {
     /// Setter d'une information de type `char`
     pub fn set_info_char(&mut self, id_info: IdInfo, value: char) {
         let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::Char);
+        if let Some(TValue::Char(max_value)) = inner_info.option_max_t_value {
+            if value > max_value {
+                return;
+            }
+        }
         inner_info.is_none = false;
         inner_info.t_value = TValue::Char(value);
         let t_value = inner_info.t_value.clone();
@@ -910,6 +885,11 @@ impl Context {
     /// Setter d'une information de type `u8`
     pub fn set_info_u8(&mut self, id_info: IdInfo, value: u8) {
         let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::U8);
+        if let Some(TValue::U8(max_value)) = inner_info.option_max_t_value {
+            if value > max_value {
+                return;
+            }
+        }
         inner_info.is_none = false;
         inner_info.t_value = TValue::U8(value);
         let t_value = inner_info.t_value.clone();
@@ -936,6 +916,11 @@ impl Context {
     /// Setter d'une information de type `u16`
     pub fn set_info_u16(&mut self, id_info: IdInfo, value: u16) {
         let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::U16);
+        if let Some(TValue::U16(max_value)) = inner_info.option_max_t_value {
+            if value > max_value {
+                return;
+            }
+        }
         inner_info.is_none = false;
         inner_info.t_value = TValue::U16(value);
         let t_value = inner_info.t_value.clone();
@@ -962,6 +947,11 @@ impl Context {
     /// Setter d'une information de type `u32`
     pub fn set_info_u32(&mut self, id_info: IdInfo, value: u32) {
         let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::U32);
+        if let Some(TValue::U32(max_value)) = inner_info.option_max_t_value {
+            if value > max_value {
+                return;
+            }
+        }
         inner_info.is_none = false;
         inner_info.t_value = TValue::U32(value);
         let t_value = inner_info.t_value.clone();
@@ -988,6 +978,11 @@ impl Context {
     /// Setter d'une information de type `u64`
     pub fn set_info_u64(&mut self, id_info: IdInfo, value: u64) {
         let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::U64);
+        if let Some(TValue::U64(max_value)) = inner_info.option_max_t_value {
+            if value > max_value {
+                return;
+            }
+        }
         inner_info.is_none = false;
         inner_info.t_value = TValue::U64(value);
         let t_value = inner_info.t_value.clone();
@@ -1014,6 +1009,12 @@ impl Context {
     /// Setter d'une information de type `f32`
     pub fn set_info_f32(&mut self, id_info: IdInfo, value: f32) {
         let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::F32);
+
+        if let Some(TValue::F32(max_value)) = inner_info.option_max_t_value {
+            if value > max_value {
+                return;
+            }
+        }
         inner_info.is_none = false;
         inner_info.t_value = TValue::F32(value);
         let t_value = inner_info.t_value.clone();
@@ -1040,6 +1041,20 @@ impl Context {
     /// Setter d'une information de type `string`
     pub fn set_info_string(&mut self, id_info: IdInfo, value: &str) {
         let inner_info = self.get_mut_inner_info(id_info);
+        let value = if let FormatInfo::String(width) = inner_info.format_info {
+            if value.len() > width {
+                &value[0..width]
+            } else {
+                value
+            }
+        } else {
+            value
+        };
+        if let Some(TValue::String(max_value)) = &inner_info.option_max_t_value {
+            if value > &max_value[..] {
+                return;
+            }
+        }
         inner_info.is_none = false;
         inner_info.t_value = TValue::String(value.to_string());
         let t_value = inner_info.t_value.clone();
@@ -1055,6 +1070,7 @@ mod tests {
     // Cette fonction devrait être appelée avec des `IdInfo` de tous les `FormatInfo` possibles
     // Voir `test_get_set` ci-dessous
     fn check_id_code(context: &mut Context, id_info: IdInfo) {
+        let option_max_t_value = { context.get_inner_info(id_info).option_max_t_value.clone() };
         match context.get_info_format(id_info) {
             FormatInfo::Bool => {
                 assert!(context.get_option_info_bool(id_info).is_none());
@@ -1065,7 +1081,12 @@ mod tests {
             }
             FormatInfo::Char => {
                 assert!(context.get_option_info_char(id_info).is_none());
-                for value in ['A', 'B', 'é'] {
+                for value in ['A', 'B', 'e', 'é'] {
+                    if let Some(TValue::Char(max_value)) = option_max_t_value {
+                        if value > max_value {
+                            continue;
+                        }
+                    }
                     context.set_info_char(id_info, value);
                     assert_eq!(context.get_option_info_char(id_info), Some(value));
                 }
@@ -1073,6 +1094,11 @@ mod tests {
             FormatInfo::U8 => {
                 assert!(context.get_option_info_u8(id_info).is_none());
                 for value in [0_u8, 10_u8, 100_u8] {
+                    if let Some(TValue::U8(max_value)) = option_max_t_value {
+                        if value > max_value {
+                            continue;
+                        }
+                    }
                     context.set_info_u8(id_info, value);
                     assert_eq!(context.get_option_info_u8(id_info), Some(value));
                 }
@@ -1080,6 +1106,11 @@ mod tests {
             FormatInfo::U16 => {
                 assert!(context.get_option_info_u16(id_info).is_none());
                 for value in [0_u16, 1000_u16, 10_000_u16] {
+                    if let Some(TValue::U16(max_value)) = option_max_t_value {
+                        if value > max_value {
+                            continue;
+                        }
+                    }
                     context.set_info_u16(id_info, value);
                     assert_eq!(context.get_option_info_u16(id_info), Some(value));
                 }
@@ -1087,6 +1118,11 @@ mod tests {
             FormatInfo::U32 => {
                 assert!(context.get_option_info_u32(id_info).is_none());
                 for value in [0_u32, 1000_u32, 100_000_u32] {
+                    if let Some(TValue::U32(max_value)) = option_max_t_value {
+                        if value > max_value {
+                            continue;
+                        }
+                    }
                     context.set_info_u32(id_info, value);
                     assert_eq!(context.get_option_info_u32(id_info), Some(value));
                 }
@@ -1094,6 +1130,11 @@ mod tests {
             FormatInfo::U64 => {
                 assert!(context.get_option_info_u64(id_info).is_none());
                 for value in [0_u64, 100_000_u64, 100_000_000_u64, 100_000_000_000_000_u64] {
+                    if let Some(TValue::U64(max_value)) = option_max_t_value {
+                        if value > max_value {
+                            continue;
+                        }
+                    }
                     context.set_info_u64(id_info, value);
                     assert_eq!(context.get_option_info_u64(id_info), Some(value));
                 }
@@ -1101,6 +1142,11 @@ mod tests {
             FormatInfo::F32 => {
                 assert!(context.get_option_info_f32(id_info).is_none());
                 for value in [0.0_f32, 1000.0_f32, -1000.0_f32, 100_000.0_f32] {
+                    if let Some(TValue::F32(max_value)) = option_max_t_value {
+                        if value > max_value {
+                            continue;
+                        }
+                    }
                     context.set_info_f32(id_info, value);
                     assert_eq!(context.get_option_info_f32(id_info), Some(value));
                 }
@@ -1108,6 +1154,11 @@ mod tests {
             FormatInfo::String(_width) => {
                 assert!(context.get_option_info_string(id_info).is_none());
                 for value in ["", "ABC"] {
+                    if let Some(TValue::String(max_value)) = &option_max_t_value {
+                        if value > &max_value[..] {
+                            continue;
+                        }
+                    }
                     context.set_info_string(id_info, value);
                     assert_eq!(
                         context.get_option_info_string(id_info),
