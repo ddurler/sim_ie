@@ -196,7 +196,7 @@ impl AppView {
             let txt = Text::new("(Pas d'information)");
             col = col.push(txt);
         } else if is_nack(&self.context, &id_infos) {
-            let txt = Text::new("REPONSE : NACK !!!");
+            let txt = Text::new("RÉPONSE : NACK !!!");
             col = col.push(txt);
         } else if !self.st2150.last_error.is_empty() {
             let txt = format!("ERREUR : {} !!!", self.st2150.last_error);

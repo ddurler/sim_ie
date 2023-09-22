@@ -11,7 +11,10 @@ const STR_INFO_NONE: &str = "???";
 
 /// Visualisation IHM de la valeur du champ `IdInfo`
 pub fn show_info(context: &Context, id_info: IdInfo) -> Element<'static, Message> {
-    let txt = context.get_info_to_string(id_info, STR_INFO_NONE);
-    let txt = format!("{} : {}", context.get_info_label(id_info), txt);
+    let txt = format!(
+        "{} : {}",
+        context.get_info_label(id_info),
+        context.get_info_to_string(id_info, STR_INFO_NONE)
+    );
     Text::new(txt).into()
 }

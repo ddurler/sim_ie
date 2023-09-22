@@ -753,57 +753,58 @@ impl Context {
     }
 
     /// Setter d'une information du contexte depuis une représentation 'textuelle'
+    /// Une `input.is_empty()` ré-initialise l'information à `None` (non définie)
     pub fn set_info_from_string(&mut self, id_info: IdInfo, input: &str) {
         let inner_info = self.get_mut_inner_info(id_info);
-        match inner_info.format_info {
-            FormatInfo::Bool => {
-                let value =
-                    !input.is_empty() && ['o', 'O', '1'].contains(&input.chars().next().unwrap());
-                self.set_info_bool(id_info, value);
-            }
-            FormatInfo::Char => {
-                if input.is_empty() {
-                    self.set_info_char(id_info, ' ');
-                } else {
+        if input.is_empty() {
+            inner_info.is_none = true;
+        } else {
+            // L'input n'est pas vide
+            match inner_info.format_info {
+                FormatInfo::Bool => {
+                    let value = ['o', 'O', '1'].contains(&input.chars().next().unwrap());
+                    self.set_info_bool(id_info, value);
+                }
+                FormatInfo::Char => {
                     let value = input.chars().next().unwrap();
                     self.set_info_char(id_info, value);
                 }
-            }
-            FormatInfo::U8 => {
-                if let Ok(value) = input.parse::<u8>() {
-                    self.set_info_u8(id_info, value);
+                FormatInfo::U8 => {
+                    if let Ok(value) = input.parse::<u8>() {
+                        self.set_info_u8(id_info, value);
+                    }
                 }
-            }
-            FormatInfo::U16 => {
-                if let Ok(value) = input.parse::<u16>() {
-                    self.set_info_u16(id_info, value);
+                FormatInfo::U16 => {
+                    if let Ok(value) = input.parse::<u16>() {
+                        self.set_info_u16(id_info, value);
+                    }
                 }
-            }
-            FormatInfo::U32 => {
-                if let Ok(value) = input.parse::<u32>() {
-                    self.set_info_u32(id_info, value);
+                FormatInfo::U32 => {
+                    if let Ok(value) = input.parse::<u32>() {
+                        self.set_info_u32(id_info, value);
+                    }
                 }
-            }
-            FormatInfo::U64 => {
-                if let Ok(value) = input.parse::<u64>() {
-                    self.set_info_u64(id_info, value);
+                FormatInfo::U64 => {
+                    if let Ok(value) = input.parse::<u64>() {
+                        self.set_info_u64(id_info, value);
+                    }
                 }
-            }
-            FormatInfo::F32 => {
-                if let Ok(value) = input.parse::<f32>() {
-                    self.set_info_f32(id_info, value);
+                FormatInfo::F32 => {
+                    if let Ok(value) = input.parse::<f32>() {
+                        self.set_info_f32(id_info, value);
+                    }
                 }
-            }
-            FormatInfo::String(width) => {
-                let input = input.trim_end();
-                let value = if input.len() > width {
-                    // Tronque si trop long
-                    // /!\ format! ne le fait pas...
-                    input[..width].to_string()
-                } else {
-                    input.to_string()
-                };
-                self.set_info_string(id_info, &value);
+                FormatInfo::String(width) => {
+                    let input = input.trim_end();
+                    let value = if input.len() > width {
+                        // Tronque si trop long
+                        // /!\ format! ne le fait pas...
+                        input[..width].to_string()
+                    } else {
+                        input.to_string()
+                    };
+                    self.set_info_string(id_info, &value);
+                }
             }
         }
     }
@@ -1263,6 +1264,9 @@ mod tests {
         context.set_info_from_string(IdInfo::Ack, "Non");
         assert_eq!(context.get_option_info_bool(IdInfo::Ack), Some(false));
         assert_eq!(context.get_info_to_string(IdInfo::Ack, "None"), "Non");
+
+        context.set_info_from_string(IdInfo::Ack, "");
+        assert_eq!(context.get_option_info_bool(IdInfo::Ack), None);
     }
 
     #[test]
@@ -1286,6 +1290,9 @@ mod tests {
             context.get_info_to_string(IdInfo::TypeDistribution, "None"),
             "X"
         );
+
+        context.set_info_from_string(IdInfo::TypeDistribution, "");
+        assert_eq!(context.get_option_info_char(IdInfo::TypeDistribution), None);
     }
 
     #[test]
@@ -1301,6 +1308,9 @@ mod tests {
         context.set_info_from_string(IdInfo::CodeProduit, "3");
         assert_eq!(context.get_option_info_u8(IdInfo::CodeProduit), Some(3));
         assert_eq!(context.get_info_to_string(IdInfo::CodeProduit, "None"), "3");
+
+        context.set_info_from_string(IdInfo::CodeProduit, "");
+        assert_eq!(context.get_option_info_u8(IdInfo::CodeProduit), None);
     }
 
     #[test]
@@ -1319,6 +1329,9 @@ mod tests {
             context.get_info_to_string(IdInfo::HeureHHMM, "None"),
             "1234"
         );
+
+        context.set_info_from_string(IdInfo::HeureHHMM, "");
+        assert_eq!(context.get_option_info_u16(IdInfo::HeureHHMM), None);
     }
 
     #[test]
@@ -1341,6 +1354,12 @@ mod tests {
         assert_eq!(
             context.get_info_to_string(IdInfo::QuantitePrincipale, "None"),
             "12345"
+        );
+
+        context.set_info_from_string(IdInfo::QuantitePrincipale, "");
+        assert_eq!(
+            context.get_option_info_u32(IdInfo::QuantitePrincipale),
+            None
         );
     }
 
@@ -1365,6 +1384,12 @@ mod tests {
             context.get_info_to_string(IdInfo::DateAAMMJJHeureHHMMSS, "None"),
             "991231235959"
         );
+
+        context.set_info_from_string(IdInfo::DateAAMMJJHeureHHMMSS, "");
+        assert_eq!(
+            context.get_option_info_u64(IdInfo::DateAAMMJJHeureHHMMSS),
+            None
+        );
     }
 
     #[test]
@@ -1387,6 +1412,12 @@ mod tests {
         assert_eq!(
             context.get_info_to_string(IdInfo::TemperatureInstant, "None"),
             "-12.3"
+        );
+
+        context.set_info_from_string(IdInfo::TemperatureInstant, "");
+        assert_eq!(
+            context.get_option_info_f32(IdInfo::TemperatureInstant),
+            None
         );
     }
 
@@ -1411,6 +1442,9 @@ mod tests {
             context.get_info_to_string(IdInfo::LibelleProduit, "None"),
             "ABCDE"
         );
+
+        context.set_info_from_string(IdInfo::LibelleProduit, "");
+        assert_eq!(context.get_option_info_string(IdInfo::LibelleProduit), None);
     }
 
     #[test]
