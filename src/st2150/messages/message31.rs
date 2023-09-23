@@ -52,10 +52,11 @@ impl CommonMessageTrait for Message31 {
 
         // Réception réponse
         let mut buffer = [0; 200];
-        let len_rep = st2150.wait_rep(&mut buffer, 11)?;
+        let lens_expected = &[3];
+        let len_rep = st2150.wait_rep(&mut buffer, lens_expected)?;
 
         // Décodage de la réponse reçue
-        let frame = st2150.try_from_buffer(&buffer[..len_rep], MESSAGE_NUM, &[3])?;
+        let frame = st2150.try_from_buffer(&buffer[..len_rep], MESSAGE_NUM, lens_expected)?;
 
         // Mise à jour du contexte
 

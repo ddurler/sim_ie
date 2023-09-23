@@ -48,7 +48,7 @@ impl CommonMessageTrait for Message77 {
 
         // Réception réponse
         let mut buffer = [0; 200];
-        let len_rep = st2150.wait_rep(&mut buffer, helper::max_expected_rep_len(MESSAGE_NUM))?;
+        let len_rep = st2150.wait_rep(&mut buffer, helper::rep_len_fields(MESSAGE_NUM))?;
 
         // Décodage de la réponse reçue
         let frame = st2150.try_from_buffer(

@@ -36,6 +36,13 @@ impl Frame {
         !self.fields.is_empty() && self.fields[0].to_frame() == vec![protocol::NACK]
     }
 
+    /// Longueur d'une trame de réponse selon longueur des champs attendus
+    pub fn len_expected_response(len_fields: &[usize]) -> usize {
+        // Longueur attendue = STX(1) + message_num(2) + [SEP(1) + len_field]* + SEP(1) + checksum(2) + ETx(1)
+        //                   = map(len + 1) + 1 + 2 + 1 + 2 + 1 = map(len + 1) + 7
+        len_fields.iter().map(|len| *len + 1).sum::<usize>() + 7
+    }
+
     /// Ajout d'un champ dans le message
     pub fn add_field(&mut self, field: Field) {
         self.fields.push(field);
@@ -135,9 +142,7 @@ impl Frame {
         }
 
         // Longueur du message OK ?
-        let mut expected_rec_len = 1 + 2; // STX + numéro de message
-        expected_rec_len += len_fields.len() + len_fields.iter().sum::<usize>(); // SEPARATOR avant chaque champs + champs
-        expected_rec_len += 1 + 2 + 1; // SEPARATOR + checksum + ETX
+        let expected_rec_len = Self::len_expected_response(len_fields);
         if rec_len != expected_rec_len {
             return Err(ProtocolError::BadMessageLen(rec_len, expected_rec_len));
         }

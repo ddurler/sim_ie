@@ -244,11 +244,6 @@ pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame,
     Ok(req)
 }
 
-/// Longueur max du message de réponse à un message de mouvement de produit
-pub fn max_expected_rep_len(_message_num: u8) -> usize {
-    12
-}
-
 /// Longueur des différents champs dans la réponse à un message de mouvement de produit
 pub fn rep_len_fields(_message_num: u8) -> &'static [usize] {
     &[1, 2]

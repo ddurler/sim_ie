@@ -179,8 +179,9 @@ impl ST2150 {
     fn wait_rep(
         &mut self,
         buffer: &mut [u8],
-        max_expected_len: usize,
+        len_fields: &[usize],
     ) -> Result<usize, ProtocolError> {
+        let max_expected_len = Frame::len_expected_response(len_fields);
         self.last_rep = vec![];
         let len_rep = protocol::waiting_frame(&mut self.port, buffer, max_expected_len);
         self.set_last_rep(buffer, len_rep);

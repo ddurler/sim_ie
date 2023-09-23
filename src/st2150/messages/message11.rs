@@ -72,16 +72,14 @@ impl CommonMessageTrait for Message11 {
 
         // Réception réponse
         let mut buffer = [0; 200];
-        let len_rep = st2150.wait_rep(&mut buffer, 88)?;
+        let lens_expected = &[
+            1, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 4,
+        ];
+
+        let len_rep = st2150.wait_rep(&mut buffer, lens_expected)?;
 
         // Décodage de la réponse reçue
-        let frame = st2150.try_from_buffer(
-            &buffer[..len_rep],
-            MESSAGE_NUM,
-            &[
-                1, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 4,
-            ],
-        )?;
+        let frame = st2150.try_from_buffer(&buffer[..len_rep], MESSAGE_NUM, lens_expected)?;
 
         // Mise à jour du contexte
 

@@ -61,7 +61,8 @@ impl CommonMessageTrait for Message21 {
 
         // Réception réponse (2 réponses possibles)
         let mut buffer = [0; 200];
-        let len_rep = st2150.wait_rep(&mut buffer, 57)?;
+        let lens_expected = &[5, 4, 5, 8, 3, 3, 3, 1, 4, 4];
+        let len_rep = st2150.wait_rep(&mut buffer, lens_expected)?;
 
         // Décodage de la réponse reçue : 2 réponses possibles : NACK ou compte rendu de mesurage
         // On tente d'abord de décoder un NACK (dans une trame correcte)
@@ -72,11 +73,7 @@ impl CommonMessageTrait for Message21 {
 
         // Sinon...
         context.set_info_bool(IdInfo::Nack, false);
-        let frame = st2150.try_from_buffer(
-            &buffer[..len_rep],
-            MESSAGE_NUM,
-            &[5, 4, 5, 8, 3, 3, 3, 1, 4, 4],
-        )?;
+        let frame = st2150.try_from_buffer(&buffer[..len_rep], MESSAGE_NUM, lens_expected)?;
 
         // Mise à jour du contexte
 
