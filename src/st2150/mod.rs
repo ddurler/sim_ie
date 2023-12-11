@@ -227,7 +227,7 @@ impl ST2150 {
         self.last_rep = vec![];
         self.last_error = String::new();
         match messages::get_dyn_message(message_num).do_vacation(self, context) {
-            Ok(_) => {
+            Ok(()) => {
                 self.last_error = String::new();
                 Ok(())
             }

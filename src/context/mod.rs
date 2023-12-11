@@ -1239,7 +1239,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "IdInfo TemperatureInstant n'est pas Bool")]
     fn test_get_set_panic() {
         // Le getter va panic! si on demande une information avec un format différent
         // du format de cette info

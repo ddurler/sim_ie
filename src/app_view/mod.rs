@@ -218,7 +218,7 @@ impl AppView {
 
         /* Disponibilité ? */
         match ST2150::message_availability(&self.context, self.dyn_message.message_num()) {
-            Ok(_) => {
+            Ok(()) => {
                 // Bouton pour exécuter cette commande
                 let txt_do_it = format!(
                     "Run Message {:02} ({}) sur le port {}",

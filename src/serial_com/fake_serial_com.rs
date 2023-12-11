@@ -27,7 +27,7 @@ impl CommonSerialComTrait for FakeSerialCom {
     fn write(&mut self, buffer: &[u8]) {
         if !self.should_write.is_empty() {
             // Si un 'should_write' a été défini, on doit le retrouver ici
-            assert_eq!(buffer, self.should_write);
+            assert_eq!(buffer, self.should_write, "Should write failure",);
             self.should_write = vec![]; // Valable qu'une seule fois
         }
     }
@@ -92,7 +92,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "Should write failure")]
     fn test_fake_serial_port_should_write_panic() {
         let mut fake = FakeSerialCom::default();
 
