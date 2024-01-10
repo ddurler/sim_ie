@@ -15,6 +15,7 @@ pub const NB_COMPARTIMENTS: usize = 9;
 pub const NB_FLEXIBLES: usize = 3;
 
 /// Format possible d'une information du contexte
+#[allow(clippy::struct_field_names)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FormatInfo {
     Bool,
@@ -107,6 +108,7 @@ struct Info {
 
     /// Format choisi pour l'information.
     /// Ce format doit être cohérent avec l'item utilisé pour la propriété `t_info`
+    #[allow(clippy::struct_field_names)]
     format_info: FormatInfo,
 
     /// Propriété à `false` tant qu'aucune valeur n'est attribuée à l'information

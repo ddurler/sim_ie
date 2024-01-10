@@ -30,11 +30,6 @@ pub const TIMEOUT_READ_FRAME: f32 = 1.0;
 /// Timeout fin de trame (en seconde) : Si reçu quelque chose mais pas assez
 pub const TIMEOUT_END_FRAME: f32 = 0.3;
 
-/// Helper pour vérifier qu'un caractère est de l'hexadécimal
-pub fn is_car_hexa(car: u8) -> bool {
-    matches!(car, b'0'..=b'9' | b'A'..=b'F' | b'a'..=b'f')
-}
-
 /// Helper pour convertir un caractère hexadécimal en binaire décimal
 pub fn car_hexa_to_value(car: u8) -> u8 {
     match car {

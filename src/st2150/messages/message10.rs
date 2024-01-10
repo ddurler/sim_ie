@@ -69,9 +69,7 @@ impl CommonMessageTrait for Message10 {
 
         // #1 : Débit instantanée (1234 pour 123.4 m3/h)
         let debit10 = frame.fields[1].decode_number::<u16>()?;
-        let debit10 = f32::try_from(debit10).map_err(|_e| {
-            ProtocolError::ErrFieldConversion("débit".to_string(), frame.fields[1].clone())
-        })?;
+        let debit10 = f32::from(debit10);
 
         context.set_info_f32(IdInfo::DebitInstant, debit10 / 10_f32);
 
@@ -83,9 +81,7 @@ impl CommonMessageTrait for Message10 {
 
         // #3 : Température instantanée +123 pour 12.3°C
         let tempe10 = frame.fields[3].decode_signed_number::<i16>()?;
-        let tempe10 = f32::try_from(tempe10).map_err(|_e| {
-            ProtocolError::ErrFieldConversion("température".to_string(), frame.fields[3].clone())
-        })?;
+        let tempe10 = f32::from(tempe10);
         context.set_info_f32(IdInfo::TemperatureInstant, tempe10 / 10_f32);
 
         // #4 : Prédétermination

@@ -85,9 +85,7 @@ impl CommonMessageTrait for Message32 {
 
         // #2 : Température moyenne +123 pour 12.3°C
         let tempe10 = frame.fields[2].decode_signed_number::<i16>()?;
-        let tempe10 = f32::try_from(tempe10).map_err(|_e| {
-            ProtocolError::ErrFieldConversion("température".to_string(), frame.fields[2].clone())
-        })?;
+        let tempe10 = f32::from(tempe10);
         context.set_info_f32(IdInfo::TemperatureMoyen, tempe10 / 10_f32);
 
         // #3 : Nombre de fractionnements

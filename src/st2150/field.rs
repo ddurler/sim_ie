@@ -282,7 +282,7 @@ impl Field {
     {
         let mut ret = 0_u64;
         for value in &self.data {
-            if !protocol::is_car_hexa(*value) {
+            if !(*value).is_ascii_hexdigit() {
                 return Err(ProtocolError::IllegalFieldCharDecode(
                     "hexa".to_string(),
                     self.clone(),

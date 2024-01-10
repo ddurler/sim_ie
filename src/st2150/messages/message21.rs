@@ -85,9 +85,7 @@ impl CommonMessageTrait for Message21 {
 
         // #1 : Température moyenne +123 pour 12.3°C
         let tempe10 = frame.fields[1].decode_signed_number::<i16>()?;
-        let tempe10 = f32::try_from(tempe10).map_err(|_e| {
-            ProtocolError::ErrFieldConversion("température".to_string(), frame.fields[1].clone())
-        })?;
+        let tempe10 = f32::from(tempe10);
         context.set_info_f32(IdInfo::TemperatureMoyen, tempe10 / 10_f32);
 
         // #2 : Quantité secondaire
