@@ -83,7 +83,7 @@ mod tests {
 
         // Infos pour la requête
         context.set_info_u8(IdInfo::CodeProduit, 3);
-        context.set_info_u32(IdInfo::OrdreCompartiments, 987_654_321);
+        context.set_info_string(IdInfo::OrdreCompartiments, "012345");
         context.set_info_u8(IdInfo::NumeroFlexible, 1);
 
         // Trame pour message
@@ -94,15 +94,15 @@ mod tests {
             protocol::SEPARATOR,
             b'3', // Code produit
             protocol::SEPARATOR,
-            b'9', // Ordre compartiments
-            b'8',
-            b'7',
-            b'6',
-            b'5',
-            b'4',
-            b'3',
-            b'2',
+            b'0', // Ordre compartiments (0 padded right)
             b'1',
+            b'2',
+            b'3',
+            b'4',
+            b'5',
+            b'0',
+            b'0',
+            b'0',
             protocol::SEPARATOR,
             b'1', // Numéro de flexible
             protocol::SEPARATOR,

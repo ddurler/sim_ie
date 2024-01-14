@@ -1,5 +1,7 @@
 //! Informations 'atomiques' échangées par le protocole ALMA IE - ST2150
 
+use regex::Regex;
+
 use std::collections::{HashMap, HashSet};
 
 /// Nombre max de produits
@@ -126,7 +128,10 @@ struct Info {
     /// En cohérence avec la propriété `format_info`
     t_value: TValue,
 
-    /// Valeur max optionnelle
+    /// Regex optionnelle pour valider la valeur de l'information (from_string)
+    option_regex: Option<Regex>,
+
+    /// Valeur max optionnelle (pour les nombres)
     option_max_t_value: Option<TValue>,
 }
 
@@ -137,6 +142,7 @@ impl Default for Info {
             format_info: FormatInfo::Bool,   // Par défaut, à définir précisément
             is_none: true,                   // Pour tous, au début...
             t_value: TValue::Bool(false),    // Don't care: Sera redéfini dès le 1er set_info_xx
+            option_regex: None,
             option_max_t_value: None,
         }
     }
@@ -576,8 +582,8 @@ impl Default for Context {
             IdInfo::OrdreCompartiments,
             Info {
                 label: "Ordre des compartiments".to_string(),
-                format_info: FormatInfo::U32,
-                option_max_t_value: Some(TValue::U32(987_654_321)),
+                format_info: FormatInfo::String(9),
+                option_regex: Some(Regex::new(r"^\d{1,9}$").unwrap()),
                 ..Default::default()
             },
         );
@@ -774,6 +780,12 @@ impl Context {
             inner_info.is_none = true;
         } else {
             // L'input n'est pas vide
+            if let Some(regex) = &inner_info.option_regex {
+                // Une Regex est associée à l'information
+                if !regex.is_match(input) {
+                    return; // Ne matche pas la Regex, on ne fait rien
+                }
+            }
             match inner_info.format_info {
                 FormatInfo::Bool => {
                     let value = ['o', 'O', '1'].contains(&input.chars().next().unwrap());

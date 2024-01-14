@@ -219,10 +219,14 @@ pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame,
                 }
             }
             IdInfo::OrdreCompartiments => {
-                let compart_order = context
-                    .get_option_info_u32(IdInfo::OrdreCompartiments)
+                let mut compart_order = context
+                    .get_option_info_string(IdInfo::OrdreCompartiments)
                     .unwrap();
-                req.add_field(Field::encode_number(compart_order, 9)?);
+                // Complète avec des '0' si trop court
+                while compart_order.len() < 9 {
+                    compart_order.push('0');
+                }
+                req.add_field(Field::encode_str(&compart_order, 9));
             }
             IdInfo::NumeroFlexible => {
                 let flexible_num = context.get_option_info_u8(IdInfo::NumeroFlexible).unwrap();

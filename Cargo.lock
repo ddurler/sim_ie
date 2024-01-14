@@ -1943,6 +1943,7 @@ name = "sim_ie"
 version = "0.3.0"
 dependencies = [
  "iced",
+ "regex",
  "serialport",
 ]
 

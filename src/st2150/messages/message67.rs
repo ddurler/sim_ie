@@ -86,7 +86,7 @@ mod tests {
         context.set_info_u32(IdInfo::Predetermination, 1000);
         context.set_info_u8(IdInfo::CodeProduit, 6);
         context.set_info_u8(IdInfo::CodeProduitFinal, 5);
-        context.set_info_u32(IdInfo::OrdreCompartiments, 987_654_321);
+        context.set_info_string(IdInfo::OrdreCompartiments, "987654321");
         context.set_info_u8_or_t(IdInfo::NumeroCompartimentFinal, U8OrT::U8(3));
         context.set_info_u8(IdInfo::NumeroFlexible, 2);
         context.set_info_u8(IdInfo::NumeroFlexibleFinal, 1);
