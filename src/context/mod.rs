@@ -21,6 +21,7 @@ pub enum FormatInfo {
     Bool,
     Char,
     U8,
+    U8OrT,
     U16,
     U32,
     U64,
@@ -28,8 +29,8 @@ pub enum FormatInfo {
     String(usize),
 }
 
-/// Énumération des informations du contexte
-/// Cette énumération permet aux modules externes de désigner une information du contexte
+/// Énumération des informations du contexte<br>
+/// Cette énumération permet aux modules externes de désigner une information du contexte.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum IdInfo {
     Ack,
@@ -87,12 +88,20 @@ pub enum IdInfo {
     FinirFlexibleVide,
 }
 
+/// Container pour une information `U8OrT`: Peut être `U8` (numéro de compartiment) ou la lettre `T` (remorque)
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum U8OrT {
+    U8(u8),
+    T,
+}
+
 /// Container des différents types de valeurs possibles pour une information du contexte
 #[derive(Clone, Debug)]
 pub enum TValue {
     Bool(bool),
     Char(char),
     U8(u8),
+    U8OrT(U8OrT),
     U16(u16),
     U32(u32),
     U64(u64),
@@ -107,7 +116,6 @@ struct Info {
     label: String,
 
     /// Format choisi pour l'information.
-    /// Ce format doit être cohérent avec l'item utilisé pour la propriété `t_info`
     #[allow(clippy::struct_field_names)]
     format_info: FormatInfo,
 
@@ -134,7 +142,7 @@ impl Default for Info {
     }
 }
 
-/// Container pour toutes les informations du contexte
+/// Container pour toutes les informations du contexte<br>
 /// C'est l'implémentation de `Default` qui créé toutes les informations
 /// atomiques du contexte
 pub struct Context {
@@ -541,8 +549,8 @@ impl Default for Context {
         hash_id_infos.insert(
             IdInfo::NumeroCompartiment,
             Info {
-                label: "Numéro de compartiment".to_string(),
-                format_info: FormatInfo::U8,
+                label: "No de compartiment (ou T pour remorque)".to_string(),
+                format_info: FormatInfo::U8OrT,
                 option_max_t_value: Some(TValue::U8(u8::try_from(NB_COMPARTIMENTS).unwrap())),
                 ..Default::default()
             },
@@ -550,7 +558,7 @@ impl Default for Context {
         hash_id_infos.insert(
             IdInfo::PresenceRemorque,
             Info {
-                label: "Présence d'un remorque".to_string(),
+                label: "Présence d'une remorque".to_string(),
                 format_info: FormatInfo::Bool,
                 ..Default::default()
             },
@@ -558,8 +566,8 @@ impl Default for Context {
         hash_id_infos.insert(
             IdInfo::NumeroCompartimentFinal,
             Info {
-                label: "Numéro de compartiment final".to_string(),
-                format_info: FormatInfo::U8,
+                label: "No de compartiment final (ou T)".to_string(),
+                format_info: FormatInfo::U8OrT,
                 option_max_t_value: Some(TValue::U8(u8::try_from(NB_COMPARTIMENTS).unwrap())),
                 ..Default::default()
             },
@@ -745,6 +753,10 @@ impl Context {
                 }
                 TValue::Char(value) => format!("{value}"),
                 TValue::U8(value) => format!("{value}"),
+                TValue::U8OrT(u8_or_t) => match u8_or_t {
+                    U8OrT::U8(value) => format!("{value}"),
+                    U8OrT::T => "T".to_string(),
+                },
                 TValue::U16(value) => format!("{value}"),
                 TValue::U32(value) => format!("{value}"),
                 TValue::U64(value) => format!("{value}"),
@@ -774,6 +786,13 @@ impl Context {
                 FormatInfo::U8 => {
                     if let Ok(value) = input.parse::<u8>() {
                         self.set_info_u8(id_info, value);
+                    }
+                }
+                FormatInfo::U8OrT => {
+                    if let Ok(value) = input.parse::<u8>() {
+                        self.set_info_u8_or_t(id_info, U8OrT::U8(value));
+                    } else if ["T", "t"].contains(&input) {
+                        self.set_info_u8_or_t(id_info, U8OrT::T);
                     }
                 }
                 FormatInfo::U16 => {
@@ -895,6 +914,39 @@ impl Context {
         }
         inner_info.is_none = false;
         inner_info.t_value = TValue::U8(value);
+        let t_value = inner_info.t_value.clone();
+        self.callback_info_on_change(id_info, &t_value);
+    }
+
+    /* ----------*/
+    /** `U8OrT` **/
+    /* ----------*/
+
+    /// Getter d'une information de type `u8_or_t`
+    pub fn get_option_info_u8_or_t(&self, id_info: IdInfo) -> Option<U8OrT> {
+        let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::U8OrT);
+        if inner_info.is_none {
+            None
+        } else {
+            match inner_info.t_value {
+                TValue::U8OrT(value) => Some(value),
+                _ => panic!("{id_info:?} n'est pas un u8_or_t"),
+            }
+        }
+    }
+
+    /// Setter d'une information de type `u8_or_t`
+    pub fn set_info_u8_or_t(&mut self, id_info: IdInfo, value: U8OrT) {
+        let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::U8OrT);
+        if let Some(TValue::U8(max_value)) = inner_info.option_max_t_value {
+            if let U8OrT::U8(value_u8) = value {
+                if value_u8 > max_value {
+                    return;
+                }
+            }
+        }
+        inner_info.is_none = false;
+        inner_info.t_value = TValue::U8OrT(value);
         let t_value = inner_info.t_value.clone();
         self.callback_info_on_change(id_info, &t_value);
     }
@@ -1104,6 +1156,25 @@ mod tests {
                     }
                     context.set_info_u8(id_info, value);
                     assert_eq!(context.get_option_info_u8(id_info), Some(value));
+                }
+            }
+            FormatInfo::U8OrT => {
+                assert!(context.get_option_info_u8_or_t(id_info).is_none());
+                // Test 'T'
+                context.set_info_u8_or_t(id_info, U8OrT::T);
+                assert_eq!(context.get_option_info_u8_or_t(id_info), Some(U8OrT::T));
+                // Test u8
+                for value in [0_u8, 10_u8, 100_u8] {
+                    if let Some(TValue::U8(max_value)) = option_max_t_value {
+                        if value > max_value {
+                            continue;
+                        }
+                    }
+                    context.set_info_u8_or_t(id_info, U8OrT::U8(value));
+                    assert_eq!(
+                        context.get_option_info_u8_or_t(id_info),
+                        Some(U8OrT::U8(value))
+                    );
                 }
             }
             FormatInfo::U16 => {

@@ -69,6 +69,7 @@ impl CommonMessageTrait for Message76 {
 mod tests {
     use super::*;
     use crate::context::Context;
+    use crate::context::U8OrT;
     use crate::st2150::protocol;
     use crate::CommonSerialComTrait;
     use crate::SerialCom;
@@ -83,7 +84,7 @@ mod tests {
 
         // Infos pour la requête
         context.set_info_u8(IdInfo::CodeProduit, 2);
-        context.set_info_u8(IdInfo::NumeroCompartimentFinal, 1);
+        context.set_info_u8_or_t(IdInfo::NumeroCompartimentFinal, U8OrT::U8(1));
 
         // Trame pour message
         fake_port.should_write(&[

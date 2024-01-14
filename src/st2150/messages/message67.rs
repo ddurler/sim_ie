@@ -69,6 +69,7 @@ impl CommonMessageTrait for Message67 {
 mod tests {
     use super::*;
     use crate::context::Context;
+    use crate::context::U8OrT;
     use crate::st2150::protocol;
     use crate::CommonSerialComTrait;
     use crate::SerialCom;
@@ -86,7 +87,7 @@ mod tests {
         context.set_info_u8(IdInfo::CodeProduit, 6);
         context.set_info_u8(IdInfo::CodeProduitFinal, 5);
         context.set_info_u32(IdInfo::OrdreCompartiments, 987_654_321);
-        context.set_info_u8(IdInfo::NumeroCompartimentFinal, 3);
+        context.set_info_u8_or_t(IdInfo::NumeroCompartimentFinal, U8OrT::U8(3));
         context.set_info_u8(IdInfo::NumeroFlexible, 2);
         context.set_info_u8(IdInfo::NumeroFlexibleFinal, 1);
         context.set_info_bool(IdInfo::FinirFlexibleVide, true);

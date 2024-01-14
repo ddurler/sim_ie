@@ -11,6 +11,7 @@ use super::Edition2150;
 use super::IdInfo;
 use crate::context;
 use crate::context::Context;
+use crate::context::U8OrT;
 use crate::st2150::protocol;
 use crate::st2150::ProtocolError;
 
@@ -149,6 +150,7 @@ pub fn id_infos_response(_message_num: u8) -> Vec<IdInfo> {
 }
 
 /// Création de la trame pour la requête
+#[allow(clippy::too_many_lines)]
 pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame, ProtocolError> {
     let mut req = Frame::new(message_num);
 
@@ -182,25 +184,39 @@ pub fn create_frame_request(message_num: u8, context: &Context) -> Result<Frame,
             }
             IdInfo::NumeroCompartiment => {
                 let compart_num = context
-                    .get_option_info_u8(IdInfo::NumeroCompartiment)
+                    .get_option_info_u8_or_t(IdInfo::NumeroCompartiment)
                     .unwrap();
-                Field::check_binary_domain(
-                    "numéro compartiment",
-                    compart_num,
-                    0_u8..=u8::try_from(context::NB_COMPARTIMENTS).unwrap(),
-                )?;
-                req.add_field(Field::encode_binary(compart_num + b'0'));
+                match compart_num {
+                    U8OrT::U8(num) => {
+                        Field::check_binary_domain(
+                            "numéro compartiment",
+                            num,
+                            0_u8..=u8::try_from(context::NB_COMPARTIMENTS).unwrap(),
+                        )?;
+                        req.add_field(Field::encode_binary(num + b'0'));
+                    }
+                    U8OrT::T => {
+                        req.add_field(Field::encode_char('T')?);
+                    }
+                }
             }
             IdInfo::NumeroCompartimentFinal => {
                 let compart_num = context
-                    .get_option_info_u8(IdInfo::NumeroCompartimentFinal)
+                    .get_option_info_u8_or_t(IdInfo::NumeroCompartimentFinal)
                     .unwrap();
-                Field::check_binary_domain(
-                    "numéro compartiment",
-                    compart_num,
-                    0_u8..=u8::try_from(context::NB_COMPARTIMENTS).unwrap(),
-                )?;
-                req.add_field(Field::encode_binary(compart_num + b'0'));
+                match compart_num {
+                    U8OrT::U8(num) => {
+                        Field::check_binary_domain(
+                            "numéro compartiment final",
+                            num,
+                            0_u8..=u8::try_from(context::NB_COMPARTIMENTS).unwrap(),
+                        )?;
+                        req.add_field(Field::encode_binary(num + b'0'));
+                    }
+                    U8OrT::T => {
+                        req.add_field(Field::encode_char('T')?);
+                    }
+                }
             }
             IdInfo::OrdreCompartiments => {
                 let compart_order = context

@@ -69,6 +69,7 @@ impl CommonMessageTrait for Message62 {
 mod tests {
     use super::*;
     use crate::context::Context;
+    use crate::context::U8OrT;
     use crate::st2150::protocol;
     use crate::CommonSerialComTrait;
     use crate::SerialCom;
@@ -83,7 +84,7 @@ mod tests {
 
         // Infos pour la requête
         context.set_info_u8(IdInfo::CodeProduit, 3);
-        context.set_info_u8(IdInfo::NumeroCompartiment, 2);
+        context.set_info_u8_or_t(IdInfo::NumeroCompartiment, U8OrT::T);
         context.set_info_u8(IdInfo::NumeroFlexible, 1);
 
         // Trame pour message
@@ -94,12 +95,12 @@ mod tests {
             protocol::SEPARATOR,
             b'3', // Code produit
             protocol::SEPARATOR,
-            b'2', // Numéro compartiment
+            b'T', // Numéro compartiment (ici remorque)
             protocol::SEPARATOR,
             b'1', // Numéro de flexible
             protocol::SEPARATOR,
-            51, // Checksum
-            52,
+            53, // Checksum
+            50,
             protocol::ETX,
         ]);
 

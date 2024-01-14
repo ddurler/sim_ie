@@ -150,6 +150,7 @@ pub trait CommonMessageTrait {
                 context::FormatInfo::Bool => context.get_option_info_bool(id_info).is_none(),
                 context::FormatInfo::Char => context.get_option_info_char(id_info).is_none(),
                 context::FormatInfo::U8 => context.get_option_info_u8(id_info).is_none(),
+                context::FormatInfo::U8OrT => context.get_option_info_u8_or_t(id_info).is_none(),
                 context::FormatInfo::U16 => context.get_option_info_u16(id_info).is_none(),
                 context::FormatInfo::U32 => context.get_option_info_u32(id_info).is_none(),
                 context::FormatInfo::U64 => context.get_option_info_u64(id_info).is_none(),
