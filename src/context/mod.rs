@@ -121,12 +121,10 @@ struct Info {
     #[allow(clippy::struct_field_names)]
     format_info: FormatInfo,
 
-    /// Propriété à `false` tant qu'aucune valeur n'est attribuée à l'information
-    is_none: bool,
-
     /// Valeur de l'information dans le format choisi
     /// En cohérence avec la propriété `format_info`
-    t_value: TValue,
+    /// Par défaut, aucune valeur n'est définie (None)
+    option_t_value: Option<TValue>,
 
     /// Regex optionnelle pour valider la valeur de l'information (from_string)
     option_regex: Option<Regex>,
@@ -140,8 +138,7 @@ impl Default for Info {
         Self {
             label: "Non défini".to_string(), // Par défaut, à définir précisément
             format_info: FormatInfo::Bool,   // Par défaut, à définir précisément
-            is_none: true,                   // Pour tous, au début...
-            t_value: TValue::Bool(false),    // Don't care: Sera redéfini dès le 1er set_info_xx
+            option_t_value: None,
             option_regex: None,
             option_max_t_value: None,
         }
@@ -746,10 +743,9 @@ impl Context {
     /// Getter de la représentation 'textuelle' d'une information du contexte
     pub fn get_info_to_string(&self, id_info: IdInfo, output_none: &str) -> String {
         let inner_info = self.get_inner_info(id_info);
-        if inner_info.is_none {
-            output_none.to_string()
-        } else {
-            match &inner_info.t_value {
+        match &inner_info.option_t_value {
+            None => output_none.to_string(),
+            Some(t_value) => match t_value {
                 TValue::Bool(value) => {
                     if *value {
                         "Oui".to_string()
@@ -768,7 +764,7 @@ impl Context {
                 TValue::U64(value) => format!("{value}"),
                 TValue::F32(value) => format!("{value:.1}"),
                 TValue::String(value) => value.trim_end().to_string(),
-            }
+            },
         }
     }
 
@@ -777,7 +773,7 @@ impl Context {
     pub fn set_info_from_string(&mut self, id_info: IdInfo, input: &str) {
         let inner_info = self.get_mut_inner_info(id_info);
         if input.is_empty() {
-            inner_info.is_none = true;
+            inner_info.option_t_value = None;
         } else {
             // L'input n'est pas vide
             if let Some(regex) = &inner_info.option_regex {
@@ -849,22 +845,20 @@ impl Context {
     /// Getter d'une information de type `bool`
     pub fn get_option_info_bool(&self, id_info: IdInfo) -> Option<bool> {
         let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::Bool);
-        if inner_info.is_none {
-            None
-        } else {
-            match inner_info.t_value {
-                TValue::Bool(value) => Some(value),
+        match &inner_info.option_t_value {
+            None => None,
+            Some(t_value) => match t_value {
+                TValue::Bool(value) => Some(*value),
                 _ => panic!("{id_info:?} n'est pas un bool"),
-            }
+            },
         }
     }
 
     /// Setter d'une information de type `bool`
     pub fn set_info_bool(&mut self, id_info: IdInfo, value: bool) {
         let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::Bool);
-        inner_info.is_none = false;
-        inner_info.t_value = TValue::Bool(value);
-        let t_value = inner_info.t_value.clone();
+        let t_value = TValue::Bool(value);
+        inner_info.option_t_value = Some(t_value.clone());
         self.callback_info_on_change(id_info, &t_value);
     }
 
@@ -875,13 +869,12 @@ impl Context {
     /// Getter d'une information de type `char`
     pub fn get_option_info_char(&self, id_info: IdInfo) -> Option<char> {
         let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::Char);
-        if inner_info.is_none {
-            None
-        } else {
-            match inner_info.t_value {
-                TValue::Char(value) => Some(value),
+        match &inner_info.option_t_value {
+            None => None,
+            Some(t_value) => match t_value {
+                TValue::Char(value) => Some(*value),
                 _ => panic!("{id_info:?} n'est pas un char"),
-            }
+            },
         }
     }
 
@@ -893,9 +886,8 @@ impl Context {
                 return;
             }
         }
-        inner_info.is_none = false;
-        inner_info.t_value = TValue::Char(value);
-        let t_value = inner_info.t_value.clone();
+        let t_value = TValue::Char(value);
+        inner_info.option_t_value = Some(t_value.clone());
         self.callback_info_on_change(id_info, &t_value);
     }
 
@@ -906,13 +898,12 @@ impl Context {
     /// Getter d'une information de type `u8`
     pub fn get_option_info_u8(&self, id_info: IdInfo) -> Option<u8> {
         let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::U8);
-        if inner_info.is_none {
-            None
-        } else {
-            match inner_info.t_value {
-                TValue::U8(value) => Some(value),
+        match &inner_info.option_t_value {
+            None => None,
+            Some(t_value) => match t_value {
+                TValue::U8(value) => Some(*value),
                 _ => panic!("{id_info:?} n'est pas un u8"),
-            }
+            },
         }
     }
 
@@ -924,9 +915,8 @@ impl Context {
                 return;
             }
         }
-        inner_info.is_none = false;
-        inner_info.t_value = TValue::U8(value);
-        let t_value = inner_info.t_value.clone();
+        let t_value = TValue::U8(value);
+        inner_info.option_t_value = Some(t_value.clone());
         self.callback_info_on_change(id_info, &t_value);
     }
 
@@ -937,13 +927,12 @@ impl Context {
     /// Getter d'une information de type `u8_or_t`
     pub fn get_option_info_u8_or_t(&self, id_info: IdInfo) -> Option<U8OrT> {
         let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::U8OrT);
-        if inner_info.is_none {
-            None
-        } else {
-            match inner_info.t_value {
-                TValue::U8OrT(value) => Some(value),
+        match &inner_info.option_t_value {
+            None => None,
+            Some(t_value) => match t_value {
+                TValue::U8OrT(value) => Some(*value),
                 _ => panic!("{id_info:?} n'est pas un u8_or_t"),
-            }
+            },
         }
     }
 
@@ -957,9 +946,8 @@ impl Context {
                 }
             }
         }
-        inner_info.is_none = false;
-        inner_info.t_value = TValue::U8OrT(value);
-        let t_value = inner_info.t_value.clone();
+        let t_value = TValue::U8OrT(value);
+        inner_info.option_t_value = Some(t_value.clone());
         self.callback_info_on_change(id_info, &t_value);
     }
 
@@ -970,13 +958,12 @@ impl Context {
     /// Getter d'une information de type `u16`
     pub fn get_option_info_u16(&self, id_info: IdInfo) -> Option<u16> {
         let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::U16);
-        if inner_info.is_none {
-            None
-        } else {
-            match inner_info.t_value {
-                TValue::U16(value) => Some(value),
+        match &inner_info.option_t_value {
+            None => None,
+            Some(t_value) => match t_value {
+                TValue::U16(value) => Some(*value),
                 _ => panic!("{id_info:?} n'est pas un u16"),
-            }
+            },
         }
     }
 
@@ -988,9 +975,8 @@ impl Context {
                 return;
             }
         }
-        inner_info.is_none = false;
-        inner_info.t_value = TValue::U16(value);
-        let t_value = inner_info.t_value.clone();
+        let t_value = TValue::U16(value);
+        inner_info.option_t_value = Some(t_value.clone());
         self.callback_info_on_change(id_info, &t_value);
     }
 
@@ -1001,13 +987,12 @@ impl Context {
     /// Getter d'une information de type `u32`
     pub fn get_option_info_u32(&self, id_info: IdInfo) -> Option<u32> {
         let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::U32);
-        if inner_info.is_none {
-            None
-        } else {
-            match inner_info.t_value {
-                TValue::U32(value) => Some(value),
+        match &inner_info.option_t_value {
+            None => None,
+            Some(t_value) => match t_value {
+                TValue::U32(value) => Some(*value),
                 _ => panic!("{id_info:?} n'est pas un u32"),
-            }
+            },
         }
     }
 
@@ -1019,9 +1004,8 @@ impl Context {
                 return;
             }
         }
-        inner_info.is_none = false;
-        inner_info.t_value = TValue::U32(value);
-        let t_value = inner_info.t_value.clone();
+        let t_value = TValue::U32(value);
+        inner_info.option_t_value = Some(t_value.clone());
         self.callback_info_on_change(id_info, &t_value);
     }
 
@@ -1032,13 +1016,12 @@ impl Context {
     /// Getter d'une information de type `u64`
     pub fn get_option_info_u64(&self, id_info: IdInfo) -> Option<u64> {
         let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::U64);
-        if inner_info.is_none {
-            None
-        } else {
-            match inner_info.t_value {
-                TValue::U64(value) => Some(value),
+        match &inner_info.option_t_value {
+            None => None,
+            Some(t_value) => match t_value {
+                TValue::U64(value) => Some(*value),
                 _ => panic!("{id_info:?} n'est pas un u64"),
-            }
+            },
         }
     }
 
@@ -1050,9 +1033,8 @@ impl Context {
                 return;
             }
         }
-        inner_info.is_none = false;
-        inner_info.t_value = TValue::U64(value);
-        let t_value = inner_info.t_value.clone();
+        let t_value = TValue::U64(value);
+        inner_info.option_t_value = Some(t_value.clone());
         self.callback_info_on_change(id_info, &t_value);
     }
 
@@ -1063,28 +1045,25 @@ impl Context {
     /// Getter d'une information de type `f32`
     pub fn get_option_info_f32(&self, id_info: IdInfo) -> Option<f32> {
         let inner_info = self.get_inner_info_with_format(id_info, FormatInfo::F32);
-        if inner_info.is_none {
-            None
-        } else {
-            match inner_info.t_value {
-                TValue::F32(value) => Some(value),
+        match &inner_info.option_t_value {
+            None => None,
+            Some(t_value) => match t_value {
+                TValue::F32(value) => Some(*value),
                 _ => panic!("{id_info:?} n'est pas un f32"),
-            }
+            },
         }
     }
 
     /// Setter d'une information de type `f32`
     pub fn set_info_f32(&mut self, id_info: IdInfo, value: f32) {
         let inner_info = self.get_mut_inner_info_with_format(id_info, FormatInfo::F32);
-
         if let Some(TValue::F32(max_value)) = inner_info.option_max_t_value {
             if value > max_value {
                 return;
             }
         }
-        inner_info.is_none = false;
-        inner_info.t_value = TValue::F32(value);
-        let t_value = inner_info.t_value.clone();
+        let t_value = TValue::F32(value);
+        inner_info.option_t_value = Some(t_value.clone());
         self.callback_info_on_change(id_info, &t_value);
     }
 
@@ -1095,13 +1074,12 @@ impl Context {
     /// Getter d'une information de type `string`
     pub fn get_option_info_string(&self, id_info: IdInfo) -> Option<String> {
         let inner_info = self.get_inner_info(id_info);
-        if inner_info.is_none {
-            None
-        } else {
-            match &inner_info.t_value {
+        match &inner_info.option_t_value {
+            None => None,
+            Some(t_value) => match t_value {
                 TValue::String(value) => Some(value.clone()),
                 _ => panic!("{id_info:?} n'est pas un string"),
-            }
+            },
         }
     }
 
@@ -1122,9 +1100,8 @@ impl Context {
                 return;
             }
         }
-        inner_info.is_none = false;
-        inner_info.t_value = TValue::String(value.to_string());
-        let t_value = inner_info.t_value.clone();
+        let t_value = TValue::String(value.to_string());
+        inner_info.option_t_value = Some(t_value.clone());
         self.callback_info_on_change(id_info, &t_value);
     }
 }
