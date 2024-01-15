@@ -103,7 +103,6 @@ fn definition_message(message_num: u8) -> MessageDefinition {
             message_str: "Transfert compartiment",
             id_infos_request: vec![
                 IdInfo::Predetermination,
-                IdInfo::CodeProduit,
                 IdInfo::NumeroCompartiment, IdInfo::NumeroCompartimentFinal,
                 IdInfo::NumeroFlexible, IdInfo::FinirFlexibleVide,
             ],
@@ -114,20 +113,26 @@ fn definition_message(message_num: u8) -> MessageDefinition {
         },
         77 => MessageDefinition {
             message_str: "Libération (vidange collecteur)",
-            id_infos_request: vec![IdInfo::CodeProduit, IdInfo::NumeroCompartimentFinal, IdInfo::NumeroFlexible],
+            id_infos_request: vec![IdInfo::NumeroCompartimentFinal, IdInfo::NumeroFlexible],
         },
         78 => MessageDefinition {
             message_str: "Vidage gravitaire",
-            id_infos_request: vec![IdInfo::CodeProduit],
+            id_infos_request: vec![],
         },
 
-        _ => panic!("Message de mouvement produit inconnu : {message_num}"),
+        _ => panic!("Message de mouvement produit inattendu : {message_num}"),
     }
 }
 
 /// Liste des éditions de la ST2150 pour chaque requête d'un mouvement de produit
-pub fn edition_st2150(_message_num: u8) -> Edition2150 {
-    Edition2150::C
+pub fn edition_st2150(message_num: u8) -> Edition2150 {
+    match message_num {
+        n if n < 60 => panic!("Message de mouvement produit inattendu : {message_num}"),
+        // Messages mis à jour en révision D de la ST2150
+        75 | 77 | 78 => Edition2150::D,
+        // Implémentation initiale en révision C de la ST2150 - Messages 60 à 79
+        _ => Edition2150::C,
+    }
 }
 
 /// Liste des libellés de chaque requête d'un mouvement de produit

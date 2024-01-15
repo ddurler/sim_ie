@@ -25,8 +25,11 @@ pub enum Edition2150 {
     /// Révision B de la ST2150 (2021)
     B,
 
-    /// Révision C de la ST2150 (2023 - Mode étendu)
+    /// Révision C de la ST2150 (2023 - Mode étendu / Préliminaire non production)
     C,
+
+    /// Révision D de la ST2150 (2024 - Mode étendu / change message 75, 77 et 78)
+    D,
 }
 
 impl Display for Edition2150 {
@@ -35,6 +38,7 @@ impl Display for Edition2150 {
             Edition2150::A => write!(f, "A"),
             Edition2150::B => write!(f, "B"),
             Edition2150::C => write!(f, "C"),
+            Edition2150::D => write!(f, "D"),
         }
     }
 }

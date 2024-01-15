@@ -3,19 +3,19 @@
     "type": "Outil",
     "group": "Générique",
     "number": 1127,
-    "branch": "main",
+    "branch": "dd_help_code",
     "name": "sim_ie",
-    "date": 20230925,
-    "version": "0.3.0"
+    "date": 20240115,
+    "version": "0.4.0"
   },
   "changes": {
     "imputation": 9501,
-    "short_description": "Améliorations mineures",
+    "short_description": "ST2150 revD et améliorations diverses",
     "long_description": [
-      "* Fix typos dans les libellées des informations",
-      "* RAZ informations si le champ de saisie est effacé",
-      "* Ajout valeur max. possible pour certaines informations des requêtes en saisie",
-      "* Simplification codage du contexte et des messages (maintenance logicielle)"
+      "* Modification des messages 75, 77 et 78: Suppression du 'code produit' (implicite) dans la requête",
+      "* Fix IHM pour saisie 'T' pour un le numéro de compartiment si remorque",
+      "* Fix IHM pour saisie de l'ordre des compartiments (padding 0 à gauche)",
+      "* Code : Améliorations proposées par 'clippy'"
     ],
     "author": "DD",
     "configuration": null,

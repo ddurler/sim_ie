@@ -83,7 +83,6 @@ mod tests {
         let mut context = Context::default();
 
         // Infos pour la requête
-        context.set_info_u8(IdInfo::CodeProduit, 3);
         context.set_info_u8_or_t(IdInfo::NumeroCompartimentFinal, U8OrT::U8(2));
         context.set_info_u8(IdInfo::NumeroFlexible, 1);
 
@@ -93,14 +92,12 @@ mod tests {
             b'7', //  Numéro de message
             b'7',
             protocol::SEPARATOR,
-            b'3', // Code produit
-            protocol::SEPARATOR,
             b'2', // Numéro compartiment final
             protocol::SEPARATOR,
             b'1', // Numéro flexible
             protocol::SEPARATOR,
-            51, // Checksum
-            48,
+            70, // Checksum
+            68,
             protocol::ETX,
         ]);
 

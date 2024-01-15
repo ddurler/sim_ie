@@ -1113,6 +1113,7 @@ mod tests {
 
     // Cette fonction devrait être appelée avec des `IdInfo` de tous les `FormatInfo` possibles
     // Voir `test_get_set` ci-dessous
+    #[allow(clippy::too_many_lines)]
     fn check_id_code(context: &mut Context, id_info: IdInfo) {
         let option_max_t_value = { context.get_inner_info(id_info).option_max_t_value.clone() };
         match context.get_info_format(id_info) {

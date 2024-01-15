@@ -84,7 +84,6 @@ mod tests {
 
         // Infos pour la requête
         context.set_info_u32(IdInfo::Predetermination, 1000);
-        context.set_info_u8(IdInfo::CodeProduit, 4);
         context.set_info_u8_or_t(IdInfo::NumeroCompartiment, U8OrT::U8(3));
         context.set_info_u8_or_t(IdInfo::NumeroCompartimentFinal, U8OrT::U8(2));
         context.set_info_u8(IdInfo::NumeroFlexible, 1);
@@ -102,8 +101,6 @@ mod tests {
             b'0',
             b'0',
             protocol::SEPARATOR,
-            b'4', // Code produit
-            protocol::SEPARATOR,
             b'3', // Numéro compartiment
             protocol::SEPARATOR,
             b'2', // Numéro compartiment final
@@ -112,8 +109,8 @@ mod tests {
             protocol::SEPARATOR,
             b'V', // Finir vide
             protocol::SEPARATOR,
-            57, // Checksum
-            70,
+            53, // Checksum
+            53,
             protocol::ETX,
         ]);
 

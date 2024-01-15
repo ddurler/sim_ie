@@ -82,7 +82,6 @@ mod tests {
         let mut context = Context::default();
 
         // Infos pour la requête
-        context.set_info_u8(IdInfo::CodeProduit, 1);
 
         // Trame pour message
         fake_port.should_write(&[
@@ -90,10 +89,8 @@ mod tests {
             b'7', //  Numéro de message
             b'8',
             protocol::SEPARATOR,
-            b'1', // Code produit
-            protocol::SEPARATOR,
-            51, // Checksum
-            69,
+            70, // Checksum
+            49,
             protocol::ETX,
         ]);
 
