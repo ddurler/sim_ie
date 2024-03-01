@@ -1,0 +1,28 @@
+{
+  "soft": {
+    "type": "Outil",
+    "group": "Générique",
+    "number": 1127,
+    "branch": "dd_help_code",
+    "name": "sim_ie",
+    "date": 20240115,
+    "version": "0.4.0"
+  },
+  "changes": {
+    "imputation": 9501,
+    "short_description": "ST2150 revD et améliorations diverses",
+    "long_description": [
+      "* Modification des messages 75, 77 et 78: Suppression du 'code produit' (implicite) dans la requête",
+      "* Fix IHM pour saisie 'T' pour un le numéro de compartiment si remorque",
+      "* Fix IHM pour saisie de l'ordre des compartiments (padding 0 à gauche)",
+      "* Code : Améliorations proposées par 'clippy'"
+    ],
+    "author": "DD",
+    "configuration": null,
+    "risk": null
+  },
+  "livrables": ["target/release/*.exe"],
+  "ignore": [".*",
+    "target/debug*", "target/doc*", "target/release/.*", "target/release/build*", "target/release/deps*",
+    "target/release/examples*", "target/release/incremental*", "target/tarpaulin*"]
+}
