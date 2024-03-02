@@ -86,7 +86,7 @@ fn run_on_terminal(st2150: &mut ST2150) {
 fn print_help() {
     eprintln!(
         r#"
-Simulateur d'informatique embarquée v{APP_VERSION} - ALMA 2023.
+Simulateur d'informatique embarquée v{APP_VERSION} - ALMA 2023-2024.
 
 Usage en mode graphique :
     sim_ie COM1               # Pour une machine Windows avec un port série 'COM1'

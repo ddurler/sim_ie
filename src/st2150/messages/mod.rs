@@ -44,6 +44,8 @@ pub mod message36;
 use message36::Message36;
 pub mod message37;
 use message37::Message37;
+pub mod message38;
+use message38::Message38;
 pub mod message40;
 use message40::Message40;
 pub mod helper_messages60_79;
@@ -83,8 +85,8 @@ use super::Edition2150;
 
 /// Liste des numéros de messages implémentés
 pub const ST2150_MESSAGE_NUMBERS: &[u8] = &[
-    0, 10, 11, 20, 21, 22, 30, 31, 32, 33, 34, 35, 36, 37, 40, 60, 61, 62, 63, 65, 66, 67, 70, 71,
-    75, 76, 77, 78,
+    0, 10, 11, 20, 21, 22, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 60, 61, 62, 63, 65, 66, 67, 70,
+    71, 75, 76, 77, 78,
 ];
 
 /// Accès au `CommonMessageTrait` des différents messages gérés
@@ -104,6 +106,7 @@ pub fn get_dyn_message(message_num: u8) -> Box<dyn CommonMessageTrait> {
         35 => Box::<Message35>::default(),
         36 => Box::<Message36>::default(),
         37 => Box::<Message37>::default(),
+        38 => Box::<Message38>::default(),
         40 => Box::<Message40>::default(),
         60 => Box::<Message60>::default(),
         61 => Box::<Message61>::default(),

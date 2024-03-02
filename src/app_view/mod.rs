@@ -271,6 +271,11 @@ impl AppView {
                 self.is_edition_st2150_visible(Edition2150::D),
                 |value| Message::SelectionEditionST2150(Edition2150::D, value)
             ),
+            checkbox(
+                "E",
+                self.is_edition_st2150_visible(Edition2150::E),
+                |value| Message::SelectionEditionST2150(Edition2150::E, value)
+            ),
         ]
         .spacing(25)
         .into()
@@ -325,6 +330,7 @@ impl Application for AppView {
         editions_st2150.insert(Edition2150::B, true);
         editions_st2150.insert(Edition2150::C, true);
         editions_st2150.insert(Edition2150::D, true);
+        editions_st2150.insert(Edition2150::E, true);
 
         // Objet AppView pour l'IHM
         (

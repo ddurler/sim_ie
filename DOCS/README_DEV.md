@@ -17,6 +17,7 @@ Pour [Rust](https://www.rust-lang.org/), les extensions suivantes sont recommand
 
 * `rust-analyzer` : Support VSCode pour le [Rust](https://www.rust-lang.org/)
 * `crates` : Vérifie si les dépendances sont valides et à jour
+* `Code Spell Checker` + `French - Code Spell Checker` : Pour éviter les typos
 
 Pour les opérations de développement :
 
@@ -39,3 +40,5 @@ Nota : Certaines commandes `cargo` ne sont pas installées par défaut : `cargo 
 Rappel: Pour la mise à jour de l'environnement [Rust](https://www.rust-lang.org/) : `rustup check` ou `rustup update`
 
 Attention : Le fichier `aaa.json` pour l'archivage du projet par `rsaaa` doit être au format `Windows 1252` (ou `ISO-8859-1`). Par défaut, il est ouvert en `UTF-8` par [VSCode](https://code.visualstudio.com/) et ce format introduit des soucis avec le chemin du livrable `Générique` qui est accentué. En cas de problème, il est nécessaire d'éditer ce fichier `aaa.json` avec l'encodage correct.
+
+Pour le calcul des 'checksum' des messages pour les tests, ne pas perdre du temps à calculer cette valeur manuellement: Mettre une valeur 'bidon' et exécuter le test qui va échouer en indiquant la valeur attendue...
